@@ -59,8 +59,3 @@ la risoluzione effettiva è la somma in quadratura delle due!
     - facendo fit
 4. riduzione noise con fft per sopprimerlo (?)
 5. studio sistematici cercando eventuale shift nella distribuzione delle energie nel tempo (?)
-6. Anomaly detection con unsupervised learning (?)
-
-
-
-
