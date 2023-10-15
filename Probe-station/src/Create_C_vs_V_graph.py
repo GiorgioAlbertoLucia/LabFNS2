@@ -16,26 +16,33 @@ if __name__=='__main__':
     infileLGAD = 'Probe-station/data/input/C_vs_V_LGAD.csv'
     infilePin = 'Probe-station/data/input/C_vs_V_pin.csv'
     outfilename = 'Probe-station/data/output/C_vs_V.root'
+    
     gLGAD = GetGraphErrorsFromCSV(infileLGAD)
     gLGAD.SetName("gLGAD")
     gLGAD.SetTitle("LGAD; Reverse Bias Voltage (V); Capacitance (pF)")
-    SetObjectStyle(gLGAD, color = kRed+1, markerstyle = kFullCircle)
+    gLGAD.SetMarkerStyle(kFullCircle)
+    gLGAD.SetMarkerSize(1)
+    gLGAD.SetMarkerColor(kRed+1)
+    gLGAD.SetLineColor(kRed+1)
     
     gPin = GetGraphErrorsFromCSV(infilePin)
     gPin.SetName("gPin")
     gPin.SetTitle("Pin; Reverse Bias Voltage (V); Capacitance (pF)")
-    SetObjectStyle(gPin, color = kAzure + 3, markerstyle = kFullSquare)
+    gPin.SetMarkerStyle(kFullSquare)
+    gPin.SetMarkerSize(1)
+    gPin.SetMarkerColor(kAzure + 3)
+    gPin.SetLineColor(kAzure + 3)
     
     canvas = TCanvas("canvas","canvas",1000,1000)
-    hFrame = canvas.DrawFrame(0,1,50,100,"C-V curves of FBK-UFSD2 LGAD and PiN pads; Reverse Bias Voltage (V); Capacitance (pF)")
+    hFrame = canvas.cd().DrawFrame(0,1,50,100,"C-V curves of FBK-UFSD2 LGAD and PiN pads; Reverse Bias Voltage (V); Capacitance (pF)")
     canvas.SetLogy()
-    gLGAD.Draw("same")
-    gPin.Draw("same")
+    gLGAD.Draw("pe")
+    gPin.Draw("pe")
 
     legend = TLegend(0.7, 0.7, 0.86, 0.8)
     legend.AddEntry(gLGAD,'LGAD','p')
     legend.AddEntry(gPin,'PiN','p')
-    legend.Draw()
+    legend.Draw("same")
 
     canvas.Modified()
     canvas.Update()
