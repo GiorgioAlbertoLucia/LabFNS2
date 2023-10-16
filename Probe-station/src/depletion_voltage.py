@@ -11,7 +11,7 @@ import argparse
 import numpy as np
 import pandas as pd
 
-import uncertainties as unc
+#import uncertainties as unc
 
 from ROOT import TFile, TGraphErrors, TF1, TCanvas, TLegend, gStyle, TText
 
@@ -62,7 +62,7 @@ def fit(graph: TGraphErrors, fit_min, fit_max, line_color=2):
 
     # Fit the graph
     fit = TF1('fit', '[0] + [1]*x', fit_min, fit_max)
-    fit.SetParameters(0.0, 0.0)
+    fit.SetParameters(20.0, 0.0)
     fit.SetParNames('a', 'b')
     fit.SetLineColor(line_color)
     fit.SetLineStyle(2)
@@ -101,15 +101,16 @@ def find_intersection(fit1: TF1, fit2: TF1):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog='depletion_voltage.py',
-                                     description='''Script to measure the depletion voltage from fits of a 1/C^2 vs V plot''')
-    parser.add_argument('--input', type=str, help='Input file with the 1/C^2 vs V data', required=True)
-    parser.add_argument('--output', type=str, help='Output file with the plot', required=True)
-    
-    args = parser.parse_args()
+    #parser = argparse.ArgumentParser(prog='depletion_voltage.py',
+    #                                 description='''Script to measure the depletion voltage from fits of a 1/C^2 vs V plot''')
+    #parser.add_argument('--input', type=str, help='Input file with the 1/C^2 vs V data', required=True)
+    #parser.add_argument('--output', type=str, help='Output file with the plot', required=True)
+    #
+    #args = parser.parse_args()
 
     # Read the data
-    df = pd.read_csv(args.input)
+    #df = pd.read_csv(args.input)
+    df = pd.read_csv('Probe-station/data/input/C_vs_V_pin.csv')
     df = compute_1c2(df, 'C', 'C_err')
     print(df.describe())
 
@@ -118,8 +119,8 @@ def main():
     graph.SetTitle('#frac{1}{C^{2}} vs V LGAD; V [V]; #frac{1}{C^{2}} [pF^{-2}]')
 
     # Fit the data
-    fit1 = fit(graph, 0.0, 100.0, 797)
-    fit2 = fit(graph, 100.0, 200.0, 862)
+    fit1 = fit(graph, 0.0, 55.0, 797)
+    fit2 = fit(graph, 55.0, 100.0, 862)
 
     # Find the intersection point
     intersection = find_intersection(fit1, fit2)
@@ -139,7 +140,8 @@ def main():
 
     text = TText(0.15, 0.4, 'Depletion voltage: {:.2f} V'.format(intersection))
 
-    outFile = TFile(args.output, 'recreate')
+    #outFile = TFile(args.output, 'recreate')
+    outFile = TFile('Probe-station/data/output/1C2_pin.root', 'recreate')
     canvas.Write()
 
 
