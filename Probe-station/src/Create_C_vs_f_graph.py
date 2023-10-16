@@ -13,8 +13,10 @@ if __name__=='__main__':
     gROOT.SetBatch()
     SetGlobalStyle(padleftmargin=0.12, padbottommargin=0.12, padrightmargin=0.05, padtopmargin=0.1, titleoffsety=1.2, titleoffsetx=0.9, titleoffset= 0.7, opttitle=1)
 
-    infileLGAD = 'Probe-station/data/input/C_vs_f_LGAD.csv'
-    infilePin = 'Probe-station/data/input/C_vs_f_pin.csv'
+    #infileLGAD = 'Probe-station/data/input/C_vs_f_LGAD.csv'
+    #infilePin = 'Probe-station/data/input/C_vs_f_pin.csv'
+    infileLGAD = 'Probe-station/data/input/C_vs_f_LGAD_ex.csv'
+    infilePin = 'Probe-station/data/input/C_vs_f_LGAD_ex.csv'
     outfilename = 'Probe-station/data/output/C_vs_f.root'
     
     gLGAD = GetGraphErrorsFromCSV(infileLGAD)
@@ -35,9 +37,9 @@ if __name__=='__main__':
     
     canvas = TCanvas("canvas","canvas",1000,1000)
     hFrame = canvas.cd().DrawFrame(0,1,50,100,"C-f curves of FBK-UFSD2 LGAD and PiN pads; Frequency [kHz]; Capacitance (pF)")
-    canvas.SetLogy()
-    gLGAD.Draw("pe")
-    gPin.Draw("pe")
+    #canvas.SetLogy()
+    gLGAD.Draw("pa")
+    gPin.Draw("pa")
 
     legend = TLegend(0.7, 0.7, 0.86, 0.8)
     legend.AddEntry(gLGAD,'LGAD','p')
