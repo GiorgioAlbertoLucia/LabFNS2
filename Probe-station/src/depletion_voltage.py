@@ -2,11 +2,13 @@
 
 '''
     Script to measure the depletion voltage from fits of a 1/C^2 vs V plot
+    To run from the LabFNS2 folder:
+        python3 -m Probe-station.src.depletion_voltage --input <input_file> --output <output_file>
+        ./Probe-station/src/depletion_voltage.py --input INPUT_FILE --output OUTPUT_FILE
 
 '''
 
 import argparse
-
 
 import numpy as np
 import pandas as pd
@@ -65,11 +67,11 @@ def fit(graph: TGraphErrors, fit_min, fit_max, line_color=2):
     fit.SetParameters(20.0, 0.0)
     fit.SetParNames('a', 'b')
     fit.SetLineColor(line_color)
-    fit.SetLineStyle(2)
+    fit.SetLineStyle(1)
     fit.SetLineWidth(2)
     fit.SetNpx(1000)
     graph.Fit(fit, 'rm+')
-
+    print('Chi2/NDF: {:.2f}'.format(fit.GetChisquare() / fit.GetNDF()))
     return fit
 
 def find_intersection(fit1: TF1, fit2: TF1):
@@ -89,11 +91,11 @@ def find_intersection(fit1: TF1, fit2: TF1):
             Intersection point of the two linear functions
     '''
     # Set up a new function that is the difference between the two input functions
-    diff_func = TF1("diff_func", "([0]-[1])", fit1.GetXmin(), fit1.GetXmax())
-    diff_func.SetParameters(fit1.GetParameter(0), fit2.GetParameter(0))
+    diff_func = TF1("diff_func", "([0]+[1]*x)", fit1.GetXmin(), fit2.GetXmax())
+    diff_func.SetParameters((fit1.GetParameter(0) - fit2.GetParameter(0)), (fit1.GetParameter(1) - fit2.GetParameter(1)))
 
     # Find the intersection point of the difference function
-    intersection = diff_func.GetX(0, fit1.GetXmax())
+    intersection = diff_func.GetX(0)
 
     return intersection
 
@@ -112,15 +114,14 @@ def main():
     #df = pd.read_csv(args.input)
     df = pd.read_csv('Probe-station/data/input/C_vs_V_pin.csv')
     df = compute_1c2(df, 'C', 'C_err')
-    print(df.describe())
 
     # Plot the data
     graph = TGraphErrors(len(df['V']), np.asarray(df['V'], dtype=float), np.asarray(df['1_C2'], dtype=float), np.asarray(df['V_err'], dtype=float), np.asarray(df['1_C2_err'], dtype=float))
     graph.SetTitle('#frac{1}{C^{2}} vs V LGAD; V [V]; #frac{1}{C^{2}} [pF^{-2}]')
 
     # Fit the data
-    fit1 = fit(graph, 0.0, 55.0, 797)
-    fit2 = fit(graph, 55.0, 100.0, 862)
+    fit1 = fit(graph, 0.0, 100.0, 797)
+    fit2 = fit(graph, 89.0, 200.0, 862)
 
     # Find the intersection point
     intersection = find_intersection(fit1, fit2)
@@ -131,18 +132,23 @@ def main():
     fit1.Draw('same')
     fit2.Draw('same')
 
-    legend = TLegend(0.15, 0.15, 0.35, 0.35)
+    legend = TLegend(0.55, 0.55, 0.75, 0.75)
     legend.SetBorderSize(0)
     legend.AddEntry(graph, 'Data', 'p')
     legend.AddEntry(fit1, 'Gain layer depletion', 'l')
     legend.AddEntry(fit2, 'Substrate depletion', 'l')
     legend.Draw()
 
-    text = TText(0.15, 0.4, 'Depletion voltage: {:.2f} V'.format(intersection))
+    text = TText(0.55, 0.8, 'Depletion voltage: {:.2f} V'.format(intersection))
+    text.SetNDC()
+    text.SetTextSize(0.04)
+    text.Draw()
 
     #outFile = TFile(args.output, 'recreate')
     outFile = TFile('Probe-station/data/output/1C2_pin.root', 'recreate')
     canvas.Write()
+
+    outFile.Close()
 
 
     
