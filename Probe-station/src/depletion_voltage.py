@@ -112,7 +112,7 @@ def main():
 
     # Read the data
     #df = pd.read_csv(args.input)
-    df = pd.read_csv('Probe-station/data/input/C_vs_V_pin.csv')
+    df = pd.read_csv('/home/fabrizio/Documents/Lectures/Lab2/LFNS2/LabFNS2/Probe-station/data/input/C_vs_V_LGAD.csv')
     df = compute_1c2(df, 'C', 'C_err')
 
     # Plot the data
@@ -145,7 +145,7 @@ def main():
     text.Draw()
 
     #outFile = TFile(args.output, 'recreate')
-    outFile = TFile('Probe-station/data/output/1C2_pin.root', 'recreate')
+    outFile = TFile('Probe-station/data/output/1C2_lgad.root', 'recreate')
     canvas.Write()
 
     outFile.Close()

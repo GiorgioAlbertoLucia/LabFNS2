@@ -13,7 +13,7 @@ if __name__=='__main__':
     gROOT.SetBatch()
     SetGlobalStyle(padleftmargin=0.12, padbottommargin=0.12, padrightmargin=0.05, padtopmargin=0.1, titleoffsety=1.2, titleoffsetx=0.9, titleoffset= 0.7, opttitle=1)
 
-    infileLGAD = 'Probe-station/data/input/C_vs_V_LGAD_ex.csv'
+    infileLGAD = 'Probe-station/data/input/C_vs_f_LGAD.csv'
     infilePin = 'Probe-station/data/input/C_vs_V_pin.csv'
     outfilename = 'Probe-station/data/output/C_vs_V.root'
     

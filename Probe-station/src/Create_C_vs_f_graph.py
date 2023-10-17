@@ -15,8 +15,6 @@ if __name__=='__main__':
 
     infileLGAD = 'Probe-station/data/input/C_vs_f_LGAD.csv'
     infilePin = 'Probe-station/data/input/C_vs_f_pin.csv'
-    #infileLGAD = 'Probe-station/data/input/C_vs_f_LGAD_ex.csv'
-    #infilePin = 'Probe-station/data/input/C_vs_f_LGAD_ex.csv'
     outfilename = 'Probe-station/data/output/C_vs_f.root'
     
     gLGAD = GetGraphErrorsFromCSV(infileLGAD)
@@ -36,10 +34,10 @@ if __name__=='__main__':
     gPin.SetLineColor(kAzure + 3)
     
     canvas = TCanvas("canvas","canvas",1000,1000)
-    hFrame = canvas.cd().DrawFrame(0,1,50,100,"C-f curves of FBK-UFSD2 LGAD and PiN pads; Frequency [kHz]; Capacitance (pF)")
+    hFrame = canvas.cd().DrawFrame(0,1,500,500,"C-f curves of FBK-UFSD2 LGAD and PiN pads; Frequency [kHz]; Capacitance (pF)")
     canvas.SetLogx()
-    gLGAD.Draw("pa")
-    gPin.Draw("pa")
+    #gPin.Draw("pa,same")
+    gLGAD.Draw("pa,same")
 
     legend = TLegend(0.7, 0.7, 0.86, 0.8)
     legend.AddEntry(gLGAD,'LGAD','p')
