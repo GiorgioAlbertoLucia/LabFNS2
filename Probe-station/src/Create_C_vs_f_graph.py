@@ -4,7 +4,7 @@ import numpy as np
 import sys
 sys.path.append('utils')
 
-from ROOT import TGraphErrors, TFile, TCanvas, TLegend, kRed, kAzure, kFullCircle, kFullSquare, gROOT
+from ROOT import TGraphErrors, TFile, TCanvas, TLegend, kRed, kAzure, kOrange, kFullCircle, kFullSquare, gROOT
 from DfUtils import GetGraphErrorsFromCSV
 from StyleFormatter import SetObjectStyle, SetGlobalStyle
 
@@ -15,6 +15,7 @@ if __name__=='__main__':
 
     infileLGAD = 'Probe-station/data/input/C_vs_f_LGAD.csv'
     infilePin = 'Probe-station/data/input/C_vs_f_pin.csv'
+    infileStrip = 'Probe-station/data/input/C_vs_f_strip.csv'
     outfilename = 'Probe-station/data/output/C_vs_f.root'
     
     gLGAD = GetGraphErrorsFromCSV(infileLGAD)
@@ -32,16 +33,28 @@ if __name__=='__main__':
     gPin.SetMarkerSize(1)
     gPin.SetMarkerColor(kAzure + 3)
     gPin.SetLineColor(kAzure + 3)
+
+    gStrip = GetGraphErrorsFromCSV(infileStrip)
+    gStrip.SetName("gStrip")
+    gStrip.SetTitle("Strip; Frequency [kHz]; Capacitance (pF)")
+    gStrip.SetMarkerStyle(kFullSquare)
+    gStrip.SetMarkerSize(1)
+    gStrip.SetMarkerColor(kOrange - 3)
+    gStrip.SetLineColor(kOrange - 3)
     
     canvas = TCanvas("canvas","canvas",1000,1000)
-    hFrame = canvas.cd().DrawFrame(0,1,500,500,"C-f curves of FBK-UFSD2 LGAD and PiN pads; Frequency [kHz]; Capacitance (pF)")
+    hFrame = canvas.cd().DrawFrame(0,1,500,300,"C-f curves of FBK-UFSD2 LGAD and PiN pads; Frequency [kHz]; Capacitance (pF)")
     canvas.SetLogx()
-    #gPin.Draw("pa,same")
-    gLGAD.Draw("pa,same")
+    #canvas.SetLogy()
+    gPin.Draw("p,same")
+    gLGAD.Draw("p,same")
+    gStrip.Draw("p,same")
 
-    legend = TLegend(0.7, 0.7, 0.86, 0.8)
+    legend = TLegend(0.8, 0.7, 0.9, 0.85)
+    legend.SetTextSize(0.03)
     legend.AddEntry(gLGAD,'LGAD','p')
     legend.AddEntry(gPin,'PiN','p')
+    legend.AddEntry(gStrip,'Strip','p')
     legend.Draw("same")
 
     canvas.Modified()
