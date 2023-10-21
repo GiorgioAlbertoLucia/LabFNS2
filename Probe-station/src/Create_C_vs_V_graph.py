@@ -15,6 +15,7 @@ if __name__=='__main__':
 
     infileLGAD = 'Probe-station/data/input/C_vs_f_LGAD.csv'
     infilePin = 'Probe-station/data/input/C_vs_V_pin.csv'
+    infileStrip = 'Probe-station/data/input/C_vs_V_strip.csv'
     outfilename = 'Probe-station/data/output/C_vs_V.root'
     
     gLGAD = GetGraphErrorsFromCSV(infileLGAD)
@@ -32,16 +33,26 @@ if __name__=='__main__':
     gPin.SetMarkerSize(1)
     gPin.SetMarkerColor(kAzure + 3)
     gPin.SetLineColor(kAzure + 3)
+
+    gStrip = GetGraphErrorsFromCSV(infileStrip)
+    gStrip.SetName("gStrip")
+    gStrip.SetTitle("Strip; Reverse Bias Voltage (V); Capacitance (pF)")
+    gStrip.SetMarkerStyle(kFullSquare)
+    gStrip.SetMarkerSize(1)
+    gStrip.SetMarkerColor(kOrange - 3)
+    gStrip.SetLineColor(kOrange - 3)
     
     canvas = TCanvas("canvas","canvas",1000,1000)
     hFrame = canvas.cd().DrawFrame(0,1,200,1000,"C-V curves of FBK-UFSD2 LGAD and PiN pads; Reverse Bias Voltage (V); Capacitance (pF)")
-    canvas.SetLogy()
-    gLGAD.Draw("pe")
-    gPin.Draw("pe")
+    //canvas.SetLogy()
+    gLGAD.Draw("p,same")
+    gPin.Draw("p,same")
+    gStrip.Draw("p,same")
 
     legend = TLegend(0.7, 0.7, 0.86, 0.8)
     legend.AddEntry(gLGAD,'LGAD','p')
     legend.AddEntry(gPin,'PiN','p')
+    legend.AddEntry(gStrip,'Strip','p')
     legend.Draw("same")
 
     canvas.Modified()
