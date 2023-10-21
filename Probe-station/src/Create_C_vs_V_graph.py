@@ -4,7 +4,8 @@ import numpy as np
 import sys
 sys.path.append('utils')
 
-from ROOT import TGraphErrors, TFile, TCanvas, TLegend, kRed, kAzure, kFullCircle, kFullSquare, gROOT
+from ROOT import TGraphErrors, TFile, TCanvas, TLegend, kRed, kAzure,  kOrange, kFullCircle, kFullSquare, gROOT
+from DfUtils import GetGraphErrorsFromCSV
 from DfUtils import GetGraphErrorsFromCSV
 from StyleFormatter import SetObjectStyle, SetGlobalStyle
 
@@ -44,7 +45,7 @@ if __name__=='__main__':
     
     canvas = TCanvas("canvas","canvas",1000,1000)
     hFrame = canvas.cd().DrawFrame(0,1,200,1000,"C-V curves of FBK-UFSD2 LGAD and PiN pads; Reverse Bias Voltage (V); Capacitance (pF)")
-    //canvas.SetLogy()
+    #canvas.SetLogy()
     gLGAD.Draw("p,same")
     gPin.Draw("p,same")
     gStrip.Draw("p,same")
