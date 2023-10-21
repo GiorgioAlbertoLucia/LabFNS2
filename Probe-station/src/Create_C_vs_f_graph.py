@@ -20,7 +20,7 @@ if __name__=='__main__':
     
     gLGAD = GetGraphErrorsFromCSV(infileLGAD)
     gLGAD.SetName("gLGAD")
-    gLGAD.SetTitle("LGAD; Frequency [kHz]; Capacitance (pF)")
+    gLGAD.SetTitle("LGAD; Frequency (kHz); Capacitance (pF)")
     gLGAD.SetMarkerStyle(kFullCircle)
     gLGAD.SetMarkerSize(1)
     gLGAD.SetMarkerColor(kRed+1)
@@ -28,7 +28,7 @@ if __name__=='__main__':
     
     gPin = GetGraphErrorsFromCSV(infilePin)
     gPin.SetName("gPin")
-    gPin.SetTitle("Pin; Frequency [kHz]; Capacitance (pF)")
+    gPin.SetTitle("Pin; Frequency (kHz); Capacitance (pF)")
     gPin.SetMarkerStyle(kFullSquare)
     gPin.SetMarkerSize(1)
     gPin.SetMarkerColor(kAzure + 3)
@@ -36,7 +36,7 @@ if __name__=='__main__':
 
     gStrip = GetGraphErrorsFromCSV(infileStrip)
     gStrip.SetName("gStrip")
-    gStrip.SetTitle("Strip; Frequency [kHz]; Capacitance (pF)")
+    gStrip.SetTitle("Strip; Frequency (kHz); Capacitance (pF)")
     gStrip.SetMarkerStyle(kFullSquare)
     gStrip.SetMarkerSize(1)
     gStrip.SetMarkerColor(kOrange - 3)
