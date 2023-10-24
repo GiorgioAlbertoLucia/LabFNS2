@@ -1,2 +1,3 @@
-AtotLGAD (mV), Atot_errLGAD (mV), AbasLGAD (mV), Abas_errLGAD (mV), Bias (V), Bias_err (V)
+#AtotLGAD (mV), Atot_errLGAD (mV), AbasLGAD (mV), Abas_errLGAD (mV), Bias (V), Bias_err (V)
+AtotLGAD,Atot_errLGAD,AbasLGAD,Abas_errLGAD,Bias,Bias_err
 0,0,0,0,0,0

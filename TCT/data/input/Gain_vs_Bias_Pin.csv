@@ -1,0 +1,3 @@
+#AtotPin (mV), Atot_errPin (mV), AbasPin (mV), Abas_errPin (mV), Bias (V), Bias_err (V)
+AtotPin,Atot_errPin,AbasPin,Abas_errPin,Bias,Bias_err
+0,0,0,0,0,0
