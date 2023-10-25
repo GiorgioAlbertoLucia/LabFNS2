@@ -8,6 +8,7 @@
 
 '''
 
+import os
 import argparse
 
 import numpy as np
@@ -16,6 +17,7 @@ import pandas as pd
 #import uncertainties as unc
 
 from ROOT import TFile, TGraphErrors, TF1, TCanvas, TLegend, gStyle, TText
+from ROOT import kGreen, kAzure
 
 def compute_1c2(df, y: str, y_err: str):
     '''
@@ -41,7 +43,7 @@ def compute_1c2(df, y: str, y_err: str):
 
     return df
 
-def fit(graph: TGraphErrors, fit_min, fit_max, line_color=2):
+def fit(graph: TGraphErrors, fit_min, fit_max, init_fit_pars=None, lim_fit_pars=None, line_color=None):
     '''
         Fit a linear function to the data
 
@@ -64,14 +66,17 @@ def fit(graph: TGraphErrors, fit_min, fit_max, line_color=2):
 
     # Fit the graph
     fit = TF1('fit', '[0] + [1]*x', fit_min, fit_max)
-    fit.SetParameters(20.0, 0.0)
+    if init_fit_pars is not None:   fit.SetParameters(init_fit_pars[0], init_fit_pars[1])
+    if lim_fit_pars is not None:    
+        fit.SetParLimits(0, lim_fit_pars[0][0], lim_fit_pars[0][1])
+        fit.SetParLimits(1, lim_fit_pars[1][0], lim_fit_pars[1][1])
     fit.SetParNames('a', 'b')
-    fit.SetLineColor(line_color)
+    if line_color is not None:      fit.SetLineColor(line_color)
     fit.SetLineStyle(1)
     fit.SetLineWidth(2)
     fit.SetNpx(1000)
     graph.Fit(fit, 'rm+')
-    print('Chi2/NDF: {:.2f}'.format(fit.GetChisquare() / fit.GetNDF()))
+    print(f'Chi2/NDF: {fit.GetChisquare():.2f} / {fit.GetNDF():.2f}')
     return fit
 
 def find_intersection(fit1: TF1, fit2: TF1):
@@ -103,50 +108,65 @@ def find_intersection(fit1: TF1, fit2: TF1):
 
 
 def main():
-    #parser = argparse.ArgumentParser(prog='depletion_voltage.py',
-    #                                 description='''Script to measure the depletion voltage from fits of a 1/C^2 vs V plot''')
-    #parser.add_argument('--input', type=str, help='Input file with the 1/C^2 vs V data', required=True)
-    #parser.add_argument('--output', type=str, help='Output file with the plot', required=True)
-    #
-    #args = parser.parse_args()
+    parser = argparse.ArgumentParser(prog='depletion_voltage.py',
+                                     description='''Script to measure the depletion voltage from fits of a 1/C^2 vs V plot''')
+    parser.add_argument('--input', type=str, help='Input file with the 1/C^2 vs V data', required=True)
+    parser.add_argument('--output', type=str, help='Output file with the plot', required=True)
+    parser.add_argument('--sensor', type=str, help='Sensor name', required=True)
+    
+    args = parser.parse_args()
 
     # Read the data
-    #df = pd.read_csv(args.input)
-    df = pd.read_csv('/home/fabrizio/Documents/Lectures/Lab2/LFNS2/LabFNS2/Probe-station/data/input/C_vs_V_LGAD.csv')
+    df = pd.read_csv(args.input, comment='#')
     df = compute_1c2(df, 'C', 'C_err')
+    df['V_abs'] = np.abs(df['V'])
 
     # Plot the data
-    graph = TGraphErrors(len(df['V']), np.asarray(df['V'], dtype=float), np.asarray(df['1_C2'], dtype=float), np.asarray(df['V_err'], dtype=float), np.asarray(df['1_C2_err'], dtype=float))
-    graph.SetTitle('#frac{1}{C^{2}} vs V LGAD; V [V]; #frac{1}{C^{2}} [pF^{-2}]')
+    graph = TGraphErrors(len(df['V_abs']), np.asarray(df['V_abs'], dtype=float), np.asarray(df['1_C2'], dtype=float), np.asarray(df['V_err'], dtype=float), np.asarray(df['1_C2_err'], dtype=float))
+    graph.SetMarkerStyle(20)
+    graph.SetMarkerSize(1)
+    graph.SetMarkerColor(kAzure+1)
+    graph.SetTitle('1/C^{2} vs |V| '+f'{args.sensor}'+'; Absolute reverse bias [V]; 1/C^{2} [pF^{-2}]')
 
     # Fit the data
-    fit1 = fit(graph, 0.0, 100.0, 797)
-    fit2 = fit(graph, 89.0, 200.0, 862)
+    fit1 = fit(graph, 26.9, 45., init_fit_pars=[0.16, 0.0], line_color=797)
+    fit2 = fit(graph, 24, 27, init_fit_pars=[0.0, 0.01], line_color=862)
+    fit3 = fit(graph, 0., 24.1, init_fit_pars=[0., 0.0], #lim_fit_pars=[[-0.1, 0.1], [-0.03, -0.01]], 
+               line_color=kGreen+2)    
 
     # Find the intersection point
-    intersection = find_intersection(fit1, fit2)
+    intersection1 = find_intersection(fit2, fit1)
+    intersection2 = find_intersection(fit3, fit2)
 
     canvas = TCanvas('canvas', 'canvas', 800, 600)
     canvas.SetGrid()
     graph.Draw('AP')
     fit1.Draw('same')
     fit2.Draw('same')
+    fit3.Draw('same')
+    
 
-    legend = TLegend(0.55, 0.55, 0.75, 0.75)
+    legend = TLegend(0.15, 0.15, 0.35, 0.35)
     legend.SetBorderSize(0)
-    legend.AddEntry(graph, 'Data', 'p')
+    legend.SetTextFont(42)
+    legend.SetTextSize(0.04)
+    legend.AddEntry(graph, 'Data', 'pe')
     legend.AddEntry(fit1, 'Gain layer depletion', 'l')
     legend.AddEntry(fit2, 'Substrate depletion', 'l')
+    legend.AddEntry(fit3, 'Sensor depletion', 'l')
     legend.Draw()
 
-    text = TText(0.55, 0.8, 'Depletion voltage: {:.2f} V'.format(intersection))
+    text = TText(0.15, 0.4, 'Depletion voltage of the sensor: {:.0f} V'.format(intersection2))
     text.SetNDC()
+    text.SetTextFont(42)
     text.SetTextSize(0.04)
     text.Draw()
 
-    #outFile = TFile(args.output, 'recreate')
-    outFile = TFile('Probe-station/data/output/1C2_lgad.root', 'recreate')
+    outFile = TFile(args.output, 'recreate')
     canvas.Write()
+
+    output_path = os.path.splitext(args.output)[0] + '.pdf'
+    canvas.SaveAs(os.path.join(os.path.join(os.path.dirname(output_path), 'Figures'), os.path.basename(output_path)))
 
     outFile.Close()
 
