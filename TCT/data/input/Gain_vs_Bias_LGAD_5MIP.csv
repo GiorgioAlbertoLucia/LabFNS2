@@ -1,0 +1,10 @@
+# 5 MIP equivalent laser input
+# Attenuaton = 48.1 %
+# Ampl ~ 78 mV
+# AtotLGAD (mV), Atot_errLGAD (mV), AbasLGAD (mV), Abas_errLGAD (mV), Bias (V), Bias_err (V)
+Bias,Bias_err,Ampl_diode,Ampl_diode_err,AtotLGAD,Atot_errLGAD,AbasLGAD,Abas_errLGAD
+150, 1, 80.573,2.803,-703.99,32.83,-434.31,31.56
+200, 1, 81.327,2.862,-1000.85,39.43,-441.36,34.18
+220, 1, 81.344,2.714,-1329.89,44.30,-432.72,33.58
+240, 1, 81.980,2.754,-6011.06,72.40,-4131.01,41.81
+250, 1, 81.845,2.788,-7568.6,101.8,-4405.22,57.04

@@ -17,7 +17,7 @@ import pandas as pd
 #import uncertainties as unc
 
 from ROOT import TFile, TGraphErrors, TF1, TCanvas, TLegend, gStyle, TText
-from ROOT import kGreen
+from ROOT import kGreen, kAzure
 
 def compute_1c2(df, y: str, y_err: str):
     '''
@@ -119,25 +119,29 @@ def main():
     # Read the data
     df = pd.read_csv(args.input, comment='#')
     df = compute_1c2(df, 'C', 'C_err')
+    df['V_abs'] = np.abs(df['V'])
 
     # Plot the data
-    graph = TGraphErrors(len(df['V']), np.asarray(df['V'], dtype=float), np.asarray(df['1_C2'], dtype=float), np.asarray(df['V_err'], dtype=float), np.asarray(df['1_C2_err'], dtype=float))
-    graph.SetTitle('1/C^{2} vs V '+f'{args.sensor}'+'; V [V]; 1/C^{2} [pF^{-2}]')
+    graph = TGraphErrors(len(df['V_abs']), np.asarray(df['V_abs'], dtype=float), np.asarray(df['1_C2'], dtype=float), np.asarray(df['V_err'], dtype=float), np.asarray(df['1_C2_err'], dtype=float))
+    graph.SetMarkerStyle(20)
+    graph.SetMarkerSize(1)
+    graph.SetMarkerColor(kAzure+1)
+    graph.SetTitle('1/C^{2} vs |V| '+f'{args.sensor}'+'; Absolute reverse bias [V]; 1/C^{2} [pF^{-2}]')
 
     # Fit the data
-    #fit1 = fit(graph, 0.0, 55.0, 797)
-    fit2 = fit(graph, -8, -2.9, init_fit_pars=[0.14, 0.0], line_color=862)
-    fit3 = fit(graph, -3, -0.5, init_fit_pars=[0., -0.02], #lim_fit_pars=[[-0.1, 0.1], [-0.03, -0.01]], 
+    fit1 = fit(graph, 26.9, 45., init_fit_pars=[0.16, 0.0], line_color=797)
+    fit2 = fit(graph, 24, 27, init_fit_pars=[0.0, 0.01], line_color=862)
+    fit3 = fit(graph, 0., 24.1, init_fit_pars=[0., 0.0], #lim_fit_pars=[[-0.1, 0.1], [-0.03, -0.01]], 
                line_color=kGreen+2)    
 
     # Find the intersection point
-    #intersection1 = find_intersection(fit1, fit2)
-    intersection2 = find_intersection(fit2, fit3)
+    intersection1 = find_intersection(fit2, fit1)
+    intersection2 = find_intersection(fit3, fit2)
 
     canvas = TCanvas('canvas', 'canvas', 800, 600)
     canvas.SetGrid()
     graph.Draw('AP')
-    #fit1.Draw('same')
+    fit1.Draw('same')
     fit2.Draw('same')
     fit3.Draw('same')
     
@@ -147,7 +151,7 @@ def main():
     legend.SetTextFont(42)
     legend.SetTextSize(0.04)
     legend.AddEntry(graph, 'Data', 'pe')
-    #legend.AddEntry(fit1, 'Gain layer depletion', 'l')
+    legend.AddEntry(fit1, 'Gain layer depletion', 'l')
     legend.AddEntry(fit2, 'Substrate depletion', 'l')
     legend.AddEntry(fit3, 'Sensor depletion', 'l')
     legend.Draw()

@@ -1,3 +1,11 @@
-#AtotPin (mV), Atot_errPin (mV), AbasPin (mV), Abas_errPin (mV), Bias (V), Bias_err (V)
-AtotPin,Atot_errPin,AbasPin,Abas_errPin,Bias,Bias_err
-0,0,0,0,0,0
+# Bias(V), Ampl_diode(mV), AtotPin (mV), Atot_errPin (mV), AbasPin (mV), Abas_errPin (mV), Bias (V), Bias_err (V)
+Bias,Bias_err,Ampl_diode,Ampl_diode_err,AtotPin,Atot_errPin,AbasPin,Abas_errPin
+150, 1, 26.268, 2.176, -182.58, 11.34, -179.37, 11.17
+175, 1, 26.684, 2.298, -183.84, 11.80, -180.25, 11.59
+200, 1, 26.768, 2.182, -182.61, 12.02, -179.03, 11.46
+210, 1, 27.295, 2.2235, -182.20, 11.43, -179.19, 11.67
+220, 1, 27.338, 2.209, -180.69, 12.51, -177.63, 12.29   
+230, 1, 27.437, 2.247, -181.85, 10.90, -179.67, 11.55
+240, 1, 28.113, 2.187, -182.62, 12.07, -179.38, 12.73
+245, 1, 28.404, 2.302, -183.95, 11.75, -180.20, 11.05
+250, 1, 28.651, 2.236, -182.10, 12.19, -178.54, 11.90
