@@ -127,26 +127,32 @@ def main():
     graph.SetMarkerSize(1)
     graph.SetMarkerColor(kAzure+1)
     graph.SetTitle('1/C^{2} vs |V| '+f'{args.sensor}'+'; Absolute reverse bias [V]; 1/C^{2} [pF^{-2}]')
+    graph.GetYaxis().SetRangeUser(-0.1, 0.24)
 
     # Fit the data
-    fit1 = fit(graph, 26.9, 45., init_fit_pars=[0.16, 0.0], line_color=797)
+    fit1 = fit(graph, 29., 45., init_fit_pars=[0.16, 0.0], line_color=797)
     fit2 = fit(graph, 24, 27, init_fit_pars=[0.0, 0.01], line_color=862)
-    fit3 = fit(graph, 0., 24.1, init_fit_pars=[0., 0.0], #lim_fit_pars=[[-0.1, 0.1], [-0.03, -0.01]], 
-               line_color=kGreen+2)    
+    fit3 = fit(graph, 5., 19, init_fit_pars=[0., 0.0], line_color=kGreen+2)   
+
+    fit1.SetRange(26.5, 45.)
+    fit2.SetRange(23., 27.)
+    fit3.SetRange(0., 25.) 
 
     # Find the intersection point
     intersection1 = find_intersection(fit2, fit1)
     intersection2 = find_intersection(fit3, fit2)
 
     canvas = TCanvas('canvas', 'canvas', 800, 600)
-    canvas.SetGrid()
-    graph.Draw('AP')
+    canvas.DrawFrame(-1., -0.01, 55., 0.24, '1/C^{2} vs |V| '+f'{args.sensor}'+'; Absolute reverse bias [V]; 1/C^{2} [pF^{-2}]')
+    #canvas.SetGrid()
+
+    graph.Draw('P')
     fit1.Draw('same')
     fit2.Draw('same')
     fit3.Draw('same')
     
 
-    legend = TLegend(0.15, 0.15, 0.35, 0.35)
+    legend = TLegend(0.55, 0.15, 0.75, 0.35)
     legend.SetBorderSize(0)
     legend.SetTextFont(42)
     legend.SetTextSize(0.04)
@@ -156,11 +162,23 @@ def main():
     legend.AddEntry(fit3, 'Sensor depletion', 'l')
     legend.Draw()
 
-    text = TText(0.15, 0.4, 'Depletion voltage of the sensor: {:.0f} V'.format(intersection2))
-    text.SetNDC()
-    text.SetTextFont(42)
-    text.SetTextSize(0.04)
-    text.Draw()
+    text1 = TText(0.55, 0.4, f'Sensor: {intersection2:.2f} V')
+    text1.SetNDC()
+    text1.SetTextFont(42)
+    text1.SetTextSize(0.04)
+    text1.Draw()
+
+    text2 = TText(0.55, 0.45, f'Gain layer: {intersection1:.2f} V')
+    text2.SetNDC()
+    text2.SetTextFont(42)
+    text2.SetTextSize(0.04)
+    text2.Draw()
+
+    text3 = TText(0.55, 0.5, f'Depletion voltage:')
+    text3.SetNDC()
+    text3.SetTextFont(42)
+    text3.SetTextSize(0.04)
+    text3.Draw()
 
     outFile = TFile(args.output, 'recreate')
     canvas.Write()
