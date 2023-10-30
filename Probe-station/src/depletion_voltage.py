@@ -208,8 +208,6 @@ class DepletionAnalysis:
 
         self.df['NB'] = 2 / (eSi * A*A * q * self.df['derivative']) # m^-1
 
-        print(self.df['NB'], self.df['derivative'])
-
         graph = TGraphErrors(len(self.df['V_abs']), 
                              np.asarray(self.df['V_abs'], dtype=float), np.asarray(self.df['NB'], dtype=float), 
                              np.asarray(self.df['V_err'], dtype=float), np.zeros(len(self.df['V_err'])))
