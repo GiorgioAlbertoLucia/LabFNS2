@@ -18,14 +18,14 @@ def ProduceGraphJittervsGain(infile, DetectorName, dfGain, GraphsColors, GraphMa
     # FIXME: Gain error is not propagated to the jitter
     gJittervsGainAnalitical=TGraphErrors(len(df['Gain']), np.asarray(df['Gain'], dtype=float), np.asarray(df['Jitter_analitical'], dtype=float), np.asarray([0]*len(df), dtype=float), np.asarray(df['err_Jitter_analitical'], dtype=float))
     gJittervsGainAnalitical.SetName("gJittervsGainAnalitical"+DetectorName[0])
-    gJittervsGainAnalitical.SetTitle(";Gain; Jitter (ns)")
+    gJittervsGainAnalitical.SetTitle(";Gain; Jitter (ps)")
     gJittervsGainAnalitical.SetMarkerStyle(GraphMarker[0])
     gJittervsGainAnalitical.SetMarkerSize(1)
     gJittervsGainAnalitical.SetMarkerColor(GraphsColors[0])
     gJittervsGainAnalitical.SetLineColor(GraphsColors[0])
     gJittervsGainMeas = GetGraphErrorsFromPandas(df[['Gain','err_Gain','std_dev','err_dev']])
     gJittervsGainMeas.SetName("gJittervsGainMeas"+DetectorName[1])
-    gJittervsGainMeas.SetTitle(";Gain; Jitter (ns)")
+    gJittervsGainMeas.SetTitle(";Gain; Jitter (ps)")
     gJittervsGainMeas.SetMarkerStyle(GraphMarker[1])
     gJittervsGainMeas.SetMarkerSize(1)
     gJittervsGainMeas.SetMarkerColor(GraphsColors[1])
@@ -48,7 +48,7 @@ if __name__=='__main__':
     legendstep = 0.05
     
     canvas = TCanvas("canvas","canvas",1000,1000)
-    hFrame = canvas.cd().DrawFrame(10,0,500,150,";Gain; Jitter (ns)")
+    hFrame = canvas.cd().DrawFrame(10,0,500,150,";Gain; Jitter (ps)")
 
     Graphs = []
     legend = TLegend(0.6, legendmax-len(infiles)*legendstep, 0.8, legendmax)
