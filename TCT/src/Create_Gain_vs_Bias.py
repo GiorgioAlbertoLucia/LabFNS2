@@ -40,7 +40,7 @@ if __name__=='__main__':
     df['Gain_err']=np.sqrt((dfLGAD['QLGAD']/(dfPiN['QPin']*dfPiN['QPin'])*dfPiN['QPin_err'])**2+ (dfLGAD['QLGAD_err']/dfPiN['QPin'])**2)
     df['Bias'] = dfPiN['Bias']
     df['Bias_err'] = dfPiN['Bias_err']
-
+    #commento a caso p
     df.to_csv('TCT/data/output/Gain_vs_Bias_with_gain.csv', index=False)
 
     df5 = pd.DataFrame()
