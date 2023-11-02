@@ -43,7 +43,7 @@ if __name__=='__main__':
     gStrip.SetLineColor(kOrange - 3)
     
     canvas = TCanvas("canvas","canvas",1000,1000)
-    hFrame = canvas.cd().DrawFrame(0,1,500,350,"C-f curves of FBK-UFSD2 LGAD, PIN and strip sensors; Frequency [kHz]; Capacitance (pF)")
+    hFrame = canvas.cd().DrawFrame(0,1,600,350,"; Frequency [kHz]; Capacitance (pF)")
     canvas.SetLogx()
     #canvas.SetLogy()
     gPin.Scale(10)
@@ -54,7 +54,7 @@ if __name__=='__main__':
     legend = TLegend(0.6, 0.7, 0.8, 0.85)
     legend.SetTextSize(0.03)
     legend.AddEntry(gLGAD,'LGAD, V = 1V','p')
-    legend.AddEntry(gPin,'10 #times PiN, V = 0V','p')
+    legend.AddEntry(gPin,'10 #times PIN, V = 0V','p')
     legend.AddEntry(gStrip,'Strip, V = 25V','p')
     legend.Draw("same")
 
