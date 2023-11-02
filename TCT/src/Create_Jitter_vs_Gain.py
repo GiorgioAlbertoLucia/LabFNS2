@@ -15,7 +15,7 @@ def ProduceGraphJittervsGain(infile, DetectorName, dfGain, GraphsColors, GraphMa
     df['err_Jitter_analitical']=df['Jitter_analitical']*np.sqrt((df['err_N']/df['N'])**2+(df['err_dV/dt']/df['dV/dt'])**2) # in ps
     df['Gain']=dfGain['Gain']
     df['err_Gain']=[0]*len(dfGain['Gain_err'])
-    # FIXME: Gain error is not propagated to the jitter
+    df["err_dev"]=df["std_dev"]/np.sqrt(2*(df["N"]-1))
     gJittervsGainAnalitical=TGraphErrors(len(df['Gain']), np.asarray(df['Gain'], dtype=float), np.asarray(df['Jitter_analitical'], dtype=float), np.asarray([0]*len(df), dtype=float), np.asarray(df['err_Jitter_analitical'], dtype=float))
     gJittervsGainAnalitical.SetName("gJittervsGainAnalitical"+DetectorName[0])
     gJittervsGainAnalitical.SetTitle(";Gain; Jitter (ps)")
