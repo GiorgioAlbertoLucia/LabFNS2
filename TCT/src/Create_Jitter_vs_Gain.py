@@ -14,9 +14,9 @@ def ProduceGraphJittervsGain(infile, DetectorName, dfGain, GraphsColors, GraphMa
     df['Jitter_analitical']=df['N']/df['dV/dt']*1000 # in ps
     df['err_Jitter_analitical']=df['Jitter_analitical']*np.sqrt((df['err_N']/df['N'])**2+(df['err_dV/dt']/df['dV/dt'])**2) # in ps
     df['Gain']=dfGain['Gain']
-    df['err_Gain']=[0]*len(dfGain['Gain_err'])
+    df['err_Gain']=dfGain['Gain_err']
     df["err_dev"]=df["std_dev"]/np.sqrt(2*(df["N"]-1))
-    gJittervsGainAnalitical=TGraphErrors(len(df['Gain']), np.asarray(df['Gain'], dtype=float), np.asarray(df['Jitter_analitical'], dtype=float), np.asarray([0]*len(df), dtype=float), np.asarray(df['err_Jitter_analitical'], dtype=float))
+    gJittervsGainAnalitical=TGraphErrors(len(df['Gain']), np.asarray(df['Gain'], dtype=float), np.asarray(df['Jitter_analitical'], dtype=float), np.asarray(df['err_Gain'], dtype=float), np.asarray(df['err_Jitter_analitical'], dtype=float))
     gJittervsGainAnalitical.SetName("gJittervsGainAnalitical"+DetectorName[0])
     gJittervsGainAnalitical.SetTitle(";Gain; Jitter (ps)")
     gJittervsGainAnalitical.SetMarkerStyle(GraphMarker[0])
@@ -44,15 +44,15 @@ if __name__=='__main__':
     GraphColors = [(kRed+1,kAzure+3)]
     GraphMarkers = [(kFullCircle, kOpenDiamond)]
     outfilename = 'TCT/data/output/Jitter_vs_gain.root'
-    legendmax = 0.85
-    legendstep = 0.05
+    legendmax = 0.75
+    legendstep = 0.07
     
     canvas = TCanvas("canvas","canvas",1000,1000)
-    hFrame = canvas.cd().DrawFrame(10,0,500,150,";Gain; Jitter (ps)")
+    hFrame = canvas.cd().DrawFrame(10,0,500,150,"Jitter vs Gain for LGAD sensor;Gain; Jitter (ps)")
 
     Graphs = []
-    legend = TLegend(0.6, legendmax-len(infiles)*legendstep, 0.8, legendmax)
-    legend.SetTextSize(0.03)
+    legend = TLegend(0.5, legendmax-len(infiles)*legendstep, 0.7, legendmax)
+    legend.SetTextSize(0.04)
     for file, name, color, marker in zip(infiles, DetectorNames, GraphColors, GraphMarkers):
         gJittervsGainAnalitical, gJittervsGainMeas = ProduceGraphJittervsGain(file, name, pd.read_csv(gainfile, sep=',', comment='#'), color, marker)
         Graphs.append(gJittervsGainAnalitical)
