@@ -1,5 +1,0 @@
-# Charge = Signal area / 50 Ohm
-# C (fC),Err_C (fC),Ampl (mV), Ampl_err (mV)
-SignA,SignA_err,Ampl,Ampl_err
-100, 1, 100, 1
-200, 1, 200, 1

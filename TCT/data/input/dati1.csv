@@ -1,4 +1,7 @@
+#
+#
 # Anoise (pWb), Asign (pWb), Ampl (mV), Attenuazione
+
 Anoise,Anoise_err,Asign,Asign_err,Ampl_diode,Ampl_diode_err,Attenuation
 -187.24, 11.06, -199.37, 10.80, 78, 3, 48
 -183.79, 10.72, -192.18, 10.61, 58.026, 3.291, 48.1

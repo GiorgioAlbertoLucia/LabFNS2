@@ -17,14 +17,24 @@ import pandas as pd
 
 #import uncertainties as unc
 
-from ROOT import TFile, TGraphErrors, TF1, TCanvas, TLegend, gStyle, TText, TLatex
-from ROOT import kGreen, kAzure
+from ROOT import TFile, TGraphErrors, TF1, TCanvas, TLegend, gStyle, TLatex, TGraph2DErrors
+from ROOT import kGreen, kAzure, kOrange
+from ROOT import TColor
 
-import os
-import argparse
-import numpy as np
-import pandas as pd
-from ROOT import TFile, TGraphErrors, TF1, TCanvas, TLegend, TText, TLatex, kGreen, kAzure
+
+class CustomROOTPalette:
+    def __init__(self):
+        nRGBs = 5
+        stops = [0.00, 0.34, 0.61, 0.84, 1.00]
+        red = [1.00, 0.00, 0.00, 0.00, 1.00]
+        green = [1.00, 0.00, 1.00, 0.00, 0.00]
+        blue = [1.00, 1.00, 0.00, 0.00, 0.00]
+        TColor.CreateGradientColorTable(nRGBs, stops, red, green, blue, 100)
+        gStyle.SetNumberContours(100)
+
+
+        
+    
 
 
 def yaml_load(file_path):
@@ -64,6 +74,10 @@ class DepletionAnalysis:
         self.sensor = args.sensor
         self.config = yaml_load(args.config)['detector'][args.sensor]
 
+        self.inversion = -1.
+        if self.sensor == 'Strip' or self.sensor == 'strip':   self.inversion = 1.
+
+
         self.outFile = TFile(args.output, 'recreate')
 
         output_path = os.path.splitext(args.output)[0] + '.pdf'
@@ -71,6 +85,7 @@ class DepletionAnalysis:
         self.zoom_outputPath = os.path.join(os.path.join(os.path.dirname(output_path), 'Figures'), f'1C2_{args.sensor}_vs_V_zoom.pdf')
         self.dcon_outputPath = os.path.join(os.path.join(os.path.dirname(output_path), 'Figures'), f'doping_concentration_{args.sensor}.pdf')
         self.dpro_outputPath = os.path.join(os.path.join(os.path.dirname(output_path), 'Figures'), f'doping_profile_{args.sensor}.pdf')
+        self.dprocol_outputPath = os.path.join(os.path.join(os.path.dirname(output_path), 'Figures'), f'doping_profile_col_{args.sensor}.pdf')
 
         self.graph = None
 
@@ -101,19 +116,20 @@ class DepletionAnalysis:
         self.df['1_C2_F'] = self.df['1_C2'] * 1e24                  # F^-2
         self.df['1_C2_err_F'] = self.df['1_C2_err'] * 1e24          # F^-2
 
-        self.df['derivative'] = np.gradient(self.df['1_C2_F'], self.df['V_abs'])
-
+        self.df['derivative'] = np.gradient(self.df['1_C2_F'], self.inversion*self.df['V'])
+        
         # error on the derivative
         self.df['derivative2_C'] = np.gradient(self.df['derivative'], self.df['1_C2_F'])
-        self.df['derivative2_V'] = np.gradient(self.df['derivative'], self.df['V_abs'])
+        self.df['derivative2_V'] = np.gradient(self.df['derivative'], self.inversion*self.df['V'])
         self.df['derivative_err'] = np.sqrt((self.df['derivative2_C']*self.df['1_C2_err_F'])**2 + (self.df['derivative2_V']*self.df['V_err'])**2)
 
         # doping concentration
-        self.df['NB'] = 2 / (eSi * A*A * q * self.df['derivative']) # m^-1
-        self.df['NB_err'] = 2 / (eSi * A*A * q * self.df['derivative']**2) * self.df['derivative_err'] # m^-1
+        self.df['NB'] = 2 / (eSi * A*A * q * self.df['derivative']) # m^-3
+        self.df['NB_err'] = 2 / (eSi * A*A * q * self.df['derivative']**2) * self.df['derivative_err'] # m^-3
 
         # depletion width
         self.df['W'] = np.sqrt(2 * self.df['V_abs'] * eSi / (q * self.df['NB'])) # m
+
         self.df['W_err'] = np.sqrt((self.df['V_err']*self.df['W']/(2*self.df['V']))**2 + (self.df['NB_err']*self.df['W']/(2*self.df['NB']))**2)
 
     #####################
@@ -176,7 +192,7 @@ class DepletionAnalysis:
         
         # Plot the data
         graph = TGraphErrors(len(self.df['V']), 
-                             np.asarray(-self.df['V'], dtype=float), np.asarray(self.df['1_C2'], dtype=float), 
+                             np.asarray(self.inversion*self.df['V'], dtype=float), np.asarray(self.df['1_C2'], dtype=float), 
                              np.asarray(self.df['V_err'], dtype=float), np.asarray(self.df['1_C2_err'], dtype=float))
         graph.SetMarkerStyle(20)
         graph.SetMarkerSize(1)
@@ -189,9 +205,14 @@ class DepletionAnalysis:
         
         # LGAD
         fit1 = TF1()
-        if self.sensor == 'LGAD':   fit1 = self.fit(graph, self.config['fits'][0]['fit_range'][0], self.config[0]['fit_range'][1], 
+        if self.sensor == 'LGAD':   fit1 = self.fit(graph, self.config['fits'][0]['fit_range'][0], self.config['fits'][0]['fit_range'][1], 
                                                     init_fit_pars=[self.config['fits'][0]['parameters'][0]['value'], 
-                                                                   self.config['fits'][0]['parameters'][0]['value']], line_color=797)
+                                                                   self.config['fits'][0]['parameters'][0]['value']], 
+                                                    lim_fit_pars=[[self.config['fits'][0]['parameters'][0]['min'], 
+                                                                   self.config['fits'][0]['parameters'][0]['max']],
+                                                                   [self.config['fits'][0]['parameters'][1]['min'], 
+                                                                   self.config['fits'][0]['parameters'][1]['max']]],
+                                                    line_color=797)
         fit2 = self.fit(graph, self.config['fits'][1]['fit_range'][0], self.config['fits'][1]['fit_range'][1], 
                         init_fit_pars=[self.config['fits'][1]['parameters'][0]['value'], 
                         self.config['fits'][1]['parameters'][0]['value']], line_color=862)
@@ -205,8 +226,11 @@ class DepletionAnalysis:
 
         # Find the intersection point
         intersection1 = 0.
-        if self.sensor == 'LGAD':   intersection1 = self.find_intersection(fit2, fit1)
+        if self.sensor == 'LGAD':   
+            intersection1 = self.find_intersection(fit2, fit1)
+            intersection1_err = np.sqrt((fit1.GetParError(0))**2 + (fit2.GetParError(0))**2 + (np.mean(self.df['1_C2_err'])/(fit2.GetParameter(1)-fit1.GetParameter(1)))**2)
         intersection2 = self.find_intersection(fit3, fit2)
+        intersection2_err = np.sqrt((fit2.GetParError(0))**2 + (fit3.GetParError(0))**2 + (np.mean(self.df['1_C2_err'])/(fit3.GetParameter(1)-fit2.GetParameter(1)))**2)
 
         canvas = TCanvas('1C2', 'canvas', 800, 600)
         canvas.DrawFrame(self.config['canvas_limits']['xmin'], self.config['canvas_limits']['ymin'],
@@ -233,12 +257,12 @@ class DepletionAnalysis:
         latex.SetTextSize(0.04)
         latex.SetNDC()
         if self.sensor == 'LGAD':
-            latex.DrawLatex(0.15, 0.65, f'Sensor: {intersection2:.2f} V')
-            latex.DrawLatex(0.15, 0.7, f'Gain layer: {intersection1:.2f} V')
+            latex.DrawLatex(0.15, 0.65, f'Sensor: ({intersection2:.2f}'+'#pm'+f'{intersection2_err:.2f}) V')
+            latex.DrawLatex(0.15, 0.7, f'Gain layer: ({intersection1:.2f}'+'#pm'+f'{intersection1_err:.2f}) V')
             latex.DrawLatex(0.15, 0.75, 'Depletion voltage:')
-        else:   latex.DrawLatex(0.55, 0.45, f'Sensor depletion: {intersection2:.2f} V')
-        latex.DrawLatex(0.55, 0.5, self.text1)
-        latex.DrawLatex(0.55, 0.55, self.text2)
+        else:   latex.DrawLatex(0.5, 0.45, f'Sensor depletion: ({intersection2:.2f}'+'#pm'+f'{intersection2_err:.2f}) V')
+        latex.DrawLatex(0.5, 0.5, self.text1)
+        latex.DrawLatex(0.5, 0.55, self.text2)
 
         self.outFile.cd()
         canvas.Write()
@@ -253,17 +277,17 @@ class DepletionAnalysis:
         '''
 
         graph = TGraphErrors(len(self.df['V']), 
-                             np.asarray(-self.df['V'], dtype=float), np.asarray(self.df['NB']*0.01, dtype=float), 
-                             np.asarray(self.df['V_err'], dtype=float), np.asarray(self.df['NB_err']*0.01, dtype=float) )
+                             np.asarray(self.inversion*self.df['V'], dtype=float), np.asarray(self.df['NB']*1e-6, dtype=float), 
+                             np.asarray(self.df['V_err'], dtype=float), np.asarray(self.df['NB_err']*1e-6, dtype=float) )
         graph.SetMarkerStyle(20)
         graph.SetMarkerSize(1)
         graph.SetMarkerColor(kAzure+1)
-        graph.SetTitle('Doping concentration '+f'{args.sensor}'+'; Reverse bias [V]; N_{B} [cm^{-1}]')
+        graph.SetTitle('Doping concentration '+f'{args.sensor}'+'; Reverse bias [V]; N_{B} [cm^{-3}]')
 
         canvas = TCanvas('doping_conc', 'canvas', 800, 600)
         canvas.DrawFrame(self.config['canvas_limits']['xmin'], self.config['canvas_limits']['conc_ymin'], 
                          self.config['canvas_limits']['xmax'], self.config['canvas_limits']['conc_ymax'], 
-                         'Doping concentration '+f'{args.sensor}'+'; Reverse bias [V]; N_{B} [cm^{-1}]')
+                         'Doping concentration '+f'{args.sensor}'+'; Reverse bias [V]; N_{B} [cm^{-3}]')
         canvas.SetLogy()
 
         graph.Draw('P')
@@ -295,16 +319,16 @@ class DepletionAnalysis:
         '''
 
         graph = TGraphErrors(len(self.df['W']), 
-                             np.asarray(self.df['W']*1e6, dtype=float), np.asarray(self.df['NB']*0.01, dtype=float), 
-                             np.asarray(self.df['W_err']*1e6, dtype=float), np.asarray(self.df['NB_err']*0.01, dtype=float) )
+                             np.asarray(self.df['W']*1e6, dtype=float), np.asarray(self.df['NB']*1e-6, dtype=float), 
+                             np.asarray(self.df['W_err']*1e6, dtype=float), np.asarray(self.df['NB_err']*1e-6, dtype=float) )
         graph.SetMarkerStyle(20)
         graph.SetMarkerSize(1)
         graph.SetMarkerColor(kAzure+1)
-        graph.SetTitle('Doping profile '+f'{args.sensor}'+'; Depth [#mum]; N_{B} [cm^{-1}]')
+        graph.SetTitle('Doping profile '+f'{args.sensor}'+'; Depth [#mum]; N_{B} [cm^{-3}]')
         graph.GetYaxis().SetRangeUser(-0.1, 0.24)
 
         canvas = TCanvas('doping_prof', 'canvas', 800, 600)
-        canvas.DrawFrame(-1., self.config['canvas_limits']['conc_ymin'], 25., self.config['canvas_limits']['conc_ymax'], 'Doping profile '+f'{args.sensor}'+'; Depth [#mum]; N_{B} [cm^{-1}]')
+        canvas.DrawFrame(-1., self.config['canvas_limits']['conc_ymin'], 30., self.config['canvas_limits']['conc_ymax'], 'Doping profile '+f'{args.sensor}'+'; Depth [#mum]; N_{B} [cm^{-3}]')
         canvas.SetLogy()
         #canvas.SetGrid()
 
@@ -329,59 +353,58 @@ class DepletionAnalysis:
         
         canvas.SaveAs(self.dpro_outputPath)
 
-    def doping_concentration_cm3(self):
+    def doping_profile_color(self):
         '''
-            Plot the doping concentration (cm^-3) vs bias voltage
+            Plot the doping profile vs depth of the depleted region
 
-            WORK IN PROGRESS
         '''
 
-        graph = TGraphErrors(len(self.df['V_abs']), 
-                             np.asarray(self.df['V_abs'], dtype=float), np.asarray(self.df['NB']*0.01, dtype=float), 
-                             np.asarray(self.df['V_err'], dtype=float), np.asarray(self.df['NB_err']*0.01, dtype=float) )
-        graph.SetMarkerStyle(20) 
+        graph = TGraph2DErrors(len(self.df['W']), 
+                             np.asarray(self.df['W']*1e6, dtype=float), np.asarray(self.df['NB']*1e-6, dtype=float), 
+                             np.asarray(self.inversion*self.df['V'], dtype=float),
+                             np.asarray(self.df['W_err']*1e6, dtype=float), np.asarray(self.df['NB_err']*1e-6, dtype=float),
+                             np.asarray(self.df['V_err'], dtype=float) )
+        graph.SetMarkerStyle(20)
         graph.SetMarkerSize(1)
         graph.SetMarkerColor(kAzure+1)
-        graph.SetTitle('Doping concentration '+f'{args.sensor}'+'; Absolute reverse bias [V]; N_{B} [cm^{-1}]')
+        graph.SetTitle('Doping profile '+f'{args.sensor}'+'; Depth [#mum]; N_{B} [cm^{-3}]; Reverse bias [V]')
         graph.GetYaxis().SetRangeUser(-0.1, 0.24)
 
-        canvas = TCanvas('doping_conc', 'canvas', 800, 600)
-        canvas.DrawFrame(-1., 10**17, 25., 30*10**20, 'Doping concentration '+f'{args.sensor}'+'; Absolute reverse bias [V]; N_{B} [cm^{-1}]')
+        canvas = TCanvas('doping_prof_col', 'canvas', 800, 600)
+        #canvas.DrawFrame(-1., self.config['canvas_limits']['conc_ymin'], 30., self.config['canvas_limits']['conc_ymax'], 'Doping profile '+f'{args.sensor}'+'; Depth [#mum]; N_{B} [cm^{-3}]; Reverse bias [V]')
         canvas.SetLogy()
         #canvas.SetGrid()
 
-        graph.Draw('P')
+        scatter_plot = graph.Project('xy')
+        scatter_plot.SetTitle('Doping profile '+f'{args.sensor}'+'; Depth [#mum]; N_{B} [cm^{-3}]; Reverse bias [V]')
+        scatter_plot.GetXaxis().SetRangeUser(-1., 30.)
+        scatter_plot.GetYaxis().SetRangeUser(self.config['canvas_limits']['conc_ymin'], self.config['canvas_limits']['conc_ymax'],)
+        scatter_plot.SetFillColor(0)
+        scatter_plot.SetMarkerStyle(20)
+        scatter_plot.SetMarkerSize(1)
+
+        scatter_plot.Draw('colz')
 
 
-        legend = TLegend(0.15, 0.15, 0.35, 0.35)
+        legend = TLegend(0.5, 0.55, 0.7, 0.75)
         legend.SetBorderSize(0)
         legend.SetTextFont(42)
         legend.SetTextSize(0.04)
         legend.AddEntry(graph, 'Data', 'pe')
         legend.Draw()
 
-        #text1 = TText(0.55, 0.4, f'Sensor: {intersection2:.2f} V')
-        #text1.SetNDC()
-        #text1.SetTextFont(42)
-        #text1.SetTextSize(0.04)
-        #text1.Draw()
-#
-        #text2 = TText(0.55, 0.45, f'Gain layer: {intersection1:.2f} V')
-        #text2.SetNDC()
-        #text2.SetTextFont(42)
-        #text2.SetTextSize(0.04)
-        #text2.Draw()
-#
-        #text3 = TText(0.55, 0.5, f'Depletion voltage:')
-        #text3.SetNDC()
-        #text3.SetTextFont(42)
-        #text3.SetTextSize(0.04)
-        #text3.Draw()
+        latex = TLatex()
+        latex.SetTextFont(42)
+        latex.SetTextSize(0.04)
+        latex.SetNDC()
+        latex.DrawLatex(0.5, 0.8, self.text1)
+        latex.DrawLatex(0.5, 0.85, self.text2)
 
         self.outFile.cd()
         canvas.Write()
         
-        canvas.SaveAs(self.dcon_outputPath)
+        canvas.SaveAs(self.dprocol_outputPath)
+
 
     #####################
     # PRIVATE-LIKE METHODS
@@ -452,11 +475,13 @@ class DepletionAnalysis:
 
 
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser(prog='depletion_voltage.py', description='Script to measure the depletion voltage from fits of a 1/C^2 vs V plot')
     parser.add_argument('--input', type=str, help='Input file with the 1/C^2 vs V data', required=True)
     parser.add_argument('--output', type=str, help='Output file with the plot', required=True)
     parser.add_argument('--config', type=str, default='Probe-station/src/depletion_voltage_conf.yml', help='Configuration file with the sensor parameters')
     parser.add_argument('--sensor', type=str, help='Sensor name', required=True)
+    parser.add_argument('--verbose', action='store_true', help='Verbose mode')
     args = parser.parse_args()
 
     df = pd.read_csv(args.input, comment='#')
@@ -468,5 +493,10 @@ if __name__ == "__main__":
 
     depletion_analysis.doping_concentration()
     depletion_analysis.doping_profile()
+    depletion_analysis.doping_profile_color()
 
+    if args.verbose:    
+        with open(os.path.splitext(args.output)[0] + '_verbose.txt', 'w') as f:
+            f.write(depletion_analysis.df.to_string())
+        print('Dataframe saved in', os.path.splitext(args.output)[0] + '_verbose.txt')
     
