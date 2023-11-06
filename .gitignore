@@ -1,3 +1,6 @@
 *.pyc
 Beta/data/input/
 Beta/data/output/BetaOutput.root
+Beta/src/*.so
+Beta/src/*.d
+Beta/src/*.pcm
