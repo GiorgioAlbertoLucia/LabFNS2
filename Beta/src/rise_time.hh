@@ -29,7 +29,7 @@ class RiseTime
 
     protected:
         std::vector<double> computeDerivative();
-        std::pair<int, int> findRiseTimeIndices(const int begin);
+        std::pair<double, double> findRiseTimeExtremes(const int begin);
 
     private:
         

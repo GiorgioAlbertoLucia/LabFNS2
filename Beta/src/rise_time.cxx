@@ -1,6 +1,8 @@
 #include <Riostream.h>
 #include <TCanvas.h>
 #include <TGraph.h>
+#include <TF1.h>
+
 #include <TString.h>
 #include <TLatex.h>
 
@@ -49,8 +51,8 @@ double RiseTime::findRiseTime()
     auto max = std::max_element(derivative.begin(), derivative.end());
     auto max_index = std::distance(derivative.begin(), max) * fWindow;  // Index of the maximum derivative in the waveform vector
 
-    std::pair<int, int> riseTimeIndices = findRiseTimeIndices(max_index);
-    fRiseTime = fTimeFrame.at(riseTimeIndices.second) - fTimeFrame.at(riseTimeIndices.first);
+    std::pair<double, double> riseTimeExtremes = findRiseTimeExtremes(max_index);
+    fRiseTime = riseTimeExtremes.second - riseTimeExtremes.first;
     
     return fRiseTime;
 }
@@ -61,54 +63,55 @@ double RiseTime::findRiseTime()
  */
 void RiseTime::drawWaveform(const char * outputPath, const int nEvent)
 {
-    TCanvas *c1 = new TCanvas("c1","c1",2100,1000);
-    TGraph *gr = new TGraph(fWaveform.size(), &fTimeFrame[0], &fWaveform[0]);
-    gr->SetTitle(Form("Waveform - Event %d; Time (ns); Amplitude (mV)", nEvent));
-    gr->SetLineColor(kBlue);
-    gr->SetLineWidth(2);
-    gr->SetMarkerColor(kBlue);
-    gr->Draw("AL");
+    TCanvas c1("c1","c1",2100,1000);
+    TGraph gr(fWaveform.size(), &fTimeFrame[0], &fWaveform[0]);
+    gr.SetTitle(Form("Waveform - Event %d; Time (ns); Amplitude (mV)", nEvent));
+    gr.SetLineColor(kBlue);
+    gr.SetLineWidth(2);
+    gr.SetMarkerColor(kBlue);
+    gr.Draw("AL");
 
-    auto latex = new TLatex();
-    latex->SetTextSize(0.04);
-    latex->SetTextFont(42);
-    latex->SetNDC();
-    latex->DrawLatex(0.2, 0.8, "^{90}Sr source acquisition");
-    latex->DrawLatex(0.2, 0.75, Form("Event %d", nEvent));
-    latex->DrawLatex(0.2, 0.7, Form("Rise time: from %d", int(fThreshold*100))+"%"+Form(" to %d", int(1.0-fThreshold)*100)+"%");
-    latex->DrawLatex(0.2, 0.65, Form("Rise Time = %.2f ns", fRiseTime));
+    TLatex latex;
+    latex.SetTextSize(0.04);
+    latex.SetTextFont(42);
+    latex.SetNDC();
+    latex.DrawLatex(0.2, 0.8, "^{90}Sr source acquisition");
+    latex.DrawLatex(0.2, 0.75, Form("Event %d", nEvent));
+    latex.DrawLatex(0.2, 0.7, (Form("Rise time: from %d", int(fThreshold*100))+std::string("%")+Form(" to %d", int((1.0-fThreshold)*100))+std::string("%")).c_str());
+    latex.DrawLatex(0.2, 0.65, Form("Rise Time = %.2f ns", fRiseTime));
 
-    // add line for beginning of the signal
+    // add lines for rise time extremes
+    
 
-    c1->SaveAs(outputPath);
+    c1.SaveAs(outputPath);
 }
 
 /*
     PROTECTED METHODS
 */
 
-std::pair<int, int> RiseTime::findRiseTimeIndices(const int begin)
+/**
+ * @brief Finds rise time extremes as the time at the x% and the 100-x% amplitude of the signal.
+ * These points are found fitting the waveform with a line.
+ * 
+ * @param begin 
+ * @return std::pair<int, int> 
+ */
+std::pair<double, double> RiseTime::findRiseTimeExtremes(const int begin)
 {
+    // find last point of the fit
     auto max = std::max_element(fWaveform.begin(), fWaveform.end());
-    
-    int firstIndex(0), lastIndex(0);
-    for(unsigned long i = begin; i < fWaveform.size(); i++)
-    {
-        if(fWaveform[i] > fThreshold * (*max))
-        {
-            firstIndex = i;
-            break;
-        }
-    }
-    for(unsigned long i = firstIndex; i < fWaveform.size(); i++)
-    {
-        if(fWaveform[i] > (1.0 - fThreshold) * (*max))
-        {
-            lastIndex = i;
-            break;
-        }
-    }
+    auto max_index = std::distance(fWaveform.begin(), max); 
 
+    TGraph graph(fWaveform.size(), &fTimeFrame[0], &fWaveform[0]);
+    auto fit = new TF1("fit", "[0]*x+[1]", fTimeFrame.at(begin), fTimeFrame.at(max_index));
+    graph.Fit(fit, "RQC");
+
+    fit->SetRange(fTimeFrame.at(0), fTimeFrame.at(fTimeFrame.size()-1));
+    double firstIndex = fit->GetX(fThreshold * *max);
+    double lastIndex = fit->GetX((1.0-fThreshold) * *max);
+
+    delete fit;
     return std::make_pair(firstIndex, lastIndex);
 }
 
