@@ -75,8 +75,10 @@ void RiseTime::drawWaveform(const char * outputPath, const int nEvent)
     latex->SetNDC();
     latex->DrawLatex(0.2, 0.8, "^{90}Sr source acquisition");
     latex->DrawLatex(0.2, 0.75, Form("Event %d", nEvent));
-    latex->DrawLatex(0.2, 0.7, Form("Rise time: %.1f to %.1f %", fThreshold*100, (1.0-fThreshold)*100));
-    latex->DrawLatex(0.2, 0.65, Form("Rise Time = %f ns", fRiseTime));
+    latex->DrawLatex(0.2, 0.7, Form("Rise time: from %d", int(fThreshold*100))+"%"+Form(" to %d", int(1.0-fThreshold)*100)+"%");
+    latex->DrawLatex(0.2, 0.65, Form("Rise Time = %.2f ns", fRiseTime));
+
+    // add line for beginning of the signal
 
     c1->SaveAs(outputPath);
 }
