@@ -1,2 +1,4 @@
 *.pyc
 Beta/data/input/
+Beta/src/BetaOutput.root
+Beta/src/BetaMeas_Lab2.root
