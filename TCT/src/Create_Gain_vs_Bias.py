@@ -96,8 +96,8 @@ if __name__=='__main__':
     legend1 = TLegend(0.25, 0.5, 0.55, 0.83)
     legend1.AddEntry(gGain,'Gain:LGAD/PiN 1 MIP','p')
     legend1.AddEntry(gGain5,'Gain:LGAD/PiN 5 MIP','p')
-    legend1.AddEntry(fit1,'a*e^{bV} 1 MIP','l')
-    legend1.AddEntry(fit5,'a*e^{bV} 5 MIP','l')
+    legend1.AddEntry(fit1,'N_{0} + c_{1}*e^{c_{2}V} 1 MIP','l')
+    legend1.AddEntry(fit5,'N_{0} + c_{1}*e^{c_{2}V} 5 MIP','l')
     legend1.SetTextSize(0.045)
     legend1.Draw("same")
     

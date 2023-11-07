@@ -53,8 +53,10 @@ void analysis::Loop()
             //cout<<"cout3"<<endl;
             histoNoise3->Fill(w3->at(ii)*1000);
          }
-         if(w2->at(ii)*1000>Amp2)
+         //if(w2->at(ii)*1000>Amp2)
+         if(w2->at(ii)>Amp2*1000)
          {
+            //Amp2=w2->at(ii)*1000;
             Amp2=w2->at(ii)*1000;
             ToA2=t2->at(ii)*1000000000;
          }
