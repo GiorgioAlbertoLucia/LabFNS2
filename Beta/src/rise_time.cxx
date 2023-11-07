@@ -2,6 +2,8 @@
 #include <TCanvas.h>
 #include <TGraph.h>
 #include <TF1.h>
+#include <TLine.h>
+#include <TAxis.h>
 
 #include <TString.h>
 #include <TLatex.h>
@@ -45,13 +47,7 @@ RiseTime::~RiseTime()
  */
 double RiseTime::findRiseTime()
 {
-    // Find the beginning of the signal
-    auto derivative = RiseTime::computeDerivative();
-    
-    auto max = std::max_element(derivative.begin(), derivative.end());
-    auto max_index = std::distance(derivative.begin(), max) * fWindow;  // Index of the maximum derivative in the waveform vector
-
-    std::pair<double, double> riseTimeExtremes = findRiseTimeExtremes(max_index);
+    std::pair<double, double> riseTimeExtremes = findRiseTimeExtremes();
     fRiseTime = riseTimeExtremes.second - riseTimeExtremes.first;
     
     return fRiseTime;
@@ -67,7 +63,7 @@ void RiseTime::drawWaveform(const char * outputPath, const int nEvent)
     TGraph gr(fWaveform.size(), &fTimeFrame[0], &fWaveform[0]);
     gr.SetTitle(Form("Waveform - Event %d; Time (ns); Amplitude (mV)", nEvent));
     gr.SetLineColor(kBlue);
-    gr.SetLineWidth(2);
+    gr.SetLineWidth(1);
     gr.SetMarkerColor(kBlue);
     gr.Draw("AL");
 
@@ -81,7 +77,19 @@ void RiseTime::drawWaveform(const char * outputPath, const int nEvent)
     latex.DrawLatex(0.2, 0.65, Form("Rise Time = %.2f ns", fRiseTime));
 
     // add lines for rise time extremes
+    std::pair<double, double> riseTimeExtremes = findRiseTimeExtremes();
+    TLine line1(riseTimeExtremes.first, gr.GetYaxis()->GetXmin(), riseTimeExtremes.first, gr.GetYaxis()->GetXmax());
+    TLine line2(riseTimeExtremes.second, gr.GetYaxis()->GetXmin(), riseTimeExtremes.second, gr.GetYaxis()->GetXmax());
     
+    line1.SetLineColor(kRed);
+    line1.SetLineWidth(1);
+    line1.SetLineStyle(2);
+    line1.Draw();
+    line2.SetLineColor(kRed);
+    line2.SetLineWidth(1);
+    line2.SetLineStyle(2);
+    line2.Draw();
+
 
     c1.SaveAs(outputPath);
 }
@@ -97,8 +105,14 @@ void RiseTime::drawWaveform(const char * outputPath, const int nEvent)
  * @param begin 
  * @return std::pair<int, int> 
  */
-std::pair<double, double> RiseTime::findRiseTimeExtremes(const int begin)
+std::pair<double, double> RiseTime::findRiseTimeExtremes()
 {
+    // Find the beginning of the signal
+    auto derivative = RiseTime::computeDerivative();
+    
+    auto max_der = std::max_element(derivative.begin(), derivative.end());
+    auto begin = std::distance(derivative.begin(), max_der) * fWindow;  // Index of the maximum derivative in the waveform vector
+
     // find last point of the fit
     auto max = std::max_element(fWaveform.begin(), fWaveform.end());
     auto max_index = std::distance(fWaveform.begin(), max); 
@@ -108,11 +122,11 @@ std::pair<double, double> RiseTime::findRiseTimeExtremes(const int begin)
     graph.Fit(fit, "RQC");
 
     fit->SetRange(fTimeFrame.at(0), fTimeFrame.at(fTimeFrame.size()-1));
-    double firstIndex = fit->GetX(fThreshold * *max);
-    double lastIndex = fit->GetX((1.0-fThreshold) * *max);
+    double firstExtreme = fit->GetX(fThreshold * *max);
+    double lastExtreme = fit->GetX((1.0-fThreshold) * *max);
 
     delete fit;
-    return std::make_pair(firstIndex, lastIndex);
+    return std::make_pair(firstExtreme, lastExtreme);
 }
 
 /**
