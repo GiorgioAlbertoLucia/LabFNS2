@@ -173,7 +173,7 @@ void analysis::Loop()
    }
     
     
-// Gli istogrammi vanno fittati e plottati qui
+// Gli istogrammi vanno fittati e plottati qui   // segmentation fault here 
 //TCanvas * canvasA = new TCanvas("canvasA","canvasA",2000,1000);
 //canvasA->Divide(2,1);
 //canvasA->cd(1);
