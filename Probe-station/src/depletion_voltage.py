@@ -14,6 +14,7 @@ import yaml
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 #import uncertainties as unc
 
@@ -86,6 +87,7 @@ class DepletionAnalysis:
         self.dcon_outputPath = os.path.join(os.path.join(os.path.dirname(output_path), 'Figures'), f'doping_concentration_{args.sensor}.pdf')
         self.dpro_outputPath = os.path.join(os.path.join(os.path.dirname(output_path), 'Figures'), f'doping_profile_{args.sensor}.pdf')
         self.dprocol_outputPath = os.path.join(os.path.join(os.path.dirname(output_path), 'Figures'), f'doping_profile_col_{args.sensor}.pdf')
+        self.depth_outputPath = os.path.join(os.path.join(os.path.dirname(output_path), 'Figures'), f'depletion_depth_{args.sensor}.pdf')
 
         self.graph = None
 
@@ -197,7 +199,7 @@ class DepletionAnalysis:
         graph.SetMarkerStyle(20)
         graph.SetMarkerSize(1)
         graph.SetMarkerColor(kAzure+1)
-        graph.SetTitle('1/C^{2} vs V '+f'{args.sensor}'+'; Reverse bias [V]; 1/C^{2} [pF^{-2}]')
+        graph.SetTitle('1/C^{2} vs V '+f'{args.sensor}'+'; Reverse bias (V); 1/C^{2} (pF^{-2})')
 
         self.graph = graph.Clone()
         
@@ -282,12 +284,12 @@ class DepletionAnalysis:
         graph.SetMarkerStyle(20)
         graph.SetMarkerSize(1)
         graph.SetMarkerColor(kAzure+1)
-        graph.SetTitle('Doping concentration '+f'{args.sensor}'+'; Reverse bias [V]; N_{B} [cm^{-3}]')
+        graph.SetTitle('Doping concentration '+f'{args.sensor}'+'; Reverse bias (V); N_{B} (cm^{-3})')
 
         canvas = TCanvas('doping_conc', 'canvas', 800, 600)
         canvas.DrawFrame(self.config['canvas_limits']['xmin'], self.config['canvas_limits']['conc_ymin'], 
                          self.config['canvas_limits']['xmax'], self.config['canvas_limits']['conc_ymax'], 
-                         'Doping concentration '+f'{args.sensor}'+'; Reverse bias [V]; N_{B} [cm^{-3}]')
+                         'Doping concentration '+f'{args.sensor}'+'; Reverse bias (V); N_{B} (cm^{-3})')
         canvas.SetLogy()
 
         graph.Draw('P')
@@ -324,11 +326,13 @@ class DepletionAnalysis:
         graph.SetMarkerStyle(20)
         graph.SetMarkerSize(1)
         graph.SetMarkerColor(kAzure+1)
-        graph.SetTitle('Doping profile '+f'{args.sensor}'+'; Depth [#mum]; N_{B} [cm^{-3}]')
+        graph.SetTitle('Doping profile '+f'{args.sensor}'+'; Depth (#mum); N_{B} (cm^{-3})')
         graph.GetYaxis().SetRangeUser(-0.1, 0.24)
 
         canvas = TCanvas('doping_prof', 'canvas', 800, 600)
-        canvas.DrawFrame(-1., self.config['canvas_limits']['conc_ymin'], 30., self.config['canvas_limits']['conc_ymax'], 'Doping profile '+f'{args.sensor}'+'; Depth [#mum]; N_{B} [cm^{-3}]')
+        canvas.DrawFrame(self.config['canvas_limits']['depth_min'], self.config['canvas_limits']['conc_ymin'], 
+                         self.config['canvas_limits']['depth_max'], self.config['canvas_limits']['conc_ymax'], 
+                         'Doping profile '+f'{args.sensor}'+'; Depth (#mum); N_{B} (cm^{-3})')
         canvas.SetLogy()
         #canvas.SetGrid()
 
@@ -353,40 +357,28 @@ class DepletionAnalysis:
         
         canvas.SaveAs(self.dpro_outputPath)
 
-    def doping_profile_color(self):
+    def depletion_depth(self):
         '''
-            Plot the doping profile vs depth of the depleted region
-
+            Plot the depletion depth vs bias voltage
         '''
 
-        graph = TGraph2DErrors(len(self.df['W']), 
-                             np.asarray(self.df['W']*1e6, dtype=float), np.asarray(self.df['NB']*1e-6, dtype=float), 
-                             np.asarray(self.inversion*self.df['V'], dtype=float),
-                             np.asarray(self.df['W_err']*1e6, dtype=float), np.asarray(self.df['NB_err']*1e-6, dtype=float),
-                             np.asarray(self.df['V_err'], dtype=float) )
+        graph = TGraphErrors(len(self.df['V']), 
+                             np.asarray(self.inversion*self.df['V'], dtype=float), np.asarray(self.df['W']*1e6, dtype=float), 
+                             np.asarray(self.df['V_err'], dtype=float), np.asarray(self.df['W_err']*1e6, dtype=float) )
         graph.SetMarkerStyle(20)
         graph.SetMarkerSize(1)
         graph.SetMarkerColor(kAzure+1)
-        graph.SetTitle('Doping profile '+f'{args.sensor}'+'; Depth [#mum]; N_{B} [cm^{-3}]; Reverse bias [V]')
-        graph.GetYaxis().SetRangeUser(-0.1, 0.24)
+        graph.SetTitle('Depletion depth '+f'{args.sensor}'+'; Reverse bias (V); W (#mum)')
 
-        canvas = TCanvas('doping_prof_col', 'canvas', 800, 600)
-        #canvas.DrawFrame(-1., self.config['canvas_limits']['conc_ymin'], 30., self.config['canvas_limits']['conc_ymax'], 'Doping profile '+f'{args.sensor}'+'; Depth [#mum]; N_{B} [cm^{-3}]; Reverse bias [V]')
-        canvas.SetLogy()
-        #canvas.SetGrid()
+        canvas = TCanvas('depletion_depth', 'canvas', 800, 600)
+        canvas.DrawFrame(self.config['canvas_limits']['xmin'], self.config['canvas_limits']['depth_min'], 
+                         self.config['canvas_limits']['xmax'], self.config['canvas_limits']['depth_max'], 
+                         'Depletion depth '+f'{args.sensor}'+'; Reverse bias (V); W (#mum)')
 
-        scatter_plot = graph.Project('xy')
-        scatter_plot.SetTitle('Doping profile '+f'{args.sensor}'+'; Depth [#mum]; N_{B} [cm^{-3}]; Reverse bias [V]')
-        scatter_plot.GetXaxis().SetRangeUser(-1., 30.)
-        scatter_plot.GetYaxis().SetRangeUser(self.config['canvas_limits']['conc_ymin'], self.config['canvas_limits']['conc_ymax'],)
-        scatter_plot.SetFillColor(0)
-        scatter_plot.SetMarkerStyle(20)
-        scatter_plot.SetMarkerSize(1)
-
-        scatter_plot.Draw('colz')
+        graph.Draw('P')
 
 
-        legend = TLegend(0.5, 0.55, 0.7, 0.75)
+        legend = TLegend(0.55, 0.55, 0.75, 0.65)
         legend.SetBorderSize(0)
         legend.SetTextFont(42)
         legend.SetTextSize(0.04)
@@ -397,13 +389,42 @@ class DepletionAnalysis:
         latex.SetTextFont(42)
         latex.SetTextSize(0.04)
         latex.SetNDC()
-        latex.DrawLatex(0.5, 0.8, self.text1)
-        latex.DrawLatex(0.5, 0.85, self.text2)
+        latex.DrawLatex(0.55, 0.7, self.text1)
+        latex.DrawLatex(0.55, 0.75, self.text2)
 
         self.outFile.cd()
         canvas.Write()
         
-        canvas.SaveAs(self.dprocol_outputPath)
+        canvas.SaveAs(self.depth_outputPath)
+
+    def doping_profile_color(self):
+        '''
+            Plot the doping profile vs depth of the depleted region
+
+        '''
+
+        # Define the data
+        w = np.array([1, 2, 3, 4, 5])
+        NB = np.array([10, 20, 30, 40, 50])
+        V = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
+        w_err = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
+        NB_err = np.array([1, 2, 3, 4, 5])
+        V_err = np.array([0.01, 0.02, 0.03, 0.04, 0.05])
+
+        # Define the color map
+        cmap = plt.cm.get_cmap('cool')
+        plt.scatter(self.df['W'], self.df['NB'], c=self.df['V'], cmap=cmap)
+        plt.errorbar(self.df['W'], self.df['NB'], xerr=self.df['W_err'], yerr=self.df['NB_err'], fmt='none', ecolor='black')
+
+        cbar = plt.colorbar()
+        cbar.set_label('Reverse bias (V)')
+
+        # Add labels and title
+        plt.xlabel('Depth (#mum)')
+        plt.ylabel('N_{B} (cm^{-3})')
+        plt.title('Doping profile - '+f'{args.sensor}')
+
+        plt.savefig(self.dprocol_outputPath)
 
 
     #####################
@@ -493,6 +514,7 @@ if __name__ == "__main__":
 
     depletion_analysis.doping_concentration()
     depletion_analysis.doping_profile()
+    depletion_analysis.depletion_depth()
     depletion_analysis.doping_profile_color()
 
     if args.verbose:    
