@@ -1,5 +1,7 @@
 #
+#
 #Diode(mV), std_dev(ps), N(mV)
+
 Diode_ampl	err_diode	std_dev	err_dev	N	err_N	dV/dt	err_dV/dt	V
 29.420	2.235	64.34	0	14.812	1.051	48.74 	18.36  	150
 29.791	2.254	37.43	0	14.866	1.059	79.51 	21.70  	175

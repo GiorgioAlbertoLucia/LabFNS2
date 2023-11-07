@@ -1,4 +1,7 @@
+#
+#
 # AtotLGAD (mV), Atot_errLGAD (mV), AbasLGAD (mV), Abas_errLGAD (mV), Bias (V), Bias_err (V)
+
 Bias,Bias_err,Ampl_diode,Ampl_diode_err,AtotLGAD,Atot_errLGAD,AbasLGAD,Abas_errLGAD
 150, 1, 26.476, 2.078, -519.94, 33.05, -428.17, 33.45
 175, 1, 26.771, 2.142, -559.85, 34.26, -432.14, 30.86

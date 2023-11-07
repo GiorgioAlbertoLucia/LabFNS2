@@ -1,4 +1,6 @@
 *.pyc
 Beta/data/input/
-Beta/src/BetaOutput.root
-Beta/src/BetaMeas_Lab2.root
+Beta/data/output/BetaOutput.root
+Beta/src/*.so
+Beta/src/*.d
+Beta/src/*.pcm

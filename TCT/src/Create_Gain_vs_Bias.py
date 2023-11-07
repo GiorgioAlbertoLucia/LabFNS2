@@ -25,13 +25,13 @@ if __name__=='__main__':
     dfPiN5 = pd.read_csv(infilePin5,comment='#')
     dfLGAD5 = pd.read_csv(infileLGAD5,comment='#')
 
-    dfPiN['QPin']=(dfPiN['AtotPin']-dfPiN['AbasPin'])
-    dfPiN['QPin_err']=(np.sqrt((dfPiN['Atot_errPin']/np.sqrt(1000))**2+(dfPiN['Abas_errPin']/np.sqrt(1000))**2))
+    dfPiN['QPIN']=(dfPiN['AtotPIN']-dfPiN['AbasPIN'])
+    dfPiN['QPIN_err']=(np.sqrt((dfPiN['Atot_errPIN']/np.sqrt(1000))**2+(dfPiN['Abas_errPIN']/np.sqrt(1000))**2))
     dfLGAD['QLGAD']=(dfLGAD['AtotLGAD']-dfLGAD['AbasLGAD'])
     dfLGAD['QLGAD_err']=(np.sqrt((dfLGAD['Atot_errLGAD']/np.sqrt(1000))**2+(dfLGAD['Abas_errLGAD']/np.sqrt(1000))**2))
 
-    dfPiN5['QPin']=(dfPiN5['AtotPin']-dfPiN5['AbasPin'])
-    dfPiN5['QPin_err']=(np.sqrt((dfPiN5['Atot_errPin']/np.sqrt(1000))**2+(dfPiN5['Abas_errPin']/np.sqrt(1000))**2))
+    dfPiN5['QPIN']=(dfPiN5['AtotPIN']-dfPiN5['AbasPIN'])
+    dfPiN5['QPIN_err']=(np.sqrt((dfPiN5['Atot_errPIN']/np.sqrt(1000))**2+(dfPiN5['Abas_errPIN']/np.sqrt(1000))**2))
     dfLGAD5['QLGAD']=(dfLGAD5['AtotLGAD']-dfLGAD5['AbasLGAD'])
     dfLGAD5['QLGAD_err']=(np.sqrt((dfLGAD5['Atot_errLGAD']/np.sqrt(1000))**2+(dfLGAD5['Abas_errLGAD']/np.sqrt(1000))**2))
 
@@ -41,16 +41,16 @@ if __name__=='__main__':
     #dfLGAD5['QLGAD_err']=(np.sqrt((dfLGAD5['Atot_errLGAD']/np.sqrt(1000))**2+(dfLGAD5['Abas_errLGAD']/np.sqrt(1000))**2))
 
     df = pd.DataFrame()
-    df['Gain']=dfLGAD['QLGAD']/dfPiN['QPin']
-    df['Gain_err']=np.sqrt(((dfLGAD['QLGAD']/(dfPiN['QPin']*dfPiN['QPin']))*dfPiN['QPin_err'])**2+ (dfLGAD['QLGAD_err']/dfPiN['QPin'])**2)
+    df['Gain']=dfLGAD['QLGAD']/dfPiN['QPIN']
+    df['Gain_err']=np.sqrt(((dfLGAD['QLGAD']/(dfPiN['QPIN']*dfPiN['QPIN']))*dfPiN['QPIN_err'])**2+ (dfLGAD['QLGAD_err']/dfPiN['QPIN'])**2)
     df['Bias'] = dfPiN['Bias']
     df['Bias_err'] = dfPiN['Bias_err']
     #commento a caso p
     df.to_csv('TCT/data/output/Gain_vs_Bias_with_gain.csv', index=False)
 
     df5 = pd.DataFrame()
-    df5['Gain']=dfLGAD5['QLGAD']/dfPiN5['QPin']
-    df5['Gain_err']=np.sqrt(((dfLGAD5['QLGAD']/(dfPiN5['QPin']*dfPiN5['QPin']))*dfPiN5['QPin_err'])**2+ (dfLGAD5['QLGAD_err']/dfPiN5['QPin'])**2)
+    df5['Gain']=dfLGAD5['QLGAD']/dfPiN5['QPIN']
+    df5['Gain_err']=np.sqrt(((dfLGAD5['QLGAD']/(dfPiN5['QPIN']*dfPiN5['QPIN']))*dfPiN5['QPIN_err'])**2+ (dfLGAD5['QLGAD_err']/dfPiN5['QPIN'])**2)
     df5['Bias'] = dfPiN5['Bias']
     df5['Bias_err'] = dfPiN5['Bias_err']
 

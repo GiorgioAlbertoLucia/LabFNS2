@@ -2,7 +2,8 @@
 # Attenuaton = 48.1 %
 # Ampl ~ 78 mV
 # AtotLGAD (mV), Atot_errLGAD (mV), AbasLGAD (mV), Abas_errLGAD (mV), Bias (V), Bias_err (V)
-Bias,Bias_err,Ampl_diode,Ampl_diode_err,AtotPin,Atot_errPin,AbasPin,Abas_errPin
+
+Bias,Bias_err,Ampl_diode,Ampl_diode_err,AtotPIN,Atot_errPIN,AbasPIN,Abas_errPIN
 150, 1, 80.773,2.836,-192.86,12.43,-180.63,11.28
 200, 1, 81.119,2.816,-193.38,11.06,-180.84,11.01
 220, 1, 81.383,2.810,-193.88,11.59,-181.34,11.29

@@ -1,4 +1,0 @@
-# AtotPin (mV), Atot_errPin (mV), AbasPin (mV), Abas_errPin (mV),AtotLGAD (mV), Atot_errLGAD (mV), AbasLGAD (mV), Abas_errLGAD (mV) RevB (V), RevB_err (V)
-AtotPin,Atot_errPin,AbasPin,Abas_errPin,AtotLGAD,Atot_errLGAD,AbasLGAD,Abas_errLGAD,RevB,RevB_err
-10,0,1,0,8,0,1,0,34,0
-# 150, 175, 200, 210, 220, 230, 240, 245, 250
