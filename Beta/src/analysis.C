@@ -64,9 +64,18 @@ void analysis::Loop()
    double ToA2{0.}, ToA3{0.};
    double RMS2{0.}, RMS3{0.};
    double baseline2{0.}, baseline3{0.};  
-   bool FillTTree = true;                 
+   bool FillTTree = false;                 
    
    double amplitude_cut2{50.}, amplitude_cut3{60.};
+
+   TH1D * histoAmpli2 = new TH1D("histoAmpli2","histoAmpli2",200,0.,400); //mV
+   TH1D * histoAmpli3 = new TH1D("histoAmpli3","histoAmpli3",200,0.,400);
+   TH1D * histoAmpli2_sel = new TH1D("histoAmpli2_sel","histoAmpli2_Sel",200,0.,400); //mV
+   TH1D * histoAmpli3_sel = new TH1D("histoAmpli3_sel","histoAmpli3_Sel",200,0.,400);
+   TH1D * histoToA2 = new TH1D("histoToA2","histoToA2",200,0.,2.5); //ns
+   TH1D * histoToA3 = new TH1D("histoToA3","histoToA3",200,0.,2.5);
+   TH1D * histoRMS2 = new TH1D("histoRMS2","histoRMS2",200,0.,1); //mV
+   TH1D * histoRMS3 = new TH1D("histoRMS3","histoRMS3",200,0.,1);
 
    TFile outFile("Beta/data/output/BetaOutput.root", "recreate");
    TTree * tree;
@@ -83,15 +92,6 @@ void analysis::Loop()
       tree->Branch("baseline3", &baseline3); 
    }
    
-
-   TH1D * histoAmpli2 = new TH1D("histoAmpli2","histoAmpli2",200,0.,400); //mV
-   TH1D * histoAmpli3 = new TH1D("histoAmpli3","histoAmpli3",200,0.,400);
-   TH1D * histoAmpli2_sel = new TH1D("histoAmpli2_sel","histoAmpli2_Sel",200,0.,400); //mV
-   TH1D * histoAmpli3_sel = new TH1D("histoAmpli3_sel","histoAmpli3_Sel",200,0.,400);
-   TH1D * histoToA2 = new TH1D("histoToA2","histoToA2",200,0.,2.5); //ns
-   TH1D * histoToA3 = new TH1D("histoToA3","histoToA3",200,0.,2.5);
-   TH1D * histoRMS2 = new TH1D("histoRMS2","histoRMS2",200,0.,1); //mV
-   TH1D * histoRMS3 = new TH1D("histoRMS3","histoRMS3",200,0.,1);
    Long64_t nentries = fChain->GetEntriesFast();
 
    Long64_t nbytes = 0, nb = 0;
@@ -174,93 +174,93 @@ void analysis::Loop()
     
     
 // Gli istogrammi vanno fittati e plottati qui   // segmentation fault here 
-//TCanvas * canvasA = new TCanvas("canvasA","canvasA",2000,1000);
-//canvasA->Divide(2,1);
-//canvasA->cd(1);
-//gPad->SetLogy();
-//histoAmpli2->Draw("hist");
-//histoAmpli2->GetXaxis()->SetTitle("Amplitude (mV)"); 
-//histoAmpli2->GetYaxis()->SetTitle("Entries (a.u.)");
-//histoAmpli2->SetTitle("Sensor A - Channel 2");
-//canvasA->cd(2);
-//gPad->SetLogy();
-//histoAmpli3->Draw("hist");
-//histoAmpli3->SetLineColor(kRed);
-//histoAmpli3->GetXaxis()->SetTitle("Amplitude (mV)"); 
-//histoAmpli3->GetYaxis()->SetTitle("Entries (a.u.)");
-//histoAmpli3->SetTitle("Sensor B - Channel 3");
-//canvasA->SaveAs("Beta/data/output/Amplitude.pdf");
-//
-//TCanvas * canvasA_Sel = new TCanvas("canvasA_Sel","canvasA_Sel",2000,1000);
-//canvasA_Sel->Divide(2,1);
-//canvasA_Sel->cd(1);
-//gPad->SetLogy();
-//histoAmpli2_sel->Draw("hist");
-//histoAmpli2_sel->GetXaxis()->SetTitle("Amplitude (mV)"); 
-//histoAmpli2_sel->GetYaxis()->SetTitle("Entries (a.u.)");
-//histoAmpli2_sel->SetTitle("Sensor A - Channel 2");
-//canvasA_Sel->cd(2);
-//gPad->SetLogy();
-//histoAmpli3_sel->Draw("hist");
-//histoAmpli3_sel->SetLineColor(kRed);
-//histoAmpli3_sel->GetXaxis()->SetTitle("Amplitude (mV)"); 
-//histoAmpli3_sel->GetYaxis()->SetTitle("Entries (a.u.)");
-//histoAmpli3_sel->SetTitle("Sensor B - Channel 3");
-//canvasA_Sel->SaveAs("Beta/data/output/Amplitude_selected.pdf");
-//
-//TCanvas * canvasT = new TCanvas("canvasT","canvasT",1000,1000);
-//canvasT->Divide(2,1);
-//canvasT->cd(1);
-//histoToA2->Draw("hist");
-//histoToA2->GetXaxis()->SetTitle("Time of arrival (ns)"); 
-//histoToA2->GetYaxis()->SetTitle("Entries (a.u.)");
-//histoToA2->SetTitle("Sensor A - Channel 2");
-//canvasT->cd(2);
-//histoToA3->Draw("hist");
-//histoToA3->SetLineColor(kRed);
-//histoToA3->GetXaxis()->SetTitle("Time of arrival (ns)");
-//histoToA3->GetYaxis()->SetTitle("Entries (a.u.)");
-//histoToA3->SetTitle("Sensor B - Channel 3");
-//
-//TCanvas * canvasRMS = new TCanvas("canvasRMS","canvasRMS",1000,1000);
-//canvasRMS->Divide(2,1);
-//canvasRMS->cd(1);
-//histoRMS2->Draw("hist");
-//histoRMS2->GetXaxis()->SetTitle("Baseline RMS (mV)"); 
-//histoRMS2->GetYaxis()->SetTitle("Entries (a.u.)");
-//histoRMS2->SetTitle("Sensor A - Channel 2");
-//canvasRMS->cd(2);
-//histoRMS3->Draw("hist");
-//histoRMS3->SetLineColor(kRed);
-//histoRMS3->GetXaxis()->SetTitle("Baseline RMS (mV)"); 
-//histoRMS3->GetYaxis()->SetTitle("Entries (a.u.)");
-//histoRMS3->SetTitle("Sensor B - Channel 3");
-//
-//TCanvas * canvas100 = new TCanvas("canvas100","canvas100",1000,1000);
-//double max = histoEvent100_ch2->GetMaximum();
-//double min = histoEvent100_ch2->GetMinimum();
-//histoEvent100_ch3->GetMaximum()>max ? max=histoEvent100_ch3->GetMaximum() : max=max;
-//histoEvent100_ch3->GetMinimum()<min ? min=histoEvent100_ch3->GetMinimum() : min=min;
-//double Xmin = histoEvent100_ch2->GetXaxis()->GetXmin();
-//double Xmax = histoEvent100_ch2->GetXaxis()->GetXmax();
-//histoEvent100_ch3->GetXaxis()->GetXmin()<Xmin ? Xmin=histoEvent100_ch3->GetXaxis()->GetXmin() : Xmin=Xmin;
-//histoEvent100_ch3->GetXaxis()->GetXmax()>Xmax ? Xmax=histoEvent100_ch3->GetXaxis()->GetXmax() : Xmax=Xmax;
-//canvas100->DrawFrame(Xmin,min*1.1,Xmax,max*1.1,"Event 100;t (s);V (mV)");
-//histoEvent100_ch2->Draw("hist,same");
-//histoEvent100_ch2->GetXaxis()->SetTitle("Baseline 100 (mV)"); 
-//histoEvent100_ch2->GetYaxis()->SetTitle("Entries (a.u.)");
-//histoEvent100_ch2->SetTitle("Sensor A - Channel 2");
-//histoEvent100_ch3->Draw("hist,same");
-//histoEvent100_ch3->SetLineColor(kRed);
-//histoEvent100_ch3->GetXaxis()->SetTitle("Baseline 100 (mV)"); 
-//histoEvent100_ch3->GetYaxis()->SetTitle("Entries (a.u.)");
-//histoEvent100_ch3->SetTitle("Sensor B - Channel 3");
-//TLegend * legend = new TLegend(0.2,0.7,0.4,0.8);
-//legend->AddEntry(histoEvent100_ch2,"Sensor A - Channel 2","l");
-//legend->AddEntry(histoEvent100_ch3,"Sensor B - Channel 3","l");
-//legend->SetTextSize(0.03);
-//legend->Draw();
-//canvas100->Modified();
-//canvas100->Update();
-//canvas100->SaveAs("Beta/data/output/Event_100.pdf");
+   TCanvas * canvasA = new TCanvas("canvasA","canvasA",2000,1000);
+   canvasA->Divide(2,1);
+   canvasA->cd(1);
+   gPad->SetLogy();
+   histoAmpli2->Draw("hist");
+   histoAmpli2->GetXaxis()->SetTitle("Amplitude (mV)"); 
+   histoAmpli2->GetYaxis()->SetTitle("Entries (a.u.)");
+   histoAmpli2->SetTitle("Sensor A - Channel 2");
+   canvasA->cd(2);
+   gPad->SetLogy();
+   histoAmpli3->Draw("hist");
+   histoAmpli3->SetLineColor(kRed);
+   histoAmpli3->GetXaxis()->SetTitle("Amplitude (mV)"); 
+   histoAmpli3->GetYaxis()->SetTitle("Entries (a.u.)");
+   histoAmpli3->SetTitle("Sensor B - Channel 3");
+   canvasA->SaveAs("Beta/data/output/Amplitude.pdf");
+
+   TCanvas * canvasA_Sel = new TCanvas("canvasA_Sel","canvasA_Sel",2000,1000);
+   canvasA_Sel->Divide(2,1);
+   canvasA_Sel->cd(1);
+   gPad->SetLogy();
+   histoAmpli2_sel->Draw("hist");
+   histoAmpli2_sel->GetXaxis()->SetTitle("Amplitude (mV)"); 
+   histoAmpli2_sel->GetYaxis()->SetTitle("Entries (a.u.)");
+   histoAmpli2_sel->SetTitle("Sensor A - Channel 2");
+   canvasA_Sel->cd(2);
+   gPad->SetLogy();
+   histoAmpli3_sel->Draw("hist");
+   histoAmpli3_sel->SetLineColor(kRed);
+   histoAmpli3_sel->GetXaxis()->SetTitle("Amplitude (mV)"); 
+   histoAmpli3_sel->GetYaxis()->SetTitle("Entries (a.u.)");
+   histoAmpli3_sel->SetTitle("Sensor B - Channel 3");
+   canvasA_Sel->SaveAs("Beta/data/output/Amplitude_selected.pdf");
+
+   TCanvas * canvasT = new TCanvas("canvasT","canvasT",1000,1000);
+   canvasT->Divide(2,1);
+   canvasT->cd(1);
+   histoToA2->Draw("hist");
+   histoToA2->GetXaxis()->SetTitle("Time of arrival (ns)"); 
+   histoToA2->GetYaxis()->SetTitle("Entries (a.u.)");
+   histoToA2->SetTitle("Sensor A - Channel 2");
+   canvasT->cd(2);
+   histoToA3->Draw("hist");
+   histoToA3->SetLineColor(kRed);
+   histoToA3->GetXaxis()->SetTitle("Time of arrival (ns)");
+   histoToA3->GetYaxis()->SetTitle("Entries (a.u.)");
+   histoToA3->SetTitle("Sensor B - Channel 3");
+
+   TCanvas * canvasRMS = new TCanvas("canvasRMS","canvasRMS",1000,1000);
+   canvasRMS->Divide(2,1);
+   canvasRMS->cd(1);
+   histoRMS2->Draw("hist");
+   histoRMS2->GetXaxis()->SetTitle("Baseline RMS (mV)"); 
+   histoRMS2->GetYaxis()->SetTitle("Entries (a.u.)");
+   histoRMS2->SetTitle("Sensor A - Channel 2");
+   canvasRMS->cd(2);
+   histoRMS3->Draw("hist");
+   histoRMS3->SetLineColor(kRed);
+   histoRMS3->GetXaxis()->SetTitle("Baseline RMS (mV)"); 
+   histoRMS3->GetYaxis()->SetTitle("Entries (a.u.)");
+   histoRMS3->SetTitle("Sensor B - Channel 3");
+
+   TCanvas * canvas100 = new TCanvas("canvas100","canvas100",1000,1000);
+   double max = histoEvent100_ch2->GetMaximum();
+   double min = histoEvent100_ch2->GetMinimum();
+   histoEvent100_ch3->GetMaximum()>max ? max=histoEvent100_ch3->GetMaximum() : max=max;
+   histoEvent100_ch3->GetMinimum()<min ? min=histoEvent100_ch3->GetMinimum() : min=min;
+   double Xmin = histoEvent100_ch2->GetXaxis()->GetXmin();
+   double Xmax = histoEvent100_ch2->GetXaxis()->GetXmax();
+   histoEvent100_ch3->GetXaxis()->GetXmin()<Xmin ? Xmin=histoEvent100_ch3->GetXaxis()->GetXmin() : Xmin=Xmin;
+   histoEvent100_ch3->GetXaxis()->GetXmax()>Xmax ? Xmax=histoEvent100_ch3->GetXaxis()->GetXmax() : Xmax=Xmax;
+   canvas100->DrawFrame(Xmin,min*1.1,Xmax,max*1.1,"Event 100;t (s);V (mV)");
+   histoEvent100_ch2->Draw("hist,same");
+   histoEvent100_ch2->GetXaxis()->SetTitle("Baseline 100 (mV)"); 
+   histoEvent100_ch2->GetYaxis()->SetTitle("Entries (a.u.)");
+   histoEvent100_ch2->SetTitle("Sensor A - Channel 2");
+   histoEvent100_ch3->Draw("hist,same");
+   histoEvent100_ch3->SetLineColor(kRed);
+   histoEvent100_ch3->GetXaxis()->SetTitle("Baseline 100 (mV)"); 
+   histoEvent100_ch3->GetYaxis()->SetTitle("Entries (a.u.)");
+   histoEvent100_ch3->SetTitle("Sensor B - Channel 3");
+   TLegend * legend = new TLegend(0.2,0.7,0.4,0.8);
+   legend->AddEntry(histoEvent100_ch2,"Sensor A - Channel 2","l");
+   legend->AddEntry(histoEvent100_ch3,"Sensor B - Channel 3","l");
+   legend->SetTextSize(0.03);
+   legend->Draw();
+   canvas100->Modified();
+   canvas100->Update();
+   canvas100->SaveAs("Beta/data/output/Event_100.pdf");
 }
