@@ -2,7 +2,7 @@
     "files.associations": {
         "test.C": "cpp",
         "analysis.C": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
         "analysis.C": "cpp",
         "array": "cpp",
         "atomic": "cpp",
