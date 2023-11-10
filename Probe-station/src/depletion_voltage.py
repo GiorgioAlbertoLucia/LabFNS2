@@ -14,7 +14,10 @@ import yaml
 
 import numpy as np
 import pandas as pd
+
 import matplotlib.pyplot as plt
+from matplotlib import use as mpl_use
+mpl_use('Agg')                              # Force matplotlib to not use any Xwindows backend (solves issues with ROOT)
 
 #import uncertainties as unc
 
@@ -84,6 +87,7 @@ class DepletionAnalysis:
         output_path = os.path.splitext(args.output)[0] + '.pdf'
         self.iC2vV_outputPath = os.path.join(os.path.join(os.path.dirname(output_path), 'Figures'), f'1C2_{args.sensor}_vs_V.pdf')
         self.zoom_outputPath = os.path.join(os.path.join(os.path.dirname(output_path), 'Figures'), f'1C2_{args.sensor}_vs_V_zoom.pdf')
+        self.der_outputPath = os.path.join(os.path.join(os.path.dirname(output_path), 'Figures'), f'derivative_{args.sensor}.pdf')
         self.dcon_outputPath = os.path.join(os.path.join(os.path.dirname(output_path), 'Figures'), f'doping_concentration_{args.sensor}.pdf')
         self.dpro_outputPath = os.path.join(os.path.join(os.path.dirname(output_path), 'Figures'), f'doping_profile_{args.sensor}.pdf')
         self.dprocol_outputPath = os.path.join(os.path.join(os.path.dirname(output_path), 'Figures'), f'doping_profile_col_{args.sensor}.pdf')
@@ -99,6 +103,13 @@ class DepletionAnalysis:
         self.text1 = 'Area = 1.0 #times 1.0 mm^{2}'
         self.text2 = f'{args.sensor} sensor'
 
+    def close(self):
+        '''
+            Close the output file 
+        '''
+
+        self.outFile.Close()
+
     #####################
     # DATA PREPROCESSING
 
@@ -108,19 +119,19 @@ class DepletionAnalysis:
         '''
         print("Preprocessing data...")
 
-        eSi = 11.7 * 8.854e-12                                      # F/m - dielectric constant of silicon
-        A = 1e-6                                                    # m^2 - detector area
-        q = 1.602e-19                                               # C - electron charge
-        Vbi = -0.6                                                   # V - built-in voltage  
+        eSi = 11.7 * 8.854e-12                                          # F/m - dielectric constant of silicon
+        A = 1e-6                                                        # m^2 - detector area
+        q = 1.602e-19                                                   # C - electron charge
+        Vbi = -0.6                                                      # V - built-in voltage  
 
-        self.df['V_abs'] = np.abs(self.df['V'] + self.inversion*Vbi)               # V - absolute value of the bias voltage
-        self.df['1_C2'] = 1.0 / (self.df['C'] * self.df['C'])
+        self.df['V_abs'] = np.abs(self.df['V'] + self.inversion*Vbi)    # V - absolute value of the bias voltage
+        self.df['1_C2'] = 1.0 / (self.df['C'] * self.df['C'])           # pF^-2
         self.df['1_C2_err'] = 2.0 * self.df['C_err'] / (self.df['C'] * self.df['C'] * self.df['C'])
 
-        self.df['1_C2_F'] = self.df['1_C2'] * 1e24                  # F^-2
-        self.df['1_C2_err_F'] = self.df['1_C2_err'] * 1e24          # F^-2
+        self.df['1_C2_F'] = self.df['1_C2'] * 1e24                      # F^-2
+        self.df['1_C2_err_F'] = self.df['1_C2_err'] * 1e24              # F^-2
 
-        self.df['derivative'] = np.gradient(self.df['1_C2_F'], self.inversion*self.df['V'])
+        self.df['derivative'] = np.gradient(self.df['1_C2_F'], self.inversion*self.df['V']) # F^-2 V^-1
         
         # error on the derivative
         self.df['derivative2_C'] = np.gradient(self.df['derivative'], self.df['1_C2_F'])
@@ -269,6 +280,49 @@ class DepletionAnalysis:
 
     # DOPING CONCENTRATION
 
+    def derivative_plot(self):
+        '''
+            Plot the derivative of 1/C^2 vs bias voltage
+        '''
+
+        plt_cfg = self.plot_config['derivative']
+
+        graph = TGraphErrors(len(self.df['V']), 
+                             np.asarray(self.inversion*self.df['V'], dtype=float), np.asarray(self.df['derivative']*1e-6, dtype=float), 
+                             np.asarray(self.df['V_err'], dtype=float), np.asarray(self.df['derivative_err']*1e-6, dtype=float) )
+        graph.SetMarkerStyle(20)
+        graph.SetMarkerSize(1)
+        graph.SetMarkerColor(self.color)
+        graph.SetTitle('Derivative '+f'{args.sensor}'+'; Reverse bias (V); #frac{d(1/C^2)}{dV} (cm^{-3} V^{-1})')
+
+        canvas = TCanvas('derivative', 'canvas', 800, 600)
+        canvas.DrawFrame(self.config['canvas_limits']['xmin'], self.config['canvas_limits']['der_ymin'], 
+                         self.config['canvas_limits']['xmax'], self.config['canvas_limits']['der_ymax'], 
+                         'Derivative '+f'{args.sensor}'+'; Reverse bias (V); #frac{d(1/C^2)}{dV} (cm^{-3} V^{-1})')
+        canvas.SetLogy()
+
+        graph.Draw('P')
+
+
+        legend = TLegend(plt_cfg['legend'][0], plt_cfg['legend'][1], plt_cfg['legend'][2], plt_cfg['legend'][3])
+        legend.SetBorderSize(0)
+        legend.SetTextFont(42)
+        legend.SetTextSize(0.04)
+        legend.AddEntry(graph, 'Data', 'pe')
+        legend.Draw()
+
+        latex = TLatex()
+        latex.SetTextFont(42)
+        latex.SetTextSize(0.04)
+        latex.SetNDC()
+        latex.DrawLatex(plt_cfg['latex'][0][0], plt_cfg['latex'][0][1], self.text1)
+        latex.DrawLatex(plt_cfg['latex'][1][0], plt_cfg['latex'][1][1], self.text2)
+
+        self.outFile.cd()
+        canvas.Write()
+        
+        canvas.SaveAs(self.der_outputPath)
+
     def doping_concentration(self):
         '''
             Plot the doping concentration vs bias voltage
@@ -406,7 +460,7 @@ class DepletionAnalysis:
         '''
 
         # Define the color map
-        cmap = plt.cm.get_cmap('cool')
+        cmap = plt.colormaps['cool']
         plt.scatter(self.df['W']*1e6, self.df['NB']*1e-6, c=self.df['V'], cmap=cmap)
         #plt.errorbar(self.df['W'], self.df['NB'], xerr=self.df['W_err'], yerr=self.df['NB_err'], fmt='none', ecolor='black')
 
@@ -415,14 +469,14 @@ class DepletionAnalysis:
 
         # Add labels and title
         plt.xlabel('Depth ($\mu$m)')
-        
         plt.ylabel('$N_{B}$ ($cm^{-3}$)')
         plt.yscale('log')
         plt.title('Doping profile - '+f'{args.sensor}')
 
         plt.savefig(self.dprocol_outputPath)
-
-
+        print('Plot saved in', self.dprocol_outputPath)
+        plt.close()
+        
     #####################
     # PRIVATE-LIKE METHODS
 
@@ -487,25 +541,26 @@ class DepletionAnalysis:
 
         return intersection
 
-    def evaluate_W_NB(self):
+    def evaluate_W_NB(self, Vbi=-0.6):
         '''
             Evaluate the depletion width and the doping concentration at the depletion voltage
 
             Parameters
             ----------
-            None
+            Vbi (float) :   Built-in voltage (V)
 
             Returns
             -------
         '''
 
-        eSi = 11.7 * 8.854e-12                                      # F/m - dielectric constant of silicon
-        A = 1e-6                                                    # m^2 - detector area
-        q = 1.602e-19                                               # C - electron charge
-        Vbi = -0.6                                                   # V - built-in voltage  
+        eSi = 11.7 * 8.854e-12                                          # F/m - dielectric constant of silicon
+        A = 1e-6                                                        # m^2 - detector area
+        q = 1.602e-19                                                   # C - electron charge
+            
+        self.df['V_abs'] = np.abs(self.df['V'] + self.inversion*Vbi)    # V - absolute value of the bias voltage
 
         # doping concentration
-        self.df['NB'] = 2 / (eSi * A*A * q * self.df['derivative']) # m^-3
+        self.df['NB'] = 2 / (eSi * A*A * q * self.df['derivative'])     # m^-3
         self.df['NB_err'] = 2 / (eSi * A*A * q * self.df['derivative']**2) * self.df['derivative_err'] # m^-3
 
         # depletion width
@@ -535,10 +590,13 @@ if __name__ == "__main__":
     depletion_analysis.inverseC2_vs_V()
     depletion_analysis.print_zoom(0., 33., -0.2e-4, 1.4e-4)
 
+    depletion_analysis.derivative_plot()
     depletion_analysis.doping_concentration()
     depletion_analysis.doping_profile()
     depletion_analysis.depletion_depth()
     depletion_analysis.doping_profile_color()
+
+    depletion_analysis.close()
 
     if args.verbose:    
         with open(os.path.splitext(args.output)[0] + '_verbose.txt', 'w') as f:

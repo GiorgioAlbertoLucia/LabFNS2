@@ -45,6 +45,8 @@ detector:
       conc_ymax: 1.0e18
       depth_min: -1.0
       depth_max: 160.0
+      der_ymin: 1e12
+      der_ymax: 5e17
 
   PiN:
     color: 3
@@ -94,6 +96,8 @@ detector:
       conc_ymax: 1.0e15
       depth_min: -1.0
       depth_max: 30.0
+      der_ymin: 1e14
+      der_ymax: 5e17
 
   Strip:
     color: 4
@@ -143,3 +147,5 @@ detector:
       conc_ymax: 1.0e25
       depth_min: -1.0
       depth_max: 30.0
+      der_ymin: 1e11
+      der_ymax: 1e18

@@ -37,35 +37,7 @@ detector:
         - [0.15, 0.7 , ""]  # text 1
         - [0.15, 0.75 , ""] # text 2
 
-  PiN:
-    ic2vV:    # 1/C^2
-      legend: [0.55, 0.15, 0.75, 0.35]
-      latex:
-        - [0.15, 0.65, ""]  # sensor value
-        - [0.15, 0.7, ""]   # gain layer value
-        - [0.15, 0.75, ""]  # depletion voltage
-        - [0.15, 0.5 , ""]  # text 1
-        - [0.15, 0.55 , ""] # text 2
-
-    dop_conc:
-      legend: [0.55, 0.55, 0.75, 0.65]
-      latex:
-        - [0.55, 0.65, ""]  # sensor value
-        - [0.55, 0.7, ""]   # gain layer value
-        - [0.55, 0.75, ""]  # depletion voltage
-        - [0.55, 0.7 , ""]  # text 1
-        - [0.55, 0.75 , ""] # text 2
-
-    dop_prof:
-      legend: [0.55, 0.55, 0.75, 0.65]
-      latex:
-        - [0.15, 0.65, ""]  # sensor value
-        - [0.15, 0.7, ""]   # gain layer value
-        - [0.15, 0.75, ""]  # depletion voltage
-        - [0.55, 0.7 , ""]  # text 1
-        - [0.55, 0.75 , ""] # text 2
-
-    depl_depth:
+    derivative:
       legend: [0.15, 0.55, 0.35, 0.65]
       latex:
         - [0.15, 0.65, ""]  # sensor value
@@ -73,5 +45,51 @@ detector:
         - [0.15, 0.75, ""]  # depletion voltage
         - [0.15, 0.7 , ""]  # text 1
         - [0.15, 0.75 , ""] # text 2
+
+  PiN:
+    ic2vV:    # 1/C^2
+      legend: [0.45, 0.25, 0.65, 0.45]
+      latex:
+        - [0.45, 0.6, ""]  # sensor value
+        - [0.45, 0.7, ""]   # gain layer value
+        - [0.45, 0.75, ""]  # depletion voltage
+        - [0.45, 0.5 , ""]  # text 1
+        - [0.45, 0.55 , ""] # text 2
+
+    dop_conc:
+      legend: [0.55, 0.3, 0.75, 0.4]
+      latex:
+        - [0.55, 0.65, ""]  # sensor value
+        - [0.55, 0.7, ""]   # gain layer value
+        - [0.55, 0.75, ""]  # depletion voltage
+        - [0.55, 0.45 , ""]  # text 1
+        - [0.55, 0.5 , ""] # text 2
+
+    dop_prof:
+      legend: [0.65, 0.55, 0.9, 0.65]
+      latex:
+        - [0.65, 0.65, ""]  # sensor value
+        - [0.65, 0.7, ""]   # gain layer value
+        - [0.65, 0.75, ""]  # depletion voltage
+        - [0.65, 0.7 , ""]  # text 1
+        - [0.65, 0.75 , ""] # text 2
+
+    depl_depth:
+      legend: [0.55, 0.55, 0.85, 0.65]
+      latex:
+        - [0.55, 0.65, ""]  # sensor value
+        - [0.55, 0.7, ""]   # gain layer value
+        - [0.55, 0.75, ""]  # depletion voltage
+        - [0.55, 0.7 , ""]  # text 1
+        - [0.55, 0.75 , ""] # text 2
+
+    derivative:
+      legend: [0.55, 0.55, 0.75, 0.65]
+      latex:
+        - [0.55, 0.65, ""]  # sensor value
+        - [0.55, 0.7, ""]   # gain layer value
+        - [0.55, 0.75, ""]  # depletion voltage
+        - [0.55, 0.7 , ""]  # text 1
+        - [0.55, 0.75 , ""] # text 2
 
 
