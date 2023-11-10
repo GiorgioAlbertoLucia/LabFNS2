@@ -1,6 +1,7 @@
 detector:
 
   LGAD:
+    color: 2
     fits:
       - fit_range: [6, 17]
         draw_range: [0, 25]
@@ -40,12 +41,13 @@ detector:
       xmax: 55
       ymin: -0.01
       ymax: 0.24
-      conc_ymin: 1.0e17
-      conc_ymax: 1.0e23
+      conc_ymin: 1.0e11
+      conc_ymax: 1.0e18
       depth_min: -1.0
-      depth_max: 30.0
+      depth_max: 100.0
 
   PiN:
+    color: 3
     fits:
       #######################
       # FIRST FIT IS NOT USED
@@ -94,6 +96,7 @@ detector:
       depth_max: 30.0
 
   Strip:
+    color: 4
     fits:
       ######################
       # FIRST FIT IS NOT USED
