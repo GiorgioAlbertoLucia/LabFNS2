@@ -136,8 +136,8 @@ void analysis::Loop(const bool FillTTree = true)
             
             if (jentry==100)
             {
-                histoEvent100_ch2->Fill(t2->at(ii),w2->at(ii));
-                histoEvent100_ch3->Fill(t3->at(ii),w3->at(ii));
+                histoEvent100_ch2->Fill(t2->at(ii),w2->at(ii)*1000);
+                histoEvent100_ch3->Fill(t3->at(ii),w3->at(ii)*1000);
             }
 
             if(ii>20 && ii<220)
