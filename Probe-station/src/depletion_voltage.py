@@ -74,6 +74,7 @@ class DepletionAnalysis:
         self.df = df
         self.sensor = args.sensor
         self.config = yaml_load(args.config)['detector'][args.sensor]
+        self.plot_config = yaml_load(args.config_plot)['detector'][args.sensor]
 
         self.inversion = -1.
         if self.sensor == 'Strip' or self.sensor == 'strip':   self.inversion = 1.
@@ -92,6 +93,7 @@ class DepletionAnalysis:
         self.graph = None
 
         # standard texts for the plots
+        self.color = int(self.config['color'])
         gStyle.SetOptStat(0)
         gStyle.SetOptFit(0)
 
@@ -283,7 +285,7 @@ class DepletionAnalysis:
                              np.asarray(self.df['V_err'], dtype=float), np.asarray(self.df['NB_err']*1e-6, dtype=float) )
         graph.SetMarkerStyle(20)
         graph.SetMarkerSize(1)
-        graph.SetMarkerColor(kAzure+1)
+        graph.SetMarkerColor(self.color)
         graph.SetTitle('Doping concentration '+f'{args.sensor}'+'; Reverse bias (V); N_{B} (cm^{-3})')
 
         canvas = TCanvas('doping_conc', 'canvas', 800, 600)
@@ -325,7 +327,7 @@ class DepletionAnalysis:
                              np.asarray(self.df['W_err']*1e6, dtype=float), np.asarray(self.df['NB_err']*1e-6, dtype=float) )
         graph.SetMarkerStyle(20)
         graph.SetMarkerSize(1)
-        graph.SetMarkerColor(kAzure+1)
+        graph.SetMarkerColor(self.color)
         graph.SetTitle('Doping profile '+f'{args.sensor}'+'; Depth (#mum); N_{B} (cm^{-3})')
         graph.GetYaxis().SetRangeUser(-0.1, 0.24)
 
@@ -367,7 +369,7 @@ class DepletionAnalysis:
                              np.asarray(self.df['V_err'], dtype=float), np.asarray(self.df['W_err']*1e6, dtype=float) )
         graph.SetMarkerStyle(20)
         graph.SetMarkerSize(1)
-        graph.SetMarkerColor(kAzure+1)
+        graph.SetMarkerColor(self.color)
         graph.SetTitle('Depletion depth '+f'{args.sensor}'+'; Reverse bias (V); W (#mum)')
 
         canvas = TCanvas('depletion_depth', 'canvas', 800, 600)
@@ -501,6 +503,7 @@ if __name__ == "__main__":
     parser.add_argument('--input', type=str, help='Input file with the 1/C^2 vs V data', required=True)
     parser.add_argument('--output', type=str, help='Output file with the plot', required=True)
     parser.add_argument('--config', type=str, default='Probe-station/src/depletion_voltage_conf.yml', help='Configuration file with the sensor parameters')
+    parser.add_argument('--config_plot', type=str, default='Probe-station/src/plot_depletion_voltage_conf.yml', help='Configuration file with the sensor parameters')
     parser.add_argument('--sensor', type=str, help='Sensor name', required=True)
     parser.add_argument('--verbose', action='store_true', help='Verbose mode')
     args = parser.parse_args()
