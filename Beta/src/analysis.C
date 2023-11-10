@@ -160,22 +160,33 @@ void analysis::Loop(const bool FillTTree = true)
 
         ToA2 = t2->at(xx)*1000000000;
         ToA3 = t3->at(yy)*1000000000;
-
+        if(jentry==100 || jentry==200 || jentry==300) cout<<"tempo 2: "<<ToA2<<" tempo 3: "<<ToA3<<endl;
+        if(jentry==100 || jentry==200 || jentry==300) cout<<"tempo 2bis: "<<t2->at(xx)<<" tempo 3bis: "<<t3->at(yy)<<endl;
         if(Amp2 > 50. && Amp3 > 50.)
         {
-            TF1* fit2 = new TF1("fit2","gaus",t2->at(yy-5),t2->at(yy+5));//checkordini di grandezza e valori che sputa
-            TF1* fit3 = new TF1("fit3","gaus",t3->at(xx-5),t3->at(xx+5));
+            TF1* fit2 = new TF1("fit2","gaus",t2->at(xx-5),t2->at(xx+5));//checkordini di grandezza e valori che sputa
+            TF1* fit3 = new TF1("fit3","gaus",t3->at(yy-5),t3->at(yy+5));
             histoTime2->Fit(fit2,"rmQ+");
             histoTime3->Fit(fit3,"rmQ+");
             ToA2f=fit2->GetParameter(1)*1000000000;
             ToA3f=fit3->GetParameter(1)*1000000000;
+            if(jentry==100 ){
+            TCanvas * canvas1 = new TCanvas("canvas1","canvas1",1000,1000);
+            canvas1->cd();
+            histoTime2->Draw("hist");
+            fit2->Draw("same");
+            }
+            delete fit2;
+            delete fit3;
         }
+        
         else
         {
             ToA2f = ToA2;
             ToA3f = ToA3;
         }
-
+        if(jentry==100 || jentry==200 || jentry==300) cout<<"tempo 2: "<<ToA2<<" tempo 2 con fit: "<<ToA2f<<endl;
+        if(jentry==100 || jentry==200 || jentry==300) cout<<"tempo 3: "<<ToA3<<" tempo 3 con fit: "<<ToA3f<<endl;
 
         if(Amp2>amplitude_cut2 && Amp3>amplitude_cut3)
         {
