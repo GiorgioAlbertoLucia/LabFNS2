@@ -8,6 +8,7 @@
 #include <TLegend.h>
 #include <TStyle.h>
 #include <TTree.h>
+#include <TF1.h>
 #include <iostream>
 
 void SetStyle(bool graypalette)
@@ -63,8 +64,10 @@ void analysis::Loop()
    double Amp2{0.}, Amp3{0.};
    double ToA2{0.}, ToA3{0.};
    double RMS2{0.}, RMS3{0.};
+   double ToA2f{0.}, ToA3f{0.};
    double baseline2{0.}, baseline3{0.};  
-   bool FillTTree = false;                 
+   int yy{0}, xx{0};
+   bool FillTTree = true;                 
    
    double amplitude_cut2{50.}, amplitude_cut3{60.};
 
@@ -87,7 +90,9 @@ void analysis::Loop()
       tree->Branch("RMS2", &RMS2); 
       tree->Branch("RMS3", &RMS3); 
       tree->Branch("ToA2", &ToA2); 
-      tree->Branch("ToA3", &ToA3);       
+      tree->Branch("ToA3", &ToA3);
+      tree->Branch("ToA2f", &ToA2f); 
+      tree->Branch("ToA3f", &ToA3f);       
       tree->Branch("baseline2", &baseline2); 
       tree->Branch("baseline3", &baseline3); 
    }
@@ -103,15 +108,22 @@ void analysis::Loop()
       Amp3=0.;
       ToA2=0.;
       ToA3=0.;
+      ToA2f=0.;
+      ToA3f=0.;
       RMS2=0.;
       RMS3=0.;
       baseline2=0.;
       baseline3=0.;
+      xx=0;
+      yy=0;
       
       // Il vostro codice va qui
       const int numPoints = w2->size();
       TH1D* histoNoise2 = new TH1D("histoNoise2","histoNoise2",200,-1.,1.);
       TH1D* histoNoise3 = new TH1D("histoNoise3","histoNoise3",200,-1.,1.);
+      TH1D* histoTime2 = new TH1D("histoTime2","histoTime2",1000,-10,10);
+      TH1D* histoTime3 = new TH1D("histoTime3","histoTime3",1000,-10,10);
+      
       if (jentry==100)
       {
          histoEvent100_ch2 = new TH1D("histoEvent100_ch2","histoEvent100_ch2",t2->size(),t2->front(),t2->back());
@@ -119,6 +131,8 @@ void analysis::Loop()
       }
       for(int ii=0;ii<numPoints;ii++)
       {
+         histoTime2->Fill(t2->at(ii),w2->at(ii));
+         histoTime3->Fill(t3->at(ii),w3->at(ii));
          if (jentry==100)
          {
             histoEvent100_ch2->Fill(t2->at(ii),w2->at(ii));
@@ -133,13 +147,41 @@ void analysis::Loop()
          if(w2->at(ii)*1000>Amp2)
          {
             Amp2=w2->at(ii)*1000;
-            ToA2=t2->at(ii)*1000000000;
+            //ToA2=t2->at(ii)*1000000000;
+            yy=ii;
          }
          if(w3->at(ii)*1000>Amp3)
          {
             Amp3=w3->at(ii)*1000;
-            ToA3=t3->at(ii)*1000000000;
+            xx=ii;
+            //ToA3=t3->at(ii)*1000000000;
          }
+         
+      }
+      cout<<"tempo 2: "<<t2->at(yy)<<" tempo 3: "<<t3->at(xx)<<endl;
+      ToA2=t2->at(yy)*1000000000;
+      ToA3=t3->at(xx)*1000000000;
+      cout<<"tempo 2: "<<ToA2<<" tempo 3: "<<ToA3<<endl;
+      
+      if(Amp3>50. && Amp2>50.)
+      {
+         TF1* fit2 = new TF1("fit2","gaus",t2->at(yy-5),t2->at(yy+5));//checkordini di grandezza e valori che sputa
+         TF1* fit3 = new TF1("fit3","gaus",t3->at(xx-5),t3->at(xx+5));
+         histoTime2->Fit(fit2,"rmQ+");
+         histoTime3->Fit(fit3,"rmQ+");
+         ToA2f=fit2->GetParameter(1)*1000000000;
+         ToA3f=fit3->GetParameter(1)*1000000000;
+      }
+      else {
+         ToA2f=ToA2;
+         ToA3f=ToA3;
+      
+      }
+      
+      if(jentry==100 || jentry==200 || jentry==300)
+      {
+         cout<<"tempo 2 con fit: "<<ToA2f<<" senza fit:"<<ToA2<<endl;
+         cout<<"tempo 3 con fit: "<<ToA3f<<" senza fit:"<<ToA3<<endl;
       }
       
       if(Amp2>amplitude_cut2 && Amp3>amplitude_cut3)
@@ -159,10 +201,15 @@ void analysis::Loop()
       histoToA3->Fill(ToA3);
       histoRMS2->Fill(RMS2);
       histoRMS3->Fill(RMS3);
+
+       if (FillTTree)
+         tree->Fill();
+
       delete histoNoise2;
       delete histoNoise3;
-      if (FillTTree)
-         tree->Fill();
+      delete histoTime2;
+      delete histoTime3;
+     
       nbytes += nb;
    }
 
