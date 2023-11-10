@@ -79,7 +79,6 @@ class DepletionAnalysis:
         self.inversion = -1.
         if self.sensor == 'Strip' or self.sensor == 'strip':   self.inversion = 1.
 
-
         self.outFile = TFile(args.output, 'recreate')
 
         output_path = os.path.splitext(args.output)[0] + '.pdf'
@@ -112,8 +111,9 @@ class DepletionAnalysis:
         eSi = 11.7 * 8.854e-12                                      # F/m - dielectric constant of silicon
         A = 1e-6                                                    # m^2 - detector area
         q = 1.602e-19                                               # C - electron charge
+        Vbi = -0.6                                                   # V - built-in voltage  
 
-        self.df['V_abs'] = np.abs(self.df['V'])
+        self.df['V_abs'] = np.abs(self.df['V'] + self.inversion*Vbi)               # V - absolute value of the bias voltage
         self.df['1_C2'] = 1.0 / (self.df['C'] * self.df['C'])
         self.df['1_C2_err'] = 2.0 * self.df['C_err'] / (self.df['C'] * self.df['C'] * self.df['C'])
 
@@ -127,14 +127,7 @@ class DepletionAnalysis:
         self.df['derivative2_V'] = np.gradient(self.df['derivative'], self.inversion*self.df['V'])
         self.df['derivative_err'] = np.sqrt((self.df['derivative2_C']*self.df['1_C2_err_F'])**2 + (self.df['derivative2_V']*self.df['V_err'])**2)
 
-        # doping concentration
-        self.df['NB'] = 2 / (eSi * A*A * q * self.df['derivative']) # m^-3
-        self.df['NB_err'] = 2 / (eSi * A*A * q * self.df['derivative']**2) * self.df['derivative_err'] # m^-3
-
-        # depletion width
-        self.df['W'] = np.sqrt(2 * self.df['V_abs'] * eSi / (q * self.df['NB'])) # m
-
-        self.df['W_err'] = np.sqrt((self.df['V_err']*self.df['W']/(2*self.df['V']))**2 + (self.df['NB_err']*self.df['W']/(2*self.df['NB']))**2)
+        self.evaluate_W_NB()
 
     #####################
     # DATA ANALYSIS
@@ -193,8 +186,9 @@ class DepletionAnalysis:
             -------
             None
         '''
+
+        plt_cfg = self.plot_config['ic2vV']
         
-        # Plot the data
         graph = TGraphErrors(len(self.df['V']), 
                              np.asarray(self.inversion*self.df['V'], dtype=float), np.asarray(self.df['1_C2'], dtype=float), 
                              np.asarray(self.df['V_err'], dtype=float), np.asarray(self.df['1_C2_err'], dtype=float))
@@ -246,7 +240,7 @@ class DepletionAnalysis:
         fit2.Draw('same')
         fit3.Draw('same')
 
-        legend = TLegend(0.55, 0.15, 0.75, 0.35)
+        legend = TLegend(plt_cfg['legend'][0], plt_cfg['legend'][1], plt_cfg['legend'][2], plt_cfg['legend'][3])
         legend.SetBorderSize(0)
         legend.SetTextFont(42)
         legend.SetTextSize(0.04)
@@ -261,12 +255,12 @@ class DepletionAnalysis:
         latex.SetTextSize(0.04)
         latex.SetNDC()
         if self.sensor == 'LGAD':
-            latex.DrawLatex(0.15, 0.65, f'Sensor: ({intersection2:.2f}'+'#pm'+f'{intersection2_err:.2f}) V')
-            latex.DrawLatex(0.15, 0.7, f'Gain layer: ({intersection1:.2f}'+'#pm'+f'{intersection1_err:.2f}) V')
-            latex.DrawLatex(0.15, 0.75, 'Depletion voltage:')
-        else:   latex.DrawLatex(0.5, 0.45, f'Sensor depletion: ({intersection2:.2f}'+'#pm'+f'{intersection2_err:.2f}) V')
-        latex.DrawLatex(0.5, 0.5, self.text1)
-        latex.DrawLatex(0.5, 0.55, self.text2)
+            latex.DrawLatex(plt_cfg['latex'][0][0], plt_cfg['latex'][0][1], f'Sensor: ({intersection2:.2f}'+'#pm'+f'{intersection2_err:.2f}) V')
+            latex.DrawLatex(plt_cfg['latex'][1][0], plt_cfg['latex'][1][1], f'Gain layer: ({intersection1:.2f}'+'#pm'+f'{intersection1_err:.2f}) V')
+            latex.DrawLatex(plt_cfg['latex'][2][0], plt_cfg['latex'][2][1], 'Depletion voltage:')
+        else:   latex.DrawLatex(plt_cfg['latex'][0][0], plt_cfg['latex'][0][1], f'Sensor depletion: ({intersection2:.2f}'+'#pm'+f'{intersection2_err:.2f}) V')
+        latex.DrawLatex(plt_cfg['latex'][3][0], plt_cfg['latex'][3][1], self.text1)
+        latex.DrawLatex(plt_cfg['latex'][4][0], plt_cfg['latex'][4][1], self.text2)
 
         self.outFile.cd()
         canvas.Write()
@@ -279,6 +273,8 @@ class DepletionAnalysis:
         '''
             Plot the doping concentration vs bias voltage
         '''
+
+        plt_cfg = self.plot_config['dop_conc']
 
         graph = TGraphErrors(len(self.df['V']), 
                              np.asarray(self.inversion*self.df['V'], dtype=float), np.asarray(self.df['NB']*1e-6, dtype=float), 
@@ -297,7 +293,7 @@ class DepletionAnalysis:
         graph.Draw('P')
 
 
-        legend = TLegend(0.55, 0.15, 0.75, 0.35)
+        legend = TLegend(plt_cfg['legend'][0], plt_cfg['legend'][1], plt_cfg['legend'][2], plt_cfg['legend'][3])
         legend.SetBorderSize(0)
         legend.SetTextFont(42)
         legend.SetTextSize(0.04)
@@ -308,8 +304,8 @@ class DepletionAnalysis:
         latex.SetTextFont(42)
         latex.SetTextSize(0.04)
         latex.SetNDC()
-        latex.DrawLatex(0.55, 0.4, self.text1)
-        latex.DrawLatex(0.55, 0.45, self.text2)
+        latex.DrawLatex(plt_cfg['latex'][0][0], plt_cfg['latex'][0][1], self.text1)
+        latex.DrawLatex(plt_cfg['latex'][1][0], plt_cfg['latex'][1][1], self.text2)
 
         self.outFile.cd()
         canvas.Write()
@@ -321,6 +317,8 @@ class DepletionAnalysis:
             Plot the doping profile vs depth of the depleted region
 
         '''
+
+        plt_cfg = self.plot_config['dop_prof']
 
         graph = TGraphErrors(len(self.df['W']), 
                              np.asarray(self.df['W']*1e6, dtype=float), np.asarray(self.df['NB']*1e-6, dtype=float), 
@@ -340,7 +338,7 @@ class DepletionAnalysis:
 
         graph.Draw('P')
 
-        legend = TLegend(0.5, 0.55, 0.7, 0.75)
+        legend = TLegend(plt_cfg['legend'][0], plt_cfg['legend'][1], plt_cfg['legend'][2], plt_cfg['legend'][3])
         legend.SetBorderSize(0)
         legend.SetTextFont(42)
         legend.SetTextSize(0.04)
@@ -351,8 +349,8 @@ class DepletionAnalysis:
         latex.SetTextFont(42)
         latex.SetTextSize(0.04)
         latex.SetNDC()
-        latex.DrawLatex(0.5, 0.8, self.text1)
-        latex.DrawLatex(0.5, 0.85, self.text2)
+        latex.DrawLatex(plt_cfg['latex'][3][0], plt_cfg['latex'][3][1], self.text1)
+        latex.DrawLatex(plt_cfg['latex'][4][0], plt_cfg['latex'][4][1], self.text2)
 
         self.outFile.cd()
         canvas.Write()
@@ -363,6 +361,8 @@ class DepletionAnalysis:
         '''
             Plot the depletion depth vs bias voltage
         '''
+
+        plt_cfg = self.plot_config['depl_depth']
 
         graph = TGraphErrors(len(self.df['V']), 
                              np.asarray(self.inversion*self.df['V'], dtype=float), np.asarray(self.df['W']*1e6, dtype=float), 
@@ -380,7 +380,7 @@ class DepletionAnalysis:
         graph.Draw('P')
 
 
-        legend = TLegend(0.55, 0.55, 0.75, 0.65)
+        legend = TLegend(plt_cfg['legend'][0], plt_cfg['legend'][1], plt_cfg['legend'][2], plt_cfg['legend'][3])
         legend.SetBorderSize(0)
         legend.SetTextFont(42)
         legend.SetTextSize(0.04)
@@ -391,8 +391,8 @@ class DepletionAnalysis:
         latex.SetTextFont(42)
         latex.SetTextSize(0.04)
         latex.SetNDC()
-        latex.DrawLatex(0.55, 0.7, self.text1)
-        latex.DrawLatex(0.55, 0.75, self.text2)
+        latex.DrawLatex(plt_cfg['latex'][3][0], plt_cfg['latex'][3][1], self.text1)
+        latex.DrawLatex(plt_cfg['latex'][4][0], plt_cfg['latex'][4][1], self.text2)
 
         self.outFile.cd()
         canvas.Write()
@@ -405,25 +405,19 @@ class DepletionAnalysis:
 
         '''
 
-        # Define the data
-        w = np.array([1, 2, 3, 4, 5])
-        NB = np.array([10, 20, 30, 40, 50])
-        V = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
-        w_err = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
-        NB_err = np.array([1, 2, 3, 4, 5])
-        V_err = np.array([0.01, 0.02, 0.03, 0.04, 0.05])
-
         # Define the color map
         cmap = plt.cm.get_cmap('cool')
-        plt.scatter(self.df['W'], self.df['NB'], c=self.df['V'], cmap=cmap)
-        plt.errorbar(self.df['W'], self.df['NB'], xerr=self.df['W_err'], yerr=self.df['NB_err'], fmt='none', ecolor='black')
+        plt.scatter(self.df['W']*1e6, self.df['NB']*1e-6, c=self.df['V'], cmap=cmap)
+        #plt.errorbar(self.df['W'], self.df['NB'], xerr=self.df['W_err'], yerr=self.df['NB_err'], fmt='none', ecolor='black')
 
         cbar = plt.colorbar()
         cbar.set_label('Reverse bias (V)')
 
         # Add labels and title
-        plt.xlabel('Depth (#mum)')
-        plt.ylabel('N_{B} (cm^{-3})')
+        plt.xlabel('Depth ($\mu$m)')
+        
+        plt.ylabel('$N_{B}$ ($cm^{-3}$)')
+        plt.yscale('log')
         plt.title('Doping profile - '+f'{args.sensor}')
 
         plt.savefig(self.dprocol_outputPath)
@@ -492,6 +486,32 @@ class DepletionAnalysis:
         intersection = diff_func.GetX(0)
 
         return intersection
+
+    def evaluate_W_NB(self):
+        '''
+            Evaluate the depletion width and the doping concentration at the depletion voltage
+
+            Parameters
+            ----------
+            None
+
+            Returns
+            -------
+        '''
+
+        eSi = 11.7 * 8.854e-12                                      # F/m - dielectric constant of silicon
+        A = 1e-6                                                    # m^2 - detector area
+        q = 1.602e-19                                               # C - electron charge
+        Vbi = -0.6                                                   # V - built-in voltage  
+
+        # doping concentration
+        self.df['NB'] = 2 / (eSi * A*A * q * self.df['derivative']) # m^-3
+        self.df['NB_err'] = 2 / (eSi * A*A * q * self.df['derivative']**2) * self.df['derivative_err'] # m^-3
+
+        # depletion width
+        self.df['W'] = np.sqrt(2 * self.df['V_abs'] * eSi / (q * self.df['NB'])) # m
+        self.df['W_err'] = np.sqrt((self.df['V_err']*self.df['W']/(2*self.df['V_abs']))**2 + (self.df['NB_err']*self.df['W']/(2*self.df['NB']))**2)
+        
 
 
 
