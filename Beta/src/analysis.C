@@ -122,8 +122,7 @@ void analysis::Loop(const bool FillTTree = true)
         const int numPoints = w2->size();
         TH1D* histoNoise2 = new TH1D("histoNoise2","histoNoise2",200,-1.,1.);   // histograms to measure rms
         TH1D* histoNoise3 = new TH1D("histoNoise3","histoNoise3",200,-1.,1.);
-        TH1D* histoTime2 = new TH1D("histoTime2","histoTime2",t2->size(),1000000000*t2->front(),1000000000*t2->back());     // histograms to measure ToA
-        TH1D* histoTime3 = new TH1D("histoTime3","histoTime3",t3->size(),1000000000*t3->front(),1000000000*t3->back());
+        
 
         if (jentry==100)
         {
@@ -157,7 +156,12 @@ void analysis::Loop(const bool FillTTree = true)
                 yy=ii;
             }
         }
-
+        baseline2=histoNoise2->GetMean();
+        baseline3=histoNoise3->GetMean();
+        RMS2=histoNoise2->GetRMS();
+        RMS3=histoNoise3->GetRMS();
+        TH1D* histoTime2 = new TH1D("histoTime2","histoTime2",t2->size(),1000000000*t2->front(),1000000000*t2->back());     // histograms to measure ToA
+        TH1D* histoTime3 = new TH1D("histoTime3","histoTime3",t3->size(),1000000000*t3->front(),1000000000*t3->back());
         ToA2 = t2->at(xx)*1000000000;
         ToA3 = t3->at(yy)*1000000000;
         if(jentry==100 || jentry==200 || jentry==300) cout<<"tempo 2: "<<ToA2<<" tempo 3: "<<ToA3<<endl;
@@ -216,10 +220,7 @@ void analysis::Loop(const bool FillTTree = true)
             //Add code here
         }
 
-        baseline2=histoNoise2->GetMean();
-        baseline3=histoNoise3->GetMean();
-        RMS2=histoNoise2->GetRMS();
-        RMS3=histoNoise3->GetRMS();
+        
         histoAmpli2->Fill(Amp2);
         histoAmpli3->Fill(Amp3);
         histoToA2->Fill(ToA2);
