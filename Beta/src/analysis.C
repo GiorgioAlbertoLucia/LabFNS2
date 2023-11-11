@@ -76,10 +76,10 @@ void analysis::Loop(const bool FillTTree = true)
     TH1D * histoAmpli3 = new TH1D("histoAmpli3","histoAmpli3",200,0.,400);
     TH1D * histoAmpli2_sel = new TH1D("histoAmpli2_sel","histoAmpli2_Sel",200,0.,400); //mV
     TH1D * histoAmpli3_sel = new TH1D("histoAmpli3_sel","histoAmpli3_Sel",200,0.,400);
-    TH1D * histoToA2 = new TH1D("histoToA2","histoToA2",170,0.,1.5); //ns
-    TH1D * histoToA3 = new TH1D("histoToA3","histoToA3",170,0.,1.5);
-    TH1D * histoRMS2 = new TH1D("histoRMS2","histoRMS2",200,0.,1); //mV
-    TH1D * histoRMS3 = new TH1D("histoRMS3","histoRMS3",200,0.,1);
+    TH1D * histoToA2 = new TH1D("histoToA2","histoToA2",150,0.,1.2); //ns
+    TH1D * histoToA3 = new TH1D("histoToA3","histoToA3",150,0.,1.2);
+    TH1D * histoRMS2 = new TH1D("histoRMS2","histoRMS2",150,0.3,0.8); //mV
+    TH1D * histoRMS3 = new TH1D("histoRMS3","histoRMS3",150,0.3,0.8);
 
     TFile outFile("Beta/data/output/BetaOutput.root", "recreate");
     TTree * tree;
@@ -122,8 +122,8 @@ void analysis::Loop(const bool FillTTree = true)
         const int numPoints = w2->size();
         TH1D* histoNoise2 = new TH1D("histoNoise2","histoNoise2",200,-1.,1.);   // histograms to measure rms
         TH1D* histoNoise3 = new TH1D("histoNoise3","histoNoise3",200,-1.,1.);
-        TH1D* histoTime2 = new TH1D("histoTime2","histoTime2",500,-2,2);     // histograms to measure ToA
-        TH1D* histoTime3 = new TH1D("histoTime3","histoTime3",500,-2,2);
+        TH1D* histoTime2 = new TH1D("histoTime2","histoTime2",500,-1.5,2.5);     // histograms to measure ToA
+        TH1D* histoTime3 = new TH1D("histoTime3","histoTime3",500,-1.5,2.5);
 
         if (jentry==100)
         {
@@ -132,8 +132,8 @@ void analysis::Loop(const bool FillTTree = true)
         }
         for(int ii=0;ii<numPoints;ii++)
         {
-            histoTime2->Fill(1000000000*(t2->at(ii)),w2->at(ii));
-            histoTime3->Fill(1000000000*(t3->at(ii)),w3->at(ii));
+            histoTime2->Fill(1000000000*(t2->at(ii)),1000*(w2->at(ii)));
+            histoTime3->Fill(1000000000*(t3->at(ii)),1000*(w3->at(ii)));
             
             if (jentry==100)
             {
@@ -171,14 +171,30 @@ void analysis::Loop(const bool FillTTree = true)
             ToA2f=fit2->GetParameter(1);
             ToA3f=fit3->GetParameter(1);
             if(jentry==100 ){
-            TCanvas * canvas1 = new TCanvas("canvas1","canvas1",800,800);
+            TCanvas * canvas1 = new TCanvas("canvas1","canvas1",1000,700);
             canvas1->Divide(2,1);
             canvas1->cd(1);
+            histoTime2->SetLineColor(kBlue -10);
+            histoTime2->SetTitle("Sensor A - Channel 2");
+            histoTime2->GetXaxis()->SetTitle("Time (ns)");
+            histoTime2->GetYaxis()->SetTitle("Amplitude (mV)");
             histoTime2->Draw("hist");
             fit2->Draw("same");
+            fit2->SetLineColor(kRed);
+            fit2->SetLineWidth(2);
+            gStyle->SetOptFit(11111111);
             canvas1->cd(2);
+            histoTime3->SetLineColor(kRed -10);
+            histoTime3->SetTitle("Sensor B - Channel 3");
+            histoTime3->GetXaxis()->SetTitle("Time (ns)");
+            histoTime3->GetYaxis()->SetTitle("Amplitude (mV)");
             histoTime3->Draw("hist");
             fit3->Draw("same");
+            fit3->SetLineColor(kRed);
+            fit3->SetLineWidth(2);
+            gStyle->SetOptFit(11111111);
+            cout<<"chi2/dof fit2: "<<fit2->GetChisquare()<<"/"<<fit2->GetNDF()<<endl;
+            cout<<"chi2/dof fit3: "<<fit3->GetChisquare()<<"/"<<fit3->GetNDF()<<endl;
             canvas1->SaveAs("Beta/data/output/checkfit.pdf");
             }
             delete fit2;
