@@ -61,6 +61,7 @@ void analysis::Loop(const bool FillTTree = true)
 {
     SetStyle(true);
     if (fChain == 0) return;
+    Long64_t nentries = fChain->GetEntriesFast();
     TH1D * histoEvent100_ch2; //mV
     TH1D * histoEvent100_ch3; //mV
     double Amp2{0.}, Amp3{0.};
@@ -80,6 +81,8 @@ void analysis::Loop(const bool FillTTree = true)
     TH1D * histoToA3 = new TH1D("histoToA3","histoToA3",150,0.,1.2);
     TH1D * histoRMS2 = new TH1D("histoRMS2","histoRMS2",150,0.3,0.8); //mV
     TH1D * histoRMS3 = new TH1D("histoRMS3","histoRMS3",150,0.3,0.8);
+    TH1D * histoChiSquare2 = new TH1D("histoChiSquare2","histoChiSquare2",nentries,0.,nentries);
+    TH1D * histoChiSquare3 = new TH1D("histoChiSquare3","histoChiSquare3",nentries,0.,nentries);
 
     TFile outFile("Beta/data/output/BetaOutput.root", "recreate");
     TTree * tree;
@@ -98,7 +101,6 @@ void analysis::Loop(const bool FillTTree = true)
         tree->Branch("baseline3", &baseline3); 
     }
    
-    Long64_t nentries = fChain->GetEntriesFast();
 
     Long64_t nbytes = 0, nb = 0;
     for (Long64_t jentry=0; jentry<nentries;jentry++) {
@@ -172,6 +174,11 @@ void analysis::Loop(const bool FillTTree = true)
             TF1* fit3 = new TF1("fit3","gaus",1000000000*(t3->at(yy-10)),1000000000*(t3->at(yy+10)));
             histoTime2->Fit(fit2,"rmQ+");
             histoTime3->Fit(fit3,"rmQ+");
+            //check NaN values
+            if (fit2->GetChisquare()/fit2->GetNDF() == fit2->GetChisquare()/fit2->GetNDF())
+                histoChiSquare2->Fill(jentry, fit2->GetChisquare()/fit2->GetNDF());
+            if (fit3->GetChisquare()/fit3->GetNDF() == fit3->GetChisquare()/fit3->GetNDF())
+                histoChiSquare3->Fill(jentry, fit3->GetChisquare()/fit3->GetNDF());
             ToA2f=fit2->GetParameter(1);
             ToA3f=fit3->GetParameter(1);
             if(jentry==100 ){
@@ -236,6 +243,9 @@ void analysis::Loop(const bool FillTTree = true)
         if (FillTTree)  tree->Fill();
         nbytes += nb;
    }
+
+    histoChiSquare2->Write();
+    histoChiSquare3->Write();
 
    if (FillTTree)
    {
