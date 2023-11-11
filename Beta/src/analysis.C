@@ -122,8 +122,8 @@ void analysis::Loop(const bool FillTTree = true)
         const int numPoints = w2->size();
         TH1D* histoNoise2 = new TH1D("histoNoise2","histoNoise2",200,-1.,1.);   // histograms to measure rms
         TH1D* histoNoise3 = new TH1D("histoNoise3","histoNoise3",200,-1.,1.);
-        TH1D* histoTime2 = new TH1D("histoTime2","histoTime2",500,-1.5,2.5);     // histograms to measure ToA
-        TH1D* histoTime3 = new TH1D("histoTime3","histoTime3",500,-1.5,2.5);
+        TH1D* histoTime2 = new TH1D("histoTime2","histoTime2",t2->size(),1000000000*t2->front(),1000000000*t2->back());     // histograms to measure ToA
+        TH1D* histoTime3 = new TH1D("histoTime3","histoTime3",t3->size(),1000000000*t3->front(),1000000000*t3->back());
 
         if (jentry==100)
         {
