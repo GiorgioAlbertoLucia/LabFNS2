@@ -122,8 +122,8 @@ void analysis::Loop(const bool FillTTree = true)
         const int numPoints = w2->size();
         TH1D* histoNoise2 = new TH1D("histoNoise2","histoNoise2",200,-1.,1.);   // histograms to measure rms
         TH1D* histoNoise3 = new TH1D("histoNoise3","histoNoise3",200,-1.,1.);
-        TH1D* histoTime2 = new TH1D("histoTime2","histoTime2",1000,-10,10);     // histograms to measure ToA
-        TH1D* histoTime3 = new TH1D("histoTime3","histoTime3",1000,-10,10);
+        TH1D* histoTime2 = new TH1D("histoTime2","histoTime2",500,-2,2);     // histograms to measure ToA
+        TH1D* histoTime3 = new TH1D("histoTime3","histoTime3",500,-2,2);
 
         if (jentry==100)
         {
@@ -132,8 +132,8 @@ void analysis::Loop(const bool FillTTree = true)
         }
         for(int ii=0;ii<numPoints;ii++)
         {
-            histoTime2->Fill(t2->at(ii),w2->at(ii));
-            histoTime3->Fill(t3->at(ii),w3->at(ii));
+            histoTime2->Fill(1000000000*(t2->at(ii)),w2->at(ii));
+            histoTime3->Fill(1000000000*(t3->at(ii)),w3->at(ii));
             
             if (jentry==100)
             {
@@ -164,17 +164,22 @@ void analysis::Loop(const bool FillTTree = true)
         if(jentry==100 || jentry==200 || jentry==300) cout<<"tempo 2bis: "<<t2->at(xx)<<" tempo 3bis: "<<t3->at(yy)<<endl;
         if(Amp2 > 50. && Amp3 > 50.)
         {
-            TF1* fit2 = new TF1("fit2","gaus",t2->at(xx-5),t2->at(xx+5));//checkordini di grandezza e valori che sputa
-            TF1* fit3 = new TF1("fit3","gaus",t3->at(yy-5),t3->at(yy+5));
+            TF1* fit2 = new TF1("fit2","gaus",1000000000*(t2->at(xx-10)),1000000000*(t2->at(xx+10)));//checkordini di grandezza e valori che sputa
+            TF1* fit3 = new TF1("fit3","gaus",1000000000*(t3->at(yy-10)),1000000000*(t3->at(yy+10)));
             histoTime2->Fit(fit2,"rmQ+");
             histoTime3->Fit(fit3,"rmQ+");
-            ToA2f=fit2->GetParameter(1)*1000000000;
-            ToA3f=fit3->GetParameter(1)*1000000000;
+            ToA2f=fit2->GetParameter(1);
+            ToA3f=fit3->GetParameter(1);
             if(jentry==100 ){
-            TCanvas * canvas1 = new TCanvas("canvas1","canvas1",1000,1000);
-            canvas1->cd();
+            TCanvas * canvas1 = new TCanvas("canvas1","canvas1",800,800);
+            canvas1->Divide(2,1);
+            canvas1->cd(1);
             histoTime2->Draw("hist");
             fit2->Draw("same");
+            canvas1->cd(2);
+            histoTime3->Draw("hist");
+            fit3->Draw("same");
+            canvas1->SaveAs("Beta/data/output/checkfit.pdf");
             }
             delete fit2;
             delete fit3;
