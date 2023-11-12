@@ -85,6 +85,7 @@ void RunRiseTime()
     const char * wfmTreeName = "wfm";
     const char * preprocessedPath = "Beta/data/output/BetaOutput.root";
     const char * preprocessedTreeName = "BetaTree";
+    const char * outputPath = "Beta/data/output/RiseTime.root";
 
     RiseTimeAnalysis RTanalysis(wfmPath, wfmTreeName, preprocessedPath, preprocessedTreeName);
 

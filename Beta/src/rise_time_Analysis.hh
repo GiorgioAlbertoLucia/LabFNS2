@@ -12,7 +12,7 @@
 class RiseTimeAnalysis
 {
     public:
-        RiseTimeAnalysis(const char * wfmPath, const char * wfmTreeName, const char * preprocessedPath, const char * preprocessedTreeName);
+        RiseTimeAnalysis(const char * wfmPath, const char * wfmTreeName, const char * preprocessedPath, const char * preprocessedTreeName, const char * outputPath);
         ~RiseTimeAnalysis();
 
         void buildRiseTime(const char* w_branchname, const char* t_branchname, const char* b_branchname, 
@@ -27,6 +27,7 @@ class RiseTimeAnalysis
         std::string fPreprocessedPath;      // Path to the preprocessed file
         std::string fPreprocessedTreeName;  // Name of the tree in the preprocessed file
         std::string fRiseTimeBranchName;    // Name of the rise time branch in the preprocessed file
+        std::string fOutputPath;            // Path to the output file
 
         std::vector<double> fRiseTime;      // Vector to store the rise time
 
