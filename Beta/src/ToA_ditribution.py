@@ -9,38 +9,75 @@ from ROOT import TGraphErrors, TFile, TCanvas, TLegend, kRed, kAzure,  kOrange, 
 from DfUtils import GetGraphErrorsFromCSV
 from StyleFormatter import SetObjectStyle, SetGlobalStyle
 import sys
+import itertools
 
-if __name__=='__main__':
-    tree=uproot.open("Beta/data/output/BetaOutput.root")["BetaTree"]
-    outfilename = 'Beta/data/output/Time_resolution.root'
-    df=tree.arrays(library='pd')
+def ComputeSystOnThresholds(df, th2, th3):
+    cuts = itertools.product(th2, th3)
+    resolutions = []
+    resolutionsfit = []
+
+    hResvsCut = TH1D("hResvsCut", "hResvsCut", len(th2)*len(th3), 0, len(th2)*len(th3))
+    hResFitvsCut = TH1D("hResFitvsCut", "hResFitvsCut", len(th2)*len(th3), 0, len(th2)*len(th3))
+    hResvsTh = TH2D("hRes", "hRes", len(th2), min(th2), max(th2), len(th3), min(th3), max(th3))
+    hResFitvsTh = TH2D("hResFit", "hResFit", len(th2), min(th2), max(th2), len(th3), min(th3), max(th3))
+    hResDistr = TH1D("hResDistr", "hResDistr", 100, 0, 100)
+    hResFitDistr = TH1D("hResFitDistr", "hResFitDistr", 100, 0, 100)
+    for idx, cut in enumerate(cuts):
+        th2 = cut[0]
+        th3 = cut[1]
+        _, _, _, _, timeres, timeresfit = ComputeResolution(df, th2, th3)
+        resolutions.append(timeres)
+        resolutionsfit.append(timeresfit)
+        hResvsTh.SetBinContent(hResvsTh.FindBin(th2, th3), timeres)
+        hResFitvsTh.SetBinContent(hResFitvsTh.FindBin(th2, th3), timeresfit)
+        hResvsCut.SetBinContent(idx, timeres)
+        hResFitvsCut.SetBinContent(idx, timeresfit)
+        hResDistr.Fill(timeres)
+        hResFitDistr.Fill(timeresfit)
+
+    return resolutions, resolutionsfit, hResvsCut, hResFitvsCut, hResvsTh, hResFitvsTh, hResDistr, hResFitDistr
+
+def ComputeResolution(df, th2, th3):
+
     hTime=TH1D("hTime","hTime",19,-350,550.)
     hTimeFit=TH1D("hTimeFit","hTimeFit",46,-350,550.)
-    theshold2=80
-    theshold3=80
     for a2,a3,t2,t3,t2fit,t3fit in zip(df["Amp2"],df["Amp3"],df["ToA2"],df["ToA3"], df["ToA2f"], df["ToA3f"]): 
-        if (a2 >= theshold2 and a3>= theshold3):
+        if (a2 >= th2 and a3>= th3):
             hTime.Fill(1000*(t2-t3))
             hTimeFit.Fill(1000*(t2fit-t3fit))
-    gaus=TF1("gaus","[0]*exp(-((x-[1])^2)/(2*[2]^2))",-100,300)
+    gaus = TF1("gaus","[0]*exp(-((x-[1])^2)/(2*[2]^2))",-100,300)
     gaus.SetLineColor(kRed)
     gaus.SetParameter(2,50)
     gaus.SetParameter(1,80)
     gaus.SetParameter(0,3500)
     gStyle.SetOptFit(11111111)
-    
-    hTime.Fit(gaus,"rml+")
+    hTime.Fit(gaus,"qrml+")
     timeres=gaus.GetParameter(2)
-    print("par2=",gaus.GetParameter(2))
-    gaus2=TF1("gaus2","[0]*exp(-((x-[1])^2)/(2*[2]^2))",0,240)
-    gaus2.SetLineColor(kAzure)
-    gaus2.SetParameter(2,50)
-    gaus2.SetParameter(1,80)
-    gaus2.SetParameter(0,1800)
+
+    
+    gausFit=TF1("gausFit","[0]*exp(-((x-[1])^2)/(2*[2]^2))",0,240)
+    gausFit.SetLineColor(kAzure)
+    gausFit.SetParameter(2,50)
+    gausFit.SetParameter(1,80)
+    gausFit.SetParameter(0,1800)
     gStyle.SetOptFit(11111111)
-    hTimeFit.Fit(gaus2,"rml+")
-    timeresfit=gaus2.GetParameter(2)
+    hTimeFit.Fit(gausFit,"qrml+")
+    timeresfit=gausFit.GetParameter(2)
+
+    return hTime, hTimeFit, gaus, gausFit, timeres, timeresfit
    
+
+if __name__=='__main__':
+    gROOT.SetBatch(True)
+    tree=uproot.open("Beta/data/output/BetaOutput.root")["BetaTree"]
+    outfilename = 'Beta/data/output/Time_resolution.root'
+    df=tree.arrays(library='pd')
+    theshold2=80
+    theshold3=80
+    theshold2Syst = np.arange(0, 150, 10)
+    theshold3Syst = np.arange(30, 150,10)
+    hTime, hTimeFit, gaus, gaus2, timeres, timeresfit = ComputeResolution(df, theshold2, theshold3)
+    _, _, hResvsCut, hResFitvsCut, hResvsTh, hResFitvsTh, hResDistr, hResFitDistr = ComputeSystOnThresholds(df, theshold2Syst, theshold3Syst)
     print("risolution UFSD: ",timeres/np.sqrt(2))
     print("risolution UFSD with fit: ",timeresfit/np.sqrt(2))
     canvas=TCanvas("canvas","canvas",1900,1500)
@@ -69,8 +106,6 @@ if __name__=='__main__':
     legend2.SetTextSize(0.045)
     legend2.Draw("same")
     print("chi/dof fit: ",gaus2.GetChisquare(),"/",gaus2.GetNDF())
-    print("input")
-    input()
     outfile = TFile(outfilename, 'recreate')
     hTimeFit.Write()
     hTime.Write()
@@ -78,4 +113,45 @@ if __name__=='__main__':
     gaus2.Write()
     canvas.Write()
     canvas.SaveAs('Beta/data/output/Time_distribution.pdf')
+
+    canvasSys=TCanvas("canvasSys","canvasSys",1900,1500)
+    canvasSys.Divide(2,2)
+    canvasSys.cd(1).DrawFrame(0, 0, len(theshold2Syst)*len(theshold3Syst), 130, "Resolution vs cut;Cut;Resolution")
+    hResvsCut.SetLineColor(kRed)
+    hResvsCut.Draw("hist,same")
+    hResFitvsCut.SetLineColor(kAzure)
+    hResFitvsCut.Draw("hist,same")
+    legendResvsCut = TLegend(0.6, 0.7, 0.85, 0.9)
+    legendResvsCut.AddEntry(hResvsCut,'w/o fit','l')
+    legendResvsCut.AddEntry(hResFitvsCut,'w fit','l')
+    legendResvsCut.SetTextSize(0.045)
+    legendResvsCut.Draw("same")
+    canvasSys.cd(2)
+    hResvsTh.SetTitle("Resolution vs threshold")
+    hResvsTh.GetXaxis().SetTitle("Threshold 2")
+    hResvsTh.GetYaxis().SetTitle("Threshold 3")
+    hResvsTh.SetStats(0)
+    hResvsTh.SetAxisRange(70., 90.,"z")
+    hResvsTh.Draw("colz")
+    canvasSys.cd(3)
+    hResFitvsTh.SetTitle("Resolution (fit) vs threshold")
+    hResFitvsTh.GetXaxis().SetTitle("Threshold 2")
+    hResFitvsTh.GetYaxis().SetTitle("Threshold 3")
+    hResFitvsTh.SetStats(0)
+    hResFitvsTh.SetAxisRange(50., 70.,"z")
+    hResFitvsTh.Draw("colz")
+    canvasSys.cd(4).DrawFrame(0, 0, 100, 150, "Resolution distribution;Resolution;Counts")
+    hResDistr.SetLineColor(kRed)
+    hResDistr.Draw("hist,same")
+    hResFitDistr.SetLineColor(kAzure)
+    hResFitDistr.Draw("hist,same")
+    legendResDistr = TLegend(0.6, 0.7, 0.85, 0.9)
+    legendResDistr.AddEntry(hResDistr,'w/o fit','l')
+    legendResDistr.AddEntry(hResFitDistr,'w fit','l')
+    legendResDistr.SetTextSize(0.045)
+    legendResDistr.Draw("same")
+    canvasSys.Write()
+    canvasSys.SaveAs('Beta/data/output/Time_resolution.pdf')
+
+
     outfile.Close()
