@@ -4,7 +4,7 @@ import numpy as np
 import sys
 sys.path.append('utils')
 
-from ROOT import TGraphErrors, TFile, TCanvas, TLegend, kRed, kAzure, kOrange, kFullCircle,kOpenDiamond, kFullSquare, gROOT
+from ROOT import TGraphErrors, TFile, TCanvas, TLegend, kRed, kAzure, kBlack, kFullCircle,kOpenDiamond, kFullSquare, gROOT
 from DfUtils import GetGraphErrorsFromCSV, GetGraphErrorsFromPandas
 from StyleFormatter import SetObjectStyle, SetGlobalStyle
 
@@ -30,7 +30,18 @@ def ProduceGraphJittervsGain(infile, DetectorName, dfGain, GraphsColors, GraphMa
     gJittervsGainMeas.SetMarkerSize(1)
     gJittervsGainMeas.SetMarkerColor(GraphsColors[1])
     gJittervsGainMeas.SetLineColor(GraphsColors[1])
-    return gJittervsGainAnalitical, gJittervsGainMeas
+
+    gNoise=TGraphErrors(len(df['N']), np.asarray(df['V'], dtype=float),np.asarray(df['N']), np.ones(len(df['V'])), np.asarray(df['err_N'], dtype=float))
+    gNoise.SetName("gNoise")
+    gNoise.SetTitle("Noise; Reverse Bias (V); Noise")
+    gNoise.SetMarkerStyle(kFullCircle)
+    gNoise.SetMarkerSize(3)
+    gNoise.SetMarkerColor(kBlack)
+    gNoise.SetLineColor(kBlack)
+    gNoise.GetYaxis().SetRangeUser(0, 30)
+    gNoise.GetXaxis().SetRangeUser(0, 300)
+
+    return gJittervsGainAnalitical, gJittervsGainMeas, gNoise
 
 
 if __name__=='__main__':
@@ -46,6 +57,7 @@ if __name__=='__main__':
     outfilename = 'TCT/data/output/Jitter_vs_gain.root'
     legendmax = 0.75
     legendstep = 0.07
+    outputfile2 = 'TCT/data/output/Noise_vs_Bias.root'
     
     canvas = TCanvas("canvas","canvas",1000,1000)
     hFrame = canvas.cd().DrawFrame(10,0,500,150,"Jitter vs Gain for LGAD sensor;Gain; Jitter (ps)")
@@ -54,7 +66,7 @@ if __name__=='__main__':
     legend = TLegend(0.5, legendmax-len(infiles)*legendstep, 0.7, legendmax)
     legend.SetTextSize(0.04)
     for file, name, color, marker in zip(infiles, DetectorNames, GraphColors, GraphMarkers):
-        gJittervsGainAnalitical, gJittervsGainMeas = ProduceGraphJittervsGain(file, name, pd.read_csv(gainfile, sep=',', comment='#'), color, marker)
+        gJittervsGainAnalitical, gJittervsGainMeas, gNoise = ProduceGraphJittervsGain(file, name, pd.read_csv(gainfile, sep=',', comment='#'), color, marker)
         Graphs.append(gJittervsGainAnalitical)
         Graphs.append(gJittervsGainMeas)
         Graphs[-1].Draw("p,same")
@@ -69,6 +81,14 @@ if __name__=='__main__':
     
     canvas.SaveAs('TCT/data/output/Jitter_vs_gain.pdf')
 
+    canvas1 = TCanvas("canvas1","canvas1",1000,1000)
+    hFrame = canvas1.cd().DrawFrame(120,10,280,25,"Noise for LGAD sensor;Bias; Noise (mV)")
+    gNoise.Draw("p,same")
+    legend1 = TLegend(0.6, 0.6, 0.8, 0.8)
+    legend1.AddEntry(gNoise,'Noise','p')
+    legend1.SetTextSize(0.045)
+    legend1.Draw("same")
+    canvas1.SaveAs('TCT/data/output/Noise_vs_gain.pdf')
     outfile = TFile(outfilename, 'recreate')
     for graph in Graphs:
         graph.Write()
