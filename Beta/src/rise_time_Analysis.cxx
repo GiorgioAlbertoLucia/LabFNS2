@@ -13,18 +13,19 @@
 
 ClassImp(RiseTimeAnalysis)
 
-RiseTimeAnalysis::RiseTimeAnalysis(const char * wfmPath, const char * wfmTreeName, const char * preprocessedPath, const char * preprocessedTreeName):
+RiseTimeAnalysis::RiseTimeAnalysis(const char * wfmPath, const char * wfmTreeName, const char * preprocessedPath, const char * preprocessedTreeName, const char * outputPath):
 fWfmPath(wfmPath),
 fWfmTreeName(wfmTreeName),
 fPreprocessedPath(preprocessedPath),
 fPreprocessedTreeName(preprocessedTreeName),
+fOutputPath(outputPath),
 fRiseTimeBranchName(""),
 fDirectoryName("RiseTimeAnalysis")
 {
     fRiseTime = std::vector<double>();
 
     // create directory for results
-    TFile processedFile(fPreprocessedPath.c_str(), "update");
+    TFile processedFile(fOutputPath.c_str(), "update");
     TDirectory* existingDir = processedFile.GetDirectory(fDirectoryName.c_str());
 
     if (existingDir)    processedFile.rmdir(fDirectoryName.c_str());
@@ -163,7 +164,7 @@ void RiseTimeAnalysis::analyseRiseTime(const int channel)
     std::cout << "chi2 / NDF = " << gaus->GetChisquare() << " / " << gaus->GetNDF() << std::endl;
 
     // save results
-    TFile* preprocessedFile = TFile::Open(fPreprocessedPath.c_str(), "update");
+    TFile* preprocessedFile = TFile::Open(fOutputPath.c_str(), "update");
     TDirectory* dir = preprocessedFile->GetDirectory(fDirectoryName.c_str());
     dir->cd();
     riseTimeHist->Write();
