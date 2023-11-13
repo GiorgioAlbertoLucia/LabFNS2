@@ -295,21 +295,6 @@ class DepletionAnalysis:
 
         return intersection2
 
-    def save_df(self, output_path):
-        '''
-            Save the dataframe with the data
-
-            Parameters
-            ----------
-            output_path (str):      Output path of the dataframe
-
-            Returns
-            -------
-            None
-        '''
-
-        self.df.to_csv(output_path, index=False)
-
     # DOPING CONCENTRATION
 
     def derivative_plot(self):
@@ -698,7 +683,6 @@ if __name__ == "__main__":
     depletion_analysis.depletion_depth()
     #depletion_analysis.doping_profile_color(voltage_threshold=-sensor_depletion)
 
-    depletion_analysis.save_df(os.path.splitext(args.output)[0] + '_df.csv')
     depletion_analysis.close()
 
     if args.verbose:    
