@@ -83,7 +83,7 @@ void analysis::Loop(const bool FillTTree = true)
     TH1D * histoRMS3 = new TH1D("histoRMS3","histoRMS3",150,0.3,0.8);
     TH1D * histoChiSquare2 = new TH1D("histoChiSquare2","histoChiSquare2",nentries,0.,nentries);
     TH1D * histoChiSquare3 = new TH1D("histoChiSquare3","histoChiSquare3",nentries,0.,nentries);
-
+       
     TFile outFile("Beta/data/output/BetaOutput.root", "recreate");
     TTree * tree;
     if (FillTTree)
@@ -124,7 +124,8 @@ void analysis::Loop(const bool FillTTree = true)
         const int numPoints = w2->size();
         TH1D* histoNoise2 = new TH1D("histoNoise2","histoNoise2",200,-1.,1.);   // histograms to measure rms
         TH1D* histoNoise3 = new TH1D("histoNoise3","histoNoise3",200,-1.,1.);
-        
+        TH1D* histoTime2 = new TH1D("histoTime2","histoTime2",t2->size(),1000000000*t2->front(),1000000000*t2->back());     // histograms to measure ToA
+        TH1D* histoTime3 = new TH1D("histoTime3","histoTime3",t3->size(),1000000000*t3->front(),1000000000*t3->back());
 
         if (jentry==100)
         {
@@ -162,18 +163,26 @@ void analysis::Loop(const bool FillTTree = true)
         baseline3=histoNoise3->GetMean();
         RMS2=histoNoise2->GetRMS();
         RMS3=histoNoise3->GetRMS();
-        TH1D* histoTime2 = new TH1D("histoTime2","histoTime2",t2->size(),1000000000*t2->front(),1000000000*t2->back());     // histograms to measure ToA
-        TH1D* histoTime3 = new TH1D("histoTime3","histoTime3",t3->size(),1000000000*t3->front(),1000000000*t3->back());
+        
+        
         ToA2 = t2->at(xx)*1000000000;
         ToA3 = t3->at(yy)*1000000000;
         if(jentry==100 || jentry==200 || jentry==300) cout<<"tempo 2: "<<ToA2<<" tempo 3: "<<ToA3<<endl;
         if(jentry==100 || jentry==200 || jentry==300) cout<<"tempo 2bis: "<<t2->at(xx)<<" tempo 3bis: "<<t3->at(yy)<<endl;
         if(Amp2 > 50. && Amp3 > 50.)
         {
-            TF1* fit2 = new TF1("fit2","gaus",1000000000*(t2->at(xx-10)),1000000000*(t2->at(xx+10)));//checkordini di grandezza e valori che sputa
-            TF1* fit3 = new TF1("fit3","gaus",1000000000*(t3->at(yy-10)),1000000000*(t3->at(yy+10)));
-            histoTime2->Fit(fit2,"rmQ+");
-            histoTime3->Fit(fit3,"rmQ+");
+            TF1* fit2 = new TF1("fit2","gaus",1000000000*(t2->at(xx-7)),1000000000*(t2->at(xx+7)));//checkordini di grandezza e valori che sputa
+            TF1* fit3 = new TF1("fit3","gaus",1000000000*(t3->at(yy-7)),1000000000*(t3->at(yy+7)));
+            for(int a=0;a<t2->size();a++)
+            {
+                histoTime2->SetBinError(a, 6/sqrt(12));
+            }
+             for(int a=0;a<t3->size();a++)
+            {
+                histoTime3->SetBinError(a, 6/sqrt(12));
+            }
+            histoTime2->Fit(fit2,"rmlQ+");
+            histoTime3->Fit(fit3,"rmlQ+");
             //check NaN values
             if (fit2->GetChisquare()/fit2->GetNDF() == fit2->GetChisquare()/fit2->GetNDF())
                 histoChiSquare2->Fill(jentry, fit2->GetChisquare()/fit2->GetNDF());
@@ -182,31 +191,33 @@ void analysis::Loop(const bool FillTTree = true)
             ToA2f=fit2->GetParameter(1);
             ToA3f=fit3->GetParameter(1);
             if(jentry==100 ){
-            TCanvas * canvas1 = new TCanvas("canvas1","canvas1",1000,700);
-            canvas1->Divide(2,1);
-            canvas1->cd(1);
-            histoTime2->SetLineColor(kBlue -10);
+            TCanvas * canvas11 = new TCanvas("canvas11","canvas11",1000,700);
+            canvas11->Divide(2,1);
+            canvas11->cd(1);
+            histoTime2->SetLineColor(kBlue);
             histoTime2->SetTitle("Sensor A - Channel 2");
             histoTime2->GetXaxis()->SetTitle("Time (ns)");
             histoTime2->GetYaxis()->SetTitle("Amplitude (mV)");
             histoTime2->Draw("hist");
+            histoTime2->GetXaxis()->SetRangeUser(-2.5,3.5);
             fit2->Draw("same");
-            fit2->SetLineColor(kRed);
+            fit2->SetLineColor(kBlack);
             fit2->SetLineWidth(2);
-            gStyle->SetOptFit(11111111);
-            canvas1->cd(2);
-            histoTime3->SetLineColor(kRed -10);
+            gStyle->SetOptFit(1111);
+            canvas11->cd(2);
+            histoTime3->SetLineColor(kRed);
             histoTime3->SetTitle("Sensor B - Channel 3");
             histoTime3->GetXaxis()->SetTitle("Time (ns)");
             histoTime3->GetYaxis()->SetTitle("Amplitude (mV)");
             histoTime3->Draw("hist");
+            histoTime3->GetXaxis()->SetRangeUser(-2.5,3.5);
             fit3->Draw("same");
-            fit3->SetLineColor(kRed);
+            fit3->SetLineColor(kBlack);
             fit3->SetLineWidth(2);
-            gStyle->SetOptFit(11111111);
+            gStyle->SetOptFit(1111);
             cout<<"chi2/dof fit2: "<<fit2->GetChisquare()<<"/"<<fit2->GetNDF()<<endl;
             cout<<"chi2/dof fit3: "<<fit3->GetChisquare()<<"/"<<fit3->GetNDF()<<endl;
-            canvas1->SaveAs("Beta/data/output/checkfit.pdf");
+            canvas11->SaveAs("Beta/data/output/checkfit.pdf");
             }
             delete fit2;
             delete fit3;
@@ -291,7 +302,7 @@ void analysis::Loop(const bool FillTTree = true)
       histoAmpli3_sel->SetTitle("Sensor B - Channel 3");
       canvasA_Sel->SaveAs("Beta/data/output/Amplitude_selected.pdf");
 
-      TCanvas * canvasT = new TCanvas("canvasT","canvasT",1000,1000);
+      TCanvas * canvasT = new TCanvas("canvasT","canvasT",900,600);
       canvasT->Divide(2,1);
       canvasT->cd(1);
       histoToA2->Draw("hist");
@@ -304,6 +315,7 @@ void analysis::Loop(const bool FillTTree = true)
       histoToA3->GetXaxis()->SetTitle("Time of arrival (ns)");
       histoToA3->GetYaxis()->SetTitle("Entries (a.u.)");
       histoToA3->SetTitle("Sensor B - Channel 3");
+      canvasT->SaveAs("Beta/data/output/time.pdf");
 
       TCanvas * canvasRMS = new TCanvas("canvasRMS","canvasRMS",1000,1000);
       canvasRMS->Divide(2,1);
@@ -342,7 +354,7 @@ void analysis::Loop(const bool FillTTree = true)
       legend->AddEntry(histoEvent100_ch2,"Sensor A - Channel 2","l");
       legend->AddEntry(histoEvent100_ch3,"Sensor B - Channel 3","l");
       legend->SetTextSize(0.03);
-      legend->Draw();
+      legend->Draw("same");
       canvas100->Modified();
       canvas100->Update();
       canvas100->SaveAs("Beta/data/output/Event_100.pdf");
