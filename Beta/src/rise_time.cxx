@@ -45,9 +45,9 @@ RiseTime::~RiseTime()
  * @param derivative 
  * @return int 
  */
-double RiseTime::findRiseTime()
+double RiseTime::findRiseTime(const double minAmplitude)
 {
-    std::pair<double, double> riseTimeExtremes = findRiseTimeExtremes();
+    std::pair<double, double> riseTimeExtremes = findRiseTimeExtremes(minAmplitude);
     fRiseTime = riseTimeExtremes.second - riseTimeExtremes.first;
     
     return fRiseTime;
@@ -57,7 +57,7 @@ double RiseTime::findRiseTime()
  * @brief Draw waveform of the signal and print the rise time.
  * 
  */
-void RiseTime::drawWaveform(const char * outputPath, const int nEvent)
+void RiseTime::drawWaveform(const char * outputPath, const int nEvent, const double minAmplitude)
 {
     TCanvas c1("c1","c1",2100,1000);
     TGraph gr(fWaveform.size(), &fTimeFrame[0], &fWaveform[0]);
@@ -77,7 +77,7 @@ void RiseTime::drawWaveform(const char * outputPath, const int nEvent)
     latex.DrawLatex(0.2, 0.65, Form("Rise Time = %.2f ns", fRiseTime));
 
     // add lines for rise time extremes
-    std::pair<double, double> riseTimeExtremes = findRiseTimeExtremes();
+    std::pair<double, double> riseTimeExtremes = findRiseTimeExtremes(minAmplitude);
     TLine line1(riseTimeExtremes.first, gr.GetYaxis()->GetXmin(), riseTimeExtremes.first, gr.GetYaxis()->GetXmax());
     TLine line2(riseTimeExtremes.second, gr.GetYaxis()->GetXmin(), riseTimeExtremes.second, gr.GetYaxis()->GetXmax());
     
@@ -102,20 +102,27 @@ void RiseTime::drawWaveform(const char * outputPath, const int nEvent)
  * @brief Finds rise time extremes as the time at the x% and the 100-x% amplitude of the signal.
  * These points are found fitting the waveform with a line.
  * 
- * @param begin 
+ * @param minAmplitude Minimum amplitude of the signal to be considered. If the maximum amplitude is below this value, the rise time is set to 1 s.
  * @return std::pair<int, int> 
  */
-std::pair<double, double> RiseTime::findRiseTimeExtremes()
+std::pair<double, double> RiseTime::findRiseTimeExtremes(const double minAmplitude)
 {
     // Find the beginning of the signal
-    auto derivative = RiseTime::computeDerivative();
+    //auto derivative = RiseTime::computeDerivative();
+    //
+    //auto max_der = std::max_element(derivative.begin(), derivative.end());
+    //auto begin = std::distance(derivative.begin(), max_der) * fWindow;  // Index of the maximum derivative in the waveform vector
     
-    auto max_der = std::max_element(derivative.begin(), derivative.end());
-    auto begin = std::distance(derivative.begin(), max_der) * fWindow;  // Index of the maximum derivative in the waveform vector
+    //auto zero = std::find(fTimeFrame.begin(), fTimeFrame.end(), 0.);
+    //auto begin = std::distance(fTimeFrame.begin(), zero);
+    const int begin = fTimeFrame.size() / 2;
 
     // find last point of the fit
     auto max = std::max_element(fWaveform.begin(), fWaveform.end());
-    auto max_index = std::distance(fWaveform.begin(), max); 
+    auto max_index = std::distance(fWaveform.begin(), max);
+
+    // return 1 s if the max amplitude is below the minimum amplitude
+    if(*max < minAmplitude) return std::make_pair(0, 1e9);
 
     TGraph graph(fWaveform.size(), &fTimeFrame[0], &fWaveform[0]);
     auto fit = new TF1("fit", "[0]*x+[1]", fTimeFrame.at(begin), fTimeFrame.at(max_index));

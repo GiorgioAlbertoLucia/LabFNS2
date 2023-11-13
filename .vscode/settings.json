@@ -83,6 +83,7 @@
         "stop_token": "cpp",
         "thread": "cpp",
         "cinttypes": "cpp",
-        "analysis (3).C": "cpp"
+        "analysis (3).C": "cpp",
+        "PlotWaveforms.C": "cpp"
     }
 }

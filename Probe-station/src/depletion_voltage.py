@@ -82,6 +82,9 @@ class DepletionAnalysis:
         self.inversion = -1.
         if self.sensor == 'Strip' or self.sensor == 'strip':   self.inversion = 1.
 
+        self.A = 1.0 * 1.0 * 1e-6                                         # m^2 - detector area
+        if self.sensor == 'Strip':  self.A = 7.0 * 33.0 * 1e-6            # m^2 - detector area  
+
         self.outFile = TFile(args.output, 'recreate')
 
         output_path = os.path.splitext(args.output)[0] + '.pdf'
@@ -113,25 +116,36 @@ class DepletionAnalysis:
     #####################
     # DATA PREPROCESSING
 
-    def preprocess_data(self):
+    def preprocess_data(self, derivative_method='sigmoid', moving_average=True):
         ''''
             Preprocess the data to calculate the doping concentration and the depletion width
+
+            Parameters
+            ----------
+            derivative_method (str):    Method to calculate the derivative of 1/C^2 vs V. Options: 'sigmoid', 'numpy'
         '''
         print("Preprocessing data...")
 
         eSi = 11.7 * 8.854e-12                                          # F/m - dielectric constant of silicon
-        A = 1e-6                                                        # m^2 - detector area
         q = 1.602e-19                                                   # C - electron charge
         Vbi = -0.6                                                      # V - built-in voltage  
 
+        # mobile average
+        self.df['C_mobile'] = self.df['C'].rolling(window=5, center=True).mean()
+        for i in range(2):  self.df['C_mobile'][i] = self.df['C_mobile'][2]
+        for i in range(2):  self.df['C_mobile'][len(self.df['C_mobile'])-i-1] = self.df['C_mobile'][len(self.df['C_mobile'])-3]
+
         self.df['V_abs'] = np.abs(self.df['V'] + self.inversion*Vbi)    # V - absolute value of the bias voltage
-        self.df['1_C2'] = 1.0 / (self.df['C'] * self.df['C'])           # pF^-2
+        self.df['1_C2'] = np.nan
+        if moving_average:  self.df['1_C2'] = 1.0 / (self.df['C_mobile'] * self.df['C_mobile'])         # pF^-2
+        else:               self.df['1_C2'] = 1.0 / (self.df['C'] * self.df['C'])                       # pF^-2
         self.df['1_C2_err'] = 2.0 * self.df['C_err'] / (self.df['C'] * self.df['C'] * self.df['C'])
 
         self.df['1_C2_F'] = self.df['1_C2'] * 1e24                      # F^-2
         self.df['1_C2_err_F'] = self.df['1_C2_err'] * 1e24              # F^-2
 
-        self.df['derivative'] = np.gradient(self.df['1_C2_F'], self.inversion*self.df['V']) # F^-2 V^-1
+        if derivative_method == 'sigmoid':  self.df['derivative'] = self.sigmoid_derivative()
+        elif derivative_method == 'numpy':  self.df['derivative'] = np.gradient(self.df['1_C2_F'], self.inversion*self.df['V']) # F^-2 V^-1
         
         # error on the derivative
         self.df['derivative2_C'] = np.gradient(self.df['derivative'], self.df['1_C2_F'])
@@ -191,7 +205,8 @@ class DepletionAnalysis:
 
     def inverseC2_vs_V(self):
         '''
-            Create a plot with 1/C^2 vs bias voltage
+            Create a plot with 1/C^2 vs bias voltage.
+            Return the depletion voltage of the sensor
 
             Returns
             -------
@@ -243,7 +258,7 @@ class DepletionAnalysis:
 
         canvas = TCanvas('1C2', 'canvas', 800, 600)
         canvas.DrawFrame(self.config['canvas_limits']['xmin'], self.config['canvas_limits']['ymin'],
-                         self.config['canvas_limits']['xmax'], self.config['canvas_limits']['ymax'], '1/C^{2} vs V '+f'{args.sensor}'+'; Reverse bias [V]; 1/C^{2} [pF^{-2}]')
+                         self.config['canvas_limits']['xmax'], self.config['canvas_limits']['ymax'], '1/C^{2} vs V '+f'{args.sensor}'+'; Reverse bias (V); 1/C^{2} (pF^{-2})')
         #canvas.SetGrid()
 
         graph.Draw('P')
@@ -277,6 +292,23 @@ class DepletionAnalysis:
         canvas.Write()
         
         canvas.SaveAs(self.iC2vV_outputPath)
+
+        return intersection2
+
+    def save_df(self, output_path):
+        '''
+            Save the dataframe with the data
+
+            Parameters
+            ----------
+            output_path (str):      Output path of the dataframe
+
+            Returns
+            -------
+            None
+        '''
+
+        self.df.to_csv(output_path, index=False)
 
     # DOPING CONCENTRATION
 
@@ -453,15 +485,17 @@ class DepletionAnalysis:
         
         canvas.SaveAs(self.depth_outputPath)
 
-    def doping_profile_color(self):
+    def doping_profile_color(self, voltage_threshold):
         '''
             Plot the doping profile vs depth of the depleted region
 
         '''
 
+        df = self.df.query(f'V > {voltage_threshold}', inplace=False)
+
         # Define the color map
         cmap = plt.colormaps['cool']
-        plt.scatter(self.df['W']*1e6, self.df['NB']*1e-6, c=self.df['V'], cmap=cmap)
+        plt.scatter(df['W']*1e6, df['NB']*1e-6, c=df['V'], cmap=cmap)
         #plt.errorbar(self.df['W'], self.df['NB'], xerr=self.df['W_err'], yerr=self.df['NB_err'], fmt='none', ecolor='black')
 
         cbar = plt.colorbar()
@@ -476,7 +510,7 @@ class DepletionAnalysis:
         plt.savefig(self.dprocol_outputPath)
         print('Plot saved in', self.dprocol_outputPath)
         plt.close()
-        
+
     #####################
     # PRIVATE-LIKE METHODS
 
@@ -557,16 +591,83 @@ class DepletionAnalysis:
         A = 1e-6                                                        # m^2 - detector area
         q = 1.602e-19                                                   # C - electron charge
             
-        self.df['V_abs'] = np.abs(self.df['V'] + self.inversion*Vbi)    # V - absolute value of the bias voltage
+        self.df['V_abs'] = np.abs(self.df['V'] - self.inversion*Vbi)    # V - absolute value of the bias voltage
 
         # doping concentration
-        self.df['NB'] = 2 / (eSi * A*A * q * self.df['derivative'])     # m^-3
-        self.df['NB_err'] = 2 / (eSi * A*A * q * self.df['derivative']**2) * self.df['derivative_err'] # m^-3
+        self.df['NB'] = 2 / (eSi * self.A*self.A * q * self.df['derivative'])     # m^-3
+        self.df['NB_err'] = 2 / (eSi * self.A*self.A * q * self.df['derivative']**2) * self.df['derivative_err'] # m^-3
 
         # depletion width
         self.df['W'] = np.sqrt(2 * self.df['V_abs'] * eSi / (q * self.df['NB'])) # m
         self.df['W_err'] = np.sqrt((self.df['V_err']*self.df['W']/(2*self.df['V_abs']))**2 + (self.df['NB_err']*self.df['W']/(2*self.df['NB']))**2)
+
+    def sigmoid_derivative(self):
+        ''' 
+            Fit the 1/C^2 vs V plot with a sigmoid function. Calculate the derivative and store it in the dataframe
+
+        '''
+
+        plt_cfg = self.plot_config['ic2vV']
         
+        graph = TGraphErrors(len(self.df['V']), 
+                             np.asarray(self.inversion*self.df['V'], dtype=float), np.asarray(self.df['1_C2'], dtype=float), 
+                             np.asarray(self.df['V_err'], dtype=float), np.asarray(self.df['1_C2_err'], dtype=float))
+        graph.SetMarkerStyle(20)
+        graph.SetMarkerSize(1)
+        graph.SetMarkerColor(kAzure+1)
+        graph.SetTitle('1/C^{2} vs V '+f'{args.sensor}'+'; Reverse bias (V); 1/C^{2} (pF^{-2})')
+
+        self.graph = graph.Clone()
+        
+        # Fit the data
+        fit1 = TF1('sigmoid', '[0]/(1 + exp(-(x-[1])/[2]))', self.config['fits'][3]['fit_range'][0], self.config['fits'][3]['fit_range'][1])
+        fit1.SetParameters(self.config['fits'][3]['parameters'][0]['value'], self.config['fits'][3]['parameters'][1]['value'],
+                            self.config['fits'][3]['parameters'][2]['value'])
+        if self.config['fits'][3]['parameters'][0]['min'] != self.config['fits'][3]['parameters'][0]['max']:
+            fit1.SetParLimits(0, self.config['fits'][3]['parameters'][0]['min'], self.config['fits'][3]['parameters'][0]['max'])
+        if self.config['fits'][3]['parameters'][1]['min'] != self.config['fits'][3]['parameters'][1]['max']:
+            fit1.SetParLimits(1, self.config['fits'][3]['parameters'][1]['min'], self.config['fits'][3]['parameters'][1]['max'])
+        if self.config['fits'][3]['parameters'][2]['min'] != self.config['fits'][3]['parameters'][2]['max']:
+            fit1.SetParLimits(2, self.config['fits'][3]['parameters'][2]['min'], self.config['fits'][3]['parameters'][2]['max'])
+
+        fit1.SetLineColor(kOrange-3)
+        graph.Fit(fit1, 'rm+')
+        print(f'Chi2/NDF: {fit1.GetChisquare():.2f} / {fit1.GetNDF():.2f}')
+        fit1.SetRange(self.config['fits'][3]['draw_range'][0], self.config['fits'][3]['draw_range'][1])
+
+        canvas = TCanvas('sigmoid', 'canvas', 800, 600)
+        canvas.DrawFrame(self.config['canvas_limits']['xmin'], self.config['canvas_limits']['ymin'],
+                         self.config['canvas_limits']['xmax'], self.config['canvas_limits']['ymax'], '1/C^{2} vs V '+f'{args.sensor}'+'; Reverse bias (V); 1/C^{2} (pF^{-2})')
+        #canvas.SetGrid()
+
+        graph.Draw('P')
+        fit1.Draw('same')
+        
+        legend = TLegend(plt_cfg['legend'][0], plt_cfg['legend'][1], plt_cfg['legend'][2], plt_cfg['legend'][3])
+        legend.SetBorderSize(0)
+        legend.SetTextFont(42)
+        legend.SetTextSize(0.04)
+        legend.AddEntry(graph, 'Data', 'pe')
+        if self.sensor == 'LGAD':   legend.AddEntry(fit1, 'Sigmoid fit', 'l')
+        legend.Draw()
+
+        latex = TLatex()
+        latex.SetTextFont(42)
+        latex.SetTextSize(0.04)
+        latex.SetNDC()
+        latex.DrawLatex(plt_cfg['latex'][3][0], plt_cfg['latex'][3][1], self.text1)
+        latex.DrawLatex(plt_cfg['latex'][4][0], plt_cfg['latex'][4][1], self.text2)
+
+        self.outFile.cd()
+        canvas.Write()
+        
+        #canvas.SaveAs(self.iC2vV_outputPath)
+
+        # Calculate the derivative
+        self.df['derivative_sigmoid'] = np.nan
+        for i, v in enumerate(self.df['V']):  self.df['derivative_sigmoid'][i] = fit1.Derivative(self.inversion*v) * 1e24 # F^-2 V^-1
+        
+        return self.df['derivative_sigmoid']   
 
 
 
@@ -580,22 +681,24 @@ if __name__ == "__main__":
     parser.add_argument('--config', type=str, default='Probe-station/src/depletion_voltage_conf.yml', help='Configuration file with the sensor parameters')
     parser.add_argument('--config_plot', type=str, default='Probe-station/src/plot_depletion_voltage_conf.yml', help='Configuration file with the sensor parameters')
     parser.add_argument('--sensor', type=str, help='Sensor name', required=True)
+    parser.add_argument('--derivative_method', type=str, default='sigmoid', help='Method to calculate the derivative of 1/C^2 vs V. Options: sigmoid, numpy')
     parser.add_argument('--verbose', action='store_true', help='Verbose mode')
     args = parser.parse_args()
 
     df = pd.read_csv(args.input, comment='#')
     depletion_analysis = DepletionAnalysis(df=df, args=args)
 
-    depletion_analysis.preprocess_data()
-    depletion_analysis.inverseC2_vs_V()
+    depletion_analysis.preprocess_data(derivative_method=args.derivative_method, moving_average=True)
+    sensor_depletion = depletion_analysis.inverseC2_vs_V()
     depletion_analysis.print_zoom(0., 33., -0.2e-4, 1.4e-4)
 
     depletion_analysis.derivative_plot()
     depletion_analysis.doping_concentration()
     depletion_analysis.doping_profile()
     depletion_analysis.depletion_depth()
-    depletion_analysis.doping_profile_color()
+    #depletion_analysis.doping_profile_color(voltage_threshold=-sensor_depletion)
 
+    depletion_analysis.save_df(os.path.splitext(args.output)[0] + '_df.csv')
     depletion_analysis.close()
 
     if args.verbose:    

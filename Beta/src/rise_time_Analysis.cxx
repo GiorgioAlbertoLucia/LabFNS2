@@ -10,6 +10,7 @@
 #include <TString.h>
 #include <TH1D.h>
 #include <TF1.h>
+#include <TCanvas.h>
 
 ClassImp(RiseTimeAnalysis)
 
@@ -19,21 +20,11 @@ fWfmTreeName(wfmTreeName),
 fPreprocessedPath(preprocessedPath),
 fPreprocessedTreeName(preprocessedTreeName),
 fOutputPath(outputPath),
-fRiseTimeBranchName(""),
-fDirectoryName("RiseTimeAnalysis")
+fRiseTimeBranchName("")
 {
     fRiseTime = std::vector<double>();
-
-    // create directory for results
-    TFile processedFile(fOutputPath.c_str(), "update");
-    TDirectory* existingDir = processedFile.GetDirectory(fDirectoryName.c_str());
-
-    if (existingDir)    processedFile.rmdir(fDirectoryName.c_str());
-    TDirectory* newDir = processedFile.mkdir(fDirectoryName.c_str());
-
-    processedFile.Close();
-    //delete existingDir;
-    //delete newDir;
+    TFile outputFile(fOutputPath.c_str(), "recreate");
+    outputFile.Close();
 }
 
 RiseTimeAnalysis::~RiseTimeAnalysis()
@@ -55,7 +46,7 @@ RiseTimeAnalysis::~RiseTimeAnalysis()
  * @param window        Window for rise time calculation in samples (in timeframes)
  * @param wfmDrawPath   Path to the waveform plot
  */
-void RiseTimeAnalysis::buildRiseTime(const char* w_branchname, const char* t_branchname, const char* b_branchname, const double threshold, const int window, const char* wfmDrawPath)
+void RiseTimeAnalysis::buildRiseTime(const char* w_branchname, const char* t_branchname, const char* b_branchname, const double threshold, const int window, const double minAmplitude, const char* wfmDrawPath)
 {
     // input waveform
     TFile* wfmFile = TFile::Open(fWfmPath.c_str());
@@ -93,12 +84,13 @@ void RiseTimeAnalysis::buildRiseTime(const char* w_branchname, const char* t_bra
         std::transform(waveform->begin(), waveform->end(), waveform->begin(), [baseline](double element) {return element-baseline;});
         
         RiseTime rt(threshold, window, *waveform, *timeFrame);
-        double rise_time = rt.findRiseTime();
+        double rise_time = rt.findRiseTime(minAmplitude);
         
         fRiseTime.push_back(rise_time);
-        if(ientry == 105)   rt.drawWaveform(wfmDrawPath, ientry);
+        if(ientry == 100)   rt.drawWaveform(wfmDrawPath, ientry, minAmplitude);
     }
 
+    preprocessedFile->Close();
     wfmFile->Close();
 
     //delete b_waveform;
@@ -137,7 +129,7 @@ void RiseTimeAnalysis::saveRiseTime(const char * branchname)
     }
 
     preprocessedTree->Print();
-    preprocessedTree->Write();
+    preprocessedTree->Write("", TObject::kOverwrite);
 
     //delete b_var;
     //delete preprocessedTree;
@@ -151,27 +143,21 @@ void RiseTimeAnalysis::saveRiseTime(const char * branchname)
  */
 void RiseTimeAnalysis::analyseRiseTime(const int channel)
 {
-    auto riseTimeHist = new TH1D(Form("RThist%d", channel), Form("Rise Time - Channel %d; Rise Time (ps); Counts", channel), 20, -10, 10);
-    for(auto& rt : fRiseTime)   riseTimeHist->Fill(rt*1000);
+    auto riseTimeHist = new TH1D(Form("RThist%d", channel), Form("Rise Time - Channel %d; Rise Time (ps); Counts", channel), 160, -2000, 2000);
+    for(unsigned long ientry=0; ientry<fRiseTime.size(); ++ientry)  riseTimeHist->Fill(fRiseTime.at(ientry)*1000);
 
-    riseTimeHist->Fit("gaus", "rm+");
     riseTimeHist->SetStats(0);
-    riseTimeHist->SetFillStyle(3001);
+    riseTimeHist->SetFillStyle(2);
     riseTimeHist->SetFillColor(kBlue-10);
     riseTimeHist->SetLineColor(kBlue);
 
-    TF1* gaus = riseTimeHist->GetFunction("gaus");
-    std::cout << "chi2 / NDF = " << gaus->GetChisquare() << " / " << gaus->GetNDF() << std::endl;
-
     // save results
-    TFile* preprocessedFile = TFile::Open(fOutputPath.c_str(), "update");
-    TDirectory* dir = preprocessedFile->GetDirectory(fDirectoryName.c_str());
-    dir->cd();
+    TFile* outputFile = TFile::Open(fOutputPath.c_str(), "update");
     riseTimeHist->Write();
-    preprocessedFile->Close();
+    outputFile->Close();
 
     //delete gaus;
     //delete riseTimeHist;
     //delete dir;
-    //delete preprocessedFile;
+    //delete outputFile;
 }

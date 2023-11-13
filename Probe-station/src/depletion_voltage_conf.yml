@@ -36,6 +36,22 @@ detector:
             value: 0.0
             min: 0
             max: 0
+      # sigmoid
+      - fit_range: [23, 34]
+        draw_range: [0., 50]
+        parameters:
+          - name: a
+            value: 0.16
+            min: 0.12
+            max: 0.2
+          - name: b
+            value: 25.
+            min: 20
+            max: 30
+          - name: c
+            value: 0.8
+            min: 0.001
+            max: 2
     canvas_limits:
       xmin: -1
       xmax: 55
@@ -65,7 +81,7 @@ detector:
             min: 0
             max: 0
       #######################
-      - fit_range: [3.9, 8.2]
+      - fit_range: [4.9, 10.1]
         draw_range: [2, 10]
         parameters:
           - name: a
@@ -87,6 +103,22 @@ detector:
             value: 0.1
             min: 0
             max: 0
+      # sigmoid
+      - fit_range: [-0.4, 7]
+        draw_range: [-0.5, 10]
+        parameters:
+          - name: a
+            value: 0.16
+            min: 0
+            max: 0
+          - name: b
+            value: 2.
+            min: 0
+            max: 0
+          - name: c
+            value: 2.
+            min: 0
+            max: 0
     canvas_limits:
       xmin: -1.5
       xmax: 10.5
@@ -95,7 +127,7 @@ detector:
       conc_ymin: 1.0e11
       conc_ymax: 1.0e15
       depth_min: -1.0
-      depth_max: 30.0
+      depth_max: 60.0
       der_ymin: 1e14
       der_ymax: 5e17
 
@@ -146,6 +178,6 @@ detector:
       conc_ymin: 1.0e13
       conc_ymax: 1.0e25
       depth_min: -1.0
-      depth_max: 30.0
+      depth_max: 300.0
       der_ymin: 1e11
       der_ymax: 1e18

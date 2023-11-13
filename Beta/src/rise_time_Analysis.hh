@@ -16,7 +16,8 @@ class RiseTimeAnalysis
         ~RiseTimeAnalysis();
 
         void buildRiseTime(const char* w_branchname, const char* t_branchname, const char* b_branchname, 
-                            const double threshold = 0.2, const int window = 10, const char* wfmDrawPath = "Beta/data/output/RiseTime.pdf"); 
+                            const double threshold = 0.2, const int window = 10, const double minAmplitude = 0.08,
+                            const char* wfmDrawPath = "Beta/data/output/RiseTime.pdf"); 
         void saveRiseTime(const char * rt_branchname);
         void analyseRiseTime(const int channel);
 
@@ -30,8 +31,6 @@ class RiseTimeAnalysis
         std::string fOutputPath;            // Path to the output file
 
         std::vector<double> fRiseTime;      // Vector to store the rise time
-
-        std::string fDirectoryName;         // Name of the directory with results
 
 };
 

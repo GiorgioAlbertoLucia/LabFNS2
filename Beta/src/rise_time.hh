@@ -22,14 +22,14 @@ class RiseTime
 
         double GetRiseTime() { return fRiseTime; }
         
-        double findRiseTime();
-        void drawWaveform(const char * outputPath, const int nEvent);
+        double findRiseTime(const double minAmplitude = 0.);
+        void drawWaveform(const char * outputPath, const int nEvent, const double minAmplitude = 0.);
 
         void reset() { fRiseTime = 0.; fWaveform.clear(); fTimeFrame.clear(); };
 
     protected:
         std::vector<double> computeDerivative();
-        std::pair<double, double> findRiseTimeExtremes();
+        std::pair<double, double> findRiseTimeExtremes(const double minAmplitude);
 
     private:
         
