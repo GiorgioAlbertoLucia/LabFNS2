@@ -148,8 +148,8 @@ detector:
             min: 0
             max: 0
       ######################
-      - fit_range: [55, 100]
-        draw_range: [45, 120]
+      - fit_range: [40, 100]
+        draw_range: [20, 110]
         parameters:
           - name: a
             value: 0
@@ -160,7 +160,7 @@ detector:
             min: 0
             max: 1000
       - fit_range: [120, 200]
-        draw_range: [100, 200]
+        draw_range: [90, 200]
         parameters:
           - name: a
             value: 0
@@ -170,13 +170,29 @@ detector:
             value: 0
             min: 0
             max: 500
+      # sigmoid
+      - fit_range: [20, 160]
+        draw_range: [0, 200]
+        parameters:
+          - name: a
+            value: 250e-6
+            min: 0
+            max: 0
+          - name: b
+            value: 65.
+            min: 0
+            max: 0
+          - name: c
+            value: 20.
+            min: 0
+            max: 0
     canvas_limits:
       xmin: -1
       xmax: 205
       ymin: 0
       ymax: 300e-6
-      conc_ymin: 1.0e13
-      conc_ymax: 1.0e25
+      conc_ymin: 1.0e11
+      conc_ymax: 1.0e15
       depth_min: -1.0
       depth_max: 300.0
       der_ymin: 1e11

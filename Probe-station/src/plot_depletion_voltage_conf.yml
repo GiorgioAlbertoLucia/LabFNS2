@@ -95,13 +95,13 @@ detector:
 
   Strip:
     ic2vV:    # 1/C^2
-      legend: [0.45, 0.25, 0.65, 0.45]
+      legend: [0.55, 0.2, 0.75, 0.4]
       latex:
-        - [0.45, 0.6, ""]  # sensor value
-        - [0.45, 0.7, ""]   # gain layer value
-        - [0.45, 0.75, ""]  # depletion voltage
-        - [0.45, 0.5 , ""]  # text 1
-        - [0.45, 0.55 , ""] # text 2
+        - [0.55, 0.55, ""]  # sensor value
+        - [0.55, 0.65, ""]   # gain layer value
+        - [0.55, 0.7, ""]  # depletion voltage
+        - [0.55, 0.45, ""]  # text 1
+        - [0.55, 0.5, ""] # text 2
 
     dop_conc:
       legend: [0.55, 0.3, 0.75, 0.4]
