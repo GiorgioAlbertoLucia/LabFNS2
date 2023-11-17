@@ -1,0 +1,38 @@
+inputFile:  /home/curved/apts_new/apts-dpts-ce65-daq-software/Data/dataAcqFe/SecondAcq_10082023/peakPosition_cluster_mV.csv
+outputFile: /home/curved/apts_new/apts-dpts-ce65-daq-software/Data/dataAcqFe/SecondAcq_10082023/energyCalibration_cluster.root
+
+# column that differentiates the run
+runColumn:  Vbb
+runs:       [0.0, 1.2, 2.4, 3.6, 4.8
+            ]
+fitFunc:    '[0] + [1] * x'
+nParams:    2
+
+graphTitle: 'Energy calibration, seed signal; Energy (keV); Amplitude (mV)'
+xCol:       peakEnergy
+yCol:       peak
+yErr:       peakErr
+
+legendPos:  [0.15, 0.4, 0.5, 0.68]
+
+fitCfg:
+    -   lineColor:  797
+        titleText:          [0.15, 0.8, '^{55}Fe energy calibration']
+        # legend positions are (xmin, ymin, xmax, ymax)
+        legendPos:          [0.65, 0.23, 0.9, 0.44]
+    -   lineColor:  858
+        titleText:          [0.15, 0.8, '^{55}Fe energy calibration']
+        # legend positions are (xmin, ymin, xmax, ymax)
+        legendPos:          [0.65, 0.23, 0.9, 0.44]
+    -   lineColor:  418
+        titleText:          [0.15, 0.8, '^{55}Fe energy calibration']
+        # legend positions are (xmin, ymin, xmax, ymax)
+        legendPos:          [0.65, 0.23, 0.9, 0.44]
+    -   lineColor:  628
+        titleText:          [0.15, 0.8, '^{55}Fe energy calibration']
+        # legend positions are (xmin, ymin, xmax, ymax)
+        legendPos:          [0.65, 0.23, 0.9, 0.44]
+    -   lineColor:  609
+        titleText:          [0.15, 0.8, '^{55}Fe energy calibration']
+        # legend positions are (xmin, ymin, xmax, ymax)
+        legendPos:          [0.65, 0.23, 0.9, 0.44]

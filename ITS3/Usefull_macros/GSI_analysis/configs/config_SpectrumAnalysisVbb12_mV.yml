@@ -1,0 +1,148 @@
+# vbb: 1.2
+# conversion in mV
+
+treeName:           dataFe
+dataFile:           /home/curved/apts_new/apts-dpts-ce65-daq-software/Data/dataAcqFe/SecondAcq_10082023/1.2/source/apts_DAQ-000901010542292A_20230810_182704.root
+spectrumBranch:     seed_signal_mV
+prefix:             mV_seed
+histTitle:          'Seed signal, vbb = 1.2 V; Amplitude (mV); Counts (a.u.)'
+histFillAlpha:      [860, 0.4]
+histSpec:           [500, 0, 100]    # nbins, xmin, xmax
+rebin:              1
+
+# fit initialization
+fitFunction:        ['[0]*exp(-(x-[1])*(x-[1])/(2*[2]*[2])) + [3]*exp(-(x-[4])*(x-[4])/(2*[5]*[5]))',
+                     '[0]*exp(-(x-[1])*(x-[1])/(2*[2]*[2])) + [3] + [4]*x',
+                     '[0]*exp(-(x-[1])*(x-[1])/(2*[2]*[2])) + [3] + [4]*x',
+                     '[0]*exp(-(x-[1])*(x-[1])/(2*[2]*[2])) + [3] + [4]*x']
+fitName:            ['K-alpha-K-beta',
+                     'Si-esc',
+                     'Ar-K-alpha-K-beta',
+                     'Si-fl']
+fitTitle:           ['K_{#alpha} and K_{#beta} peaks',
+                     'Si_{escape}',
+                     'Ar (air) K_{#alpha} and K_{#beta}',
+                     'Si_{fluorescence}']
+fitRange:           [[78.7, 100],
+                     [49.2, 62.5],
+                     [36.2, 48],
+                     [18, 27]]
+drawRange:          [[78.7, 100],
+                     [49.2, 62.5],
+                     [36.2, 48],
+                     [18, 27]]
+fitColor:           [2, 418, 850, 616]
+initialParameters:  [[15000, 79.5, 4, 2000, 87.5, 3],
+                     [1000, 55.5, 2, 30, 200],
+                     [1000, 41.5, 2, 30, 200],
+                     [1000, 22.1, 2, 1000, -270]]
+# the dictionary is (par_index: [par_min, par_max])
+limitParameters:    [{1: [79.3, 79.7],
+                      2: [0.1, 6],
+                      3: [500, 2500],
+                      4: [87, 88],
+                      5: [0.1, 5]
+                      },
+                     {0: [0, 5000],
+                      1: [55.3, 55.7],
+                      2: [0, 5],
+                      #3: [50, 110],
+                      #4: [820, 860],
+                     },
+                     {0: [0, 5000],
+                      1: [41.2, 41.8],
+                      2: [0, 5],
+                      #3: [50, 110],
+                      #4: [820, 860],
+                     },
+                     {0: [0, 1000],
+                      1: [21.8, 22.4],
+                      2: [0, 5],
+                      #3: [50, 110],
+                      #4: [820, 860],
+                     }]
+# single functions (used just for display purpose) 
+# the dictionary is (function_expression: number_of_parameters)
+singleFuncs:        [{'[0]*exp(-(x-[1])*(x-[1])/(2*[2]*[2]))': 3, 
+                     '[3]*exp(-(x-[4])*(x-[4])/(2*[5]*[5]))': 3, 
+                     }]
+singleNames:        [['K_{#alpha}', 'K_{#beta}']]
+singleColors:       [[797, 858, 418]]
+# texts are (xmin, ymin, text)
+titleText:          [0.15, 0.76, '^{55}Fe source measurement']
+texts:              [ 
+                     ]
+# legend positions are (xmin, ymin, xmax, ymax)
+legendPos:          [0.15, 0.37, 0.65, 0.68]
+
+
+# the dictionary is (name_of_cut: selection_condition)
+cuts:               { '_cl_size': '0 < cluster_size < 3'
+                    }
+# fit initialization for cut datasets
+_cl_size:  
+    fitFunction:        ['[0]*exp(-(x-[1])*(x-[1])/(2*[2]*[2])) + [3]*exp(-(x-[4])*(x-[4])/(2*[5]*[5]))',
+                         '[0]*exp(-(x-[1])*(x-[1])/(2*[2]*[2])) + [3] + [4]*x',
+                         '[0]*exp(-(x-[1])*(x-[1])/(2*[2]*[2])) + [3] + [4]*x',
+                         '[0]*exp(-(x-[1])*(x-[1])/(2*[2]*[2])) + [3] + [4]*x']
+    fitName:            ['K-alpha-K-beta',
+                         'Si-esc',
+                         'Ar-K-alpha-K-beta',
+                         'Si-fl']
+    fitTitle:           ['K_{#alpha} and K_{#beta} peaks',
+                         'Si_{escape}',
+                         'Ar (air) K_{#alpha} and K_{#beta}',
+                         'Si_{fluorescence}']
+    fitRange:           [[78.3, 100],
+                         [49.2, 62.5],
+                         [36.2, 48],
+                         [18, 27]]
+    drawRange:          [[78.3, 100],
+                         [49.2, 62.5],
+                         [36.2, 48],
+                         [18, 27]]
+    fitColor:           [2, 418, 850, 616]
+    initialParameters:  [[15000, 79.5, 4, 2000, 87.5, 3],
+                         [1000, 55.5, 2, 30, 200],
+                         [1000, 41.5, 2, 30, 200],
+                         [1000, 22.1, 2, 1000, -270]]
+    # the dictionary is (par_index: [par_min, par_max])
+    limitParameters:    [{1: [78.8, 79.7],
+                          2: [0.1, 6],
+                          3: [30, 2500],
+                          4: [87, 88],
+                          5: [0.5, 5]
+                          },
+                         {0: [0, 5000],
+                          1: [55.3, 55.7],
+                          2: [0, 5],
+                          #3: [50, 110],
+                          #4: [820, 860],
+                         },
+                         {0: [0, 5000],
+                          1: [41.2, 41.8],
+                          2: [0, 5],
+                          #3: [50, 110],
+                          #4: [820, 860],
+                         },
+                         {0: [0, 1000],
+                          1: [21.8, 22.4],
+                          2: [0, 5],
+                          #3: [50, 110],
+                          #4: [820, 860],
+                         }]
+    # single functions (used just for display purpose) 
+    # the dictionary is (function_expression: number_of_parameters)
+    singleFuncs:        [{'[0]*exp(-(x-[1])*(x-[1])/(2*[2]*[2]))': 3, 
+                         '[3]*exp(-(x-[4])*(x-[4])/(2*[5]*[5]))': 3, 
+                         }]
+    singleNames:        [['K_{#alpha}', 'K_{#beta}']]
+    singleColors:       [[797, 858, 418]]
+    # texts are (xmin, ymin, text)
+    titleText:          [0.15, 0.76, '^{55}Fe source measurement']
+    texts:              [[0.15, 0.68, '0 < Cluster size #leq 2'] 
+                         ]
+    # legend positions are (xmin, ymin, xmax, ymax)
+    legendPos:          [0.15, 0.37, 0.65, 0.64]
+
+outputFile: /home/curved/apts_new/apts-dpts-ce65-daq-software/Data/dataAcqFe/SecondAcq_10082023/1.2/source/analysis_apts_DAQ-000901010542292A_20230810_182704.root

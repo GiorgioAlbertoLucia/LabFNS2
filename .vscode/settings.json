@@ -84,6 +84,9 @@
         "thread": "cpp",
         "cinttypes": "cpp",
         "analysis (3).C": "cpp",
-        "PlotWaveforms.C": "cpp"
+        "PlotWaveforms.C": "cpp",
+        "Fkab2.C": "cpp",
+        "PlotFromTree1.C": "cpp",
+        "PlotWaveforms1.C": "cpp"
     }
 }

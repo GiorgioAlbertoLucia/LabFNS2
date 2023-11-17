@@ -1,0 +1,43 @@
+# shared
+rootFile :      /home/curved/apts_new/apts-dpts-ce65-daq-software/Data/dataAcqFe/PedestalRun3_30082023/4.8/apts_DAQ-000901010542292A_20230901_101715.root
+treeName:       'dataFe'
+
+# preprocessing
+do_preproc:     False
+do_calib:       True
+threshold:      0
+npyFilePath:    /home/curved/apts_new/apts-dpts-ce65-daq-software/Data/dataAcqFe/PedestalRun3_30082023/4.8/apts_DAQ-000901010542292A_20230901_101715.npy
+npzFilePath:    /home/curved/apts_new/apts-dpts-ce65-daq-software/Data/dataAcqFe/SecondAcq_10082023/3.6/gain/apts_gain_DAQ-000901010542292A_20230810_182842_analysed.npz
+savePreproc:    True
+option:         zero_point
+v_reset:        None
+
+# display
+do_display:     False
+branchNames:    [ #'charge_mean',
+                  #'ampl_mean'
+                  ]
+histSpecs:      [[200, 0, 171],
+                 [200, 4.5, 9.1]]
+canvasOutPaths: ['/home/curved/apts_new/apts-dpts-ce65-daq-software/Data/dataAcqFe/SecondAcq_10082023/0.0/source/charge.pdf',
+                 '/home/curved/apts_new/apts-dpts-ce65-daq-software/Data/dataAcqFe/SecondAcq_10082023/0.0/source/amplitude.pdf']
+
+# analysis
+do_analysis:    True
+configAnalysis: [ #/home/curved/apts_new/apts-dpts-ce65-daq-software/configs/Pedestal/config_PedestalAnalysisVbb48_mV.yml
+                  #/home/curved/apts_new/apts-dpts-ce65-daq-software/configs/SpectrumAnalysis/4.8/config_SpectrumAnalysisVbb48_cluster_mV.yml,
+                  #/home/curved/apts_new/apts-dpts-ce65-daq-software/configs/SpectrumAnalysis/4.8/config_SpectrumAnalysisVbb48_cluster.yml,
+                  #/home/curved/apts_new/apts-dpts-ce65-daq-software/configs/SpectrumAnalysis/4.8/config_SpectrumAnalysisVbb48_matrix_mV.yml,
+                  #/home/curved/apts_new/apts-dpts-ce65-daq-software/configs/SpectrumAnalysis/4.8/config_SpectrumAnalysisVbb48_matrix.yml,
+                  /home/curved/apts_new/apts-dpts-ce65-daq-software/configs/SpectrumAnalysis/1.2/config_SpectrumAnalysisVbb12_mV.yml,
+                  #/home/curved/apts_new/apts-dpts-ce65-daq-software/configs/SpectrumAnalysis/4.8/config_SpectrumAnalysisVbb48.yml,
+                ]
+
+# energy calibration
+do_en_calib:    False
+configEnCalib:  /home/curved/apts_new/apts-dpts-ce65-daq-software/configs/config_EnergyCalibration.yml
+ECruns:         5
+
+# peak monitoring
+do_peak_mon:    False
+configPeakMon:  /home/curved/apts_new/apts-dpts-ce65-daq-software/configs/PeakPosition/config_PeakMonitorVbb00_mV_HD.yml

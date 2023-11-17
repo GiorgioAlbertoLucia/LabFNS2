@@ -1,0 +1,74 @@
+# merged analysis
+
+treeName:           dataFeEnergy
+dataFile:           /home/curved/apts_new/apts-dpts-ce65-daq-software/Data/dataAcqFe/SecondAcq_10082023/mergeAnalysis.root
+branchName:         energy
+
+histTitle:          '^{55}Fe spectrum; Energy (keV); Counts (a.u.)'
+histFillAlpha:      [860, 0.4]
+histSpec:           [250, 0, 10]    # nbins, xmin, xmax
+
+fitFuncs:           ['K-alpha-beta', 'Si-escape', #'Ar-K-alpha-K-beta', 'Si-fluorescence'
+                    ]
+
+titleText:          [0.15, 0.8, 'APTS - ^{55}Fe energy spectrum']
+texts:              [[0.15, 0.7, 'Data merging for all V_{bb} values'],
+                     [0.15, 0.66, '0 < Cluster Size #leq 2'],
+                     ]
+# legend positions are (xmin, ymin, xmax, ymax)
+legendPos:          [0.15, 0.43, 0.65, 0.62]
+
+selections:         [ '0 < cluster_size < 3'
+                    ]
+
+K-alpha-beta:
+    funcName:           'Mn K_{#alpha}-K_{#beta}'
+    fitFunc:            '[0]*exp(-(x-[1])*(x-[1])/(2*[2]*[2])) + [3]*exp(-(x-[4])*(x-[4])/(2*[5]*[5]))' # double gaussian 
+    fitRange:           [5.85, 7]
+    drawRange:          [5.85, 7]
+    initialParameters:  [900, 5.9, 3, 200, 6.51, 0.2]
+    # the dictionary is (par_index: [par_min, par_max])
+    limitParameters:    {1: [5.8, 6],
+                         2: [0.1, 0.5],
+                         #3: [350, 700],
+                         4: [6.4, 6.6],
+                         5: [0.1, 0.5]
+                         }
+    color:              797
+
+Si-escape:  
+    funcName:           'Si_{esc}'
+    fitFunc:            '[0]*exp(-(x-[1])*(x-[1])/(2*[2]*[2])) + [3]+[4]*x'
+    fitRange:           [3.6, 4.5]
+    drawRange:          [3.6, 4.5]
+    initialParameters:  [900, 4.16, 0.1]
+    # the dictionary is (par_index: [par_min, par_max])
+    limitParameters:    {1: [3.9, 4.3],
+                         2: [0.01, 0.5]
+                         }
+    color:              418
+
+Ar-K-alpha-K-beta:  
+    funcName:           'Ar K_{#alpha}-K_{#beta}'
+    fitFunc:            '[0]*exp(-(x-[1])*(x-[1])/(2*[2]*[2])) + [3]+[4]*x'
+    fitRange:           [2.45, 3.3]
+    drawRange:          [2.45, 3.3]
+    initialParameters:  [900, 2.9, 0.7]
+    # the dictionary is (par_index: [par_min, par_max])
+    limitParameters:    {1: [2.7, 3.2],
+                         2: [0.1, 1.5]
+                         }
+    color:              850
+
+Si-fluorescence:  
+    funcName:           'Si_{fl}'
+    fitFunc:            '[0]*exp(-(x-[1])*(x-[1])/(2*[2]*[2])) + [3]+[4]*x'
+    fitRange:           [1., 1.92]
+    drawRange:          [1., 1.92]
+    initialParameters:  [900, 1.74, 0.7]
+    # the dictionary is (par_index: [par_min, par_max])
+    limitParameters:    {0: [80, 1000],
+                         1: [1.7, 1.9],
+                         2: [0.3, 2.5]
+                         }
+    color:              616

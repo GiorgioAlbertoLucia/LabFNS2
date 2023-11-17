@@ -1,0 +1,26 @@
+# peak monitoring - vbb: 1.2
+# conversion in mV
+
+treeName:       dataFe
+dataFile:       /home/curved/apts_new/apts-dpts-ce65-daq-software/Data/2023_06_28_SourceScan/1.2/apts_DAQ-000901010542292A_20230628_1146311M0v1.2v.root
+treeBranch:     seed_signal_mV
+
+prefix:         seed
+histTitle:      'Seed signal, V_{bb} = 1.2 V; Amplitude (mV); Counts (a.u.)'
+histSpec:       [600, 0, 120]    # nbins, xmin, xmax
+histXaxis:      'Amplitude (mV)'
+histYaxis:      'Counts (a.u.)'
+
+nIntervals:     10
+
+fitRange:       [77.6, 81]
+initFitPars:    {1: 79}
+
+colors:         [2, 3, 4, 5, 6, 7, 8, 9, 800, 880]
+legendPos:      [0.15, 0.43, 0.45, 0.64]
+
+
+
+outputFile:     /home/curved/apts_new/apts-dpts-ce65-daq-software/Data/2023_06_28_SourceScan/1.2/peak_monitor_apts_DAQ-000901010542292A_20230628_1146311M0v1.2v.root
+
+
