@@ -283,8 +283,8 @@ class DepletionAnalysis:
         if self.sensor == 'LGAD':
             latex.DrawLatex(plt_cfg['latex'][0][0], plt_cfg['latex'][0][1], f'Sensor: ({intersection2:.2f}'+'#pm'+f'{intersection2_err:.2f}) V')
             latex.DrawLatex(plt_cfg['latex'][1][0], plt_cfg['latex'][1][1], f'Gain layer: ({intersection1:.2f}'+'#pm'+f'{intersection1_err:.2f}) V')
-            latex.DrawLatex(plt_cfg['latex'][2][0], plt_cfg['latex'][2][1], 'Depletion voltage:')
-        else:   latex.DrawLatex(plt_cfg['latex'][0][0], plt_cfg['latex'][0][1], f'Sensor depletion: ({intersection2:.2f}'+'#pm'+f'{intersection2_err:.2f}) V')
+            latex.DrawLatex(plt_cfg['latex'][2][0], plt_cfg['latex'][2][1], '#textbf{Depletion voltage:}')
+        else:   latex.DrawLatex(plt_cfg['latex'][0][0], plt_cfg['latex'][0][1], '#textbf{Sensor depletion:} '+f'({intersection2:.2f}'+'#pm'+f'{intersection2_err:.2f}) V')
         latex.DrawLatex(plt_cfg['latex'][3][0], plt_cfg['latex'][3][1], self.text1)
         latex.DrawLatex(plt_cfg['latex'][4][0], plt_cfg['latex'][4][1], self.text2)
 
@@ -681,7 +681,7 @@ if __name__ == "__main__":
     depletion_analysis.doping_concentration()
     depletion_analysis.doping_profile()
     depletion_analysis.depletion_depth()
-    #depletion_analysis.doping_profile_color(voltage_threshold=-sensor_depletion)
+    depletion_analysis.doping_profile_color(voltage_threshold=-sensor_depletion)
 
     depletion_analysis.close()
 
