@@ -77,12 +77,13 @@ void analysis::Loop(const bool FillTTree = true)
     TH1D * histoAmpli3 = new TH1D("histoAmpli3","histoAmpli3",200,0.,400);
     TH1D * histoAmpli2_sel = new TH1D("histoAmpli2_sel","histoAmpli2_Sel",200,0.,400); //mV
     TH1D * histoAmpli3_sel = new TH1D("histoAmpli3_sel","histoAmpli3_Sel",200,0.,400);
-    TH1D * histoToA2 = new TH1D("histoToA2","histoToA2",150,0.,1.2); //ns
-    TH1D * histoToA3 = new TH1D("histoToA3","histoToA3",150,0.,1.2);
+    TH1D * histoToA2 = new TH1D("histoToA2","histoToA2",100,0.,1.2); //ns
+    TH1D * histoToA3 = new TH1D("histoToA3","histoToA3",100,0.,1.2);
     TH1D * histoRMS2 = new TH1D("histoRMS2","histoRMS2",150,0.3,0.8); //mV
     TH1D * histoRMS3 = new TH1D("histoRMS3","histoRMS3",150,0.3,0.8);
     TH1D * histoChiSquare2 = new TH1D("histoChiSquare2","histoChiSquare2",nentries,0.,nentries);
     TH1D * histoChiSquare3 = new TH1D("histoChiSquare3","histoChiSquare3",nentries,0.,nentries);
+    
        
     TFile outFile("Beta/data/output/BetaOutput.root", "recreate");
     TTree * tree;
@@ -171,7 +172,7 @@ void analysis::Loop(const bool FillTTree = true)
         if(jentry==100 || jentry==200 || jentry==300) cout<<"tempo 2bis: "<<t2->at(xx)<<" tempo 3bis: "<<t3->at(yy)<<endl;
         if(Amp2 > 50. && Amp3 > 50.)
         {
-            TF1* fit2 = new TF1("fit2","gaus",1000000000*(t2->at(xx-7)),1000000000*(t2->at(xx+7)));//checkordini di grandezza e valori che sputa
+            TF1* fit2 = new TF1("fit2","gaus",1000000000*(t2->at(xx-7)),1000000000*(t2->at(xx+7)));//TO DO:check with other range
             TF1* fit3 = new TF1("fit3","gaus",1000000000*(t3->at(yy-7)),1000000000*(t3->at(yy+7)));
             for(int a=0;a<t2->size();a++)
             {
@@ -309,12 +310,18 @@ void analysis::Loop(const bool FillTTree = true)
       histoToA2->GetXaxis()->SetTitle("Time of arrival (ns)"); 
       histoToA2->GetYaxis()->SetTitle("Entries (a.u.)");
       histoToA2->SetTitle("Sensor A - Channel 2");
+      TF1 * fitToA2 = new TF1("fitToA2","gaus",0.4,0.8);
+      histoToA2->Fit(fitToA2,"rmlQ+");
+      fitToA2->SetLineColor(kBlue+2);
       canvasT->cd(2);
       histoToA3->Draw("hist");
       histoToA3->SetLineColor(kRed);
       histoToA3->GetXaxis()->SetTitle("Time of arrival (ns)");
       histoToA3->GetYaxis()->SetTitle("Entries (a.u.)");
       histoToA3->SetTitle("Sensor B - Channel 3");
+      TF1 * fitToA3 = new TF1("fitToA3","gaus",0.5,0.9);
+      histoToA3->Fit(fitToA3,"rmlQ+");
+      fitToA3->SetLineColor(kRed+2);
       canvasT->SaveAs("Beta/data/output/time.pdf");
 
       TCanvas * canvasRMS = new TCanvas("canvasRMS","canvasRMS",1000,1000);
