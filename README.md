@@ -11,9 +11,9 @@ silicon-based timing detectors, R. Preghenella, on behalf of the ALICE Collabora
 * [LGAD and 3D as Timing Detectors, S. Otero Ugobono on behalf of the RD50 Collaboration](https://cdsweb.cern.ch/record/2747755/files/untitled.pdf)
 
 >MAPS
-*[Development of monolithic sensors for high energy physics in commercial
+* [Development of monolithic sensors for high energy physics in commercial
 CMOS technologies, W. Snoeys](https://www.sciencedirect.com/science/article/pii/S0168900219306655?via%3Dihub)
-*[Study and Development of a novel Silicon
+* [Study and Development of a novel Silicon
 Pixel Detector for the Upgrade of the ALICE
 Inner Tracking System,  J. W. van Hoorne](https://cds.cern.ch/record/2119197?ln=it)
 
