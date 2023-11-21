@@ -11,7 +11,7 @@ from StyleFormatter import SetObjectStyle, SetGlobalStyle
 import sys
 import itertools
 
-def ComputeSystOnThresholds(df, th2, th3):
+def ComputeSystOnThresholds(df, th2, th3, Up=False):
     cuts = itertools.product(th2, th3)
     resolutions = []
     resolutionsfit = []
@@ -25,7 +25,10 @@ def ComputeSystOnThresholds(df, th2, th3):
     for idx, cut in enumerate(cuts):
         th2 = cut[0]
         th3 = cut[1]
-        _, _, _, _, timeres, timeresfit = ComputeResolution(df, th2, th3)
+        if(Up==True):
+            _, _, _, _, timeres, timeresfit = ComputeResolutionUp(df, th2, th3)
+        else:   
+            _, _, _, _, timeres, timeresfit = ComputeResolution(df, th2, th3)
         timeres = timeres/np.sqrt(2)
         timeresfit = timeresfit/np.sqrt(2)
         resolutions.append(timeres)
@@ -36,7 +39,7 @@ def ComputeSystOnThresholds(df, th2, th3):
         hResFitvsCut.SetBinContent(idx, timeresfit)
         hResDistr.Fill(timeres)
         hResFitDistr.Fill(timeresfit)
-
+        
     return resolutions, resolutionsfit, hResvsCut, hResFitvsCut, hResvsTh, hResFitvsTh, hResDistr, hResFitDistr
 
 def ComputeResolution(df, th2, th3):
@@ -67,6 +70,34 @@ def ComputeResolution(df, th2, th3):
     timeresfit=gausFit.GetParameter(2)
 
     return hTime, hTimeFit, gaus, gausFit, timeres, timeresfit
+
+def ComputeResolutionUp(df, th2Up, th3Up):
+    
+        hTime1=TH1D("hTime1","hTime1",19,-350,550.)
+        hTimeFit1=TH1D("hTimeFit1","hTimeFit1",46,-350,550.)
+        for a2,a3,t2,t3,t2fit,t3fit in zip(df["Amp2"],df["Amp3"],df["ToA2"],df["ToA3"], df["ToA2f"], df["ToA3f"]): 
+            if (a2 <= th2Up and a3<= th3Up and a2>80 and a3>80):
+                hTime1.Fill(1000*(t2-t3))
+                hTimeFit1.Fill(1000*(t2fit-t3fit))
+        gaus1 = TF1("gaus","[0]*exp(-((x-[1])^2)/(2*[2]^2))",-100,300)
+        gaus1.SetLineColor(kRed)
+        gaus1.SetParameter(2,50)
+        gaus1.SetParameter(1,80)
+        gaus1.SetParameter(0,3500)
+        gStyle.SetOptFit(11111111)
+        hTime1.Fit(gaus1,"qrml+")
+        timeres1=gaus1.GetParameter(2)
+
+        gausFit1=TF1("gausFit","[0]*exp(-((x-[1])^2)/(2*[2]^2))",0,240)
+        gausFit1.SetLineColor(kAzure)
+        gausFit1.SetParameter(2,50)
+        gausFit1.SetParameter(1,80)
+        gausFit1.SetParameter(0,1800)
+        gStyle.SetOptFit(11111111)
+        hTimeFit1.Fit(gausFit1,"qrml+")
+        timeresfit1=gausFit1.GetParameter(2)
+
+        return hTime1, hTimeFit1, gaus1, gausFit1, timeres1, timeresfit1
    
 
 if __name__=='__main__':
@@ -78,8 +109,13 @@ if __name__=='__main__':
     theshold3=80
     theshold2Syst = np.arange(0, 150, 10)
     theshold3Syst = np.arange(30, 150,10)
+    theshold2SystUp = np.arange(240, 360, 10)
+    theshold3SystUp = np.arange(250, 360, 10)
+    #theshold2Syst = np.flip(theshold2Syst)
+    #theshold3Syst = np.flip(theshold3Syst)
+    _, _, hResvsCut, hResFitvsCut, hResvsTh, hResFitvsTh, hResDistr, hResFitDistr  = ComputeSystOnThresholds(df, theshold2Syst, theshold3Syst)
+    _, _, hResvsCutUp, hResFitvsCutUp, hResvsThUp, hResFitvsThUp, hResDistrUp, hResFitDistrUp  = ComputeSystOnThresholds(df, theshold2SystUp, theshold3SystUp, Up=True)
     hTime, hTimeFit, gaus, gaus2, timeres, timeresfit = ComputeResolution(df, theshold2, theshold3)
-    _, _, hResvsCut, hResFitvsCut, hResvsTh, hResFitvsTh, hResDistr, hResFitDistr = ComputeSystOnThresholds(df, theshold2Syst, theshold3Syst)
     print("risolution UFSD: ",timeres/np.sqrt(2))
     print("risolution UFSD with fit: ",timeresfit/np.sqrt(2))
     canvas=TCanvas("canvas","canvas",1900,1500)
@@ -154,6 +190,47 @@ if __name__=='__main__':
     legendResDistr.Draw("same")
     canvasSys.Write()
     canvasSys.SaveAs('Beta/data/output/Time_resolution.pdf')
+
+    canvasSysUp=TCanvas("canvasSysUp","canvasSysUp",1900,1500)
+    canvasSysUp.Divide(2,2)
+    canvasSysUp.cd(1).DrawFrame(0, 0,len(theshold2SystUp)*len(theshold3SystUp), 130, "Resolution vs cut;Cut;Resolution")
+    hResvsCutUp.SetLineColor(kRed)
+    hResvsCutUp.Draw("hist,same")
+    hResFitvsCutUp.SetLineColor(kAzure)
+    hResFitvsCutUp.Draw("hist,same")
+    legendResvsCutUp = TLegend(0.6, 0.7, 0.85, 0.9)
+    legendResvsCutUp.AddEntry(hResvsCutUp,'w/o fit','l')
+    legendResvsCutUp.AddEntry(hResFitvsCutUp,'w fit','l')
+    legendResvsCutUp.SetTextSize(0.045)
+    legendResvsCutUp.Draw("same")
+    canvasSysUp.cd(2)
+    hResvsThUp.SetTitle("Resolution vs threshold")
+    hResvsThUp.GetXaxis().SetTitle("High Threshold 2")
+    hResvsThUp.GetYaxis().SetTitle("High Threshold 3")
+    hResvsThUp.SetStats(0)
+    hResvsThUp.SetAxisRange(46.,58.,"z")
+    hResvsThUp.Draw("colz")
+    canvasSysUp.cd(3)
+    hResFitvsThUp.SetTitle("Resolution (fit) vs threshold")
+    hResFitvsThUp.GetXaxis().SetTitle("High Threshold 2")
+    hResFitvsThUp.GetYaxis().SetTitle("High Threshold 3")
+    hResFitvsThUp.SetStats(0)
+    hResFitvsThUp.SetAxisRange(35., 42.,"z")
+    hResFitvsThUp.Draw("colz")
+    canvasSysUp.cd(4).DrawFrame(20, 0, 80, 150, "Resolution distribution;Resolution;Counts")
+    hResDistrUp.SetLineColor(kRed)
+    hResDistrUp.Draw("hist,same")
+    hResFitDistrUp.SetLineColor(kAzure)
+    hResFitDistrUp.Draw("hist,same")
+    legendResDistrUp = TLegend(0.6, 0.7, 0.85, 0.9)
+    legendResDistrUp.AddEntry(hResDistrUp,'w/o fit','l')
+    legendResDistrUp.AddEntry(hResFitDistrUp,'w fit','l')
+    legendResDistrUp.SetTextSize(0.045)
+    legendResDistrUp.Draw("same")
+    canvasSysUp.Write()
+    canvasSysUp.SaveAs('Beta/data/output/Time_resolutionUp.pdf')
+
+
 
 
     outfile.Close()
