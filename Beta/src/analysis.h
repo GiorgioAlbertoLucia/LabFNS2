@@ -45,6 +45,8 @@ public :
    virtual void     Loop(const bool FillTTree);
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
+   virtual void     FitSignal(TH1D* histo2, TH1D* histo3, double& mean2, double&  mean3, TF1* fit2, TF1* fit3);
+   virtual int findIndexOfMaxElement(const std::vector<double>* ptrToVector);
 };
 
 #endif
@@ -145,3 +147,37 @@ Int_t analysis::Cut(Long64_t entry)
    return 1;
 }
 #endif // #ifdef analysis_cxx
+
+void analysis::FitSignal(TH1D* histo2, TH1D* histo3, double& mean2, double&  mean3, TF1* fit2, TF1* fit3)
+{
+   int xx = findIndexOfMaxElement(w2);
+   int yy = findIndexOfMaxElement(w3);
+   histo2->Fit(fit2,"rmQ+");
+   histo3->Fit(fit3,"rmQ+");
+   mean2 = fit2->GetParameter(1);
+   mean3 = fit3->GetParameter(1);
+}
+
+// Function to find the index of the maximum element in a vector
+// Returns -1 if the vector is empty
+int analysis::findIndexOfMaxElement(const std::vector<double>* ptrToVector) {
+    // Check if the vector is not empty
+    if (ptrToVector && !ptrToVector->empty()) {
+        // Initialize variables to keep track of the maximum element and its index
+        double maxElement = (*ptrToVector)[0]; // Assume the first element is the maximum
+        int maxIndex = 0;
+
+        // Iterate through the vector to find the maximum element and its index
+        for (int i = 1; i < ptrToVector->size(); ++i) {
+            if ((*ptrToVector)[i] > maxElement) {
+                maxElement = (*ptrToVector)[i];
+                maxIndex = i;
+            }
+        }
+
+        return maxIndex;
+    } else {
+        // Return -1 if the vector is empty
+        return -1;
+    }
+}
