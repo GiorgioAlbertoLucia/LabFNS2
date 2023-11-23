@@ -296,7 +296,7 @@ void FindEdge(TGraph* gcount,TGraph* gnegder, TGraph* gder, double& endplateau, 
 }
 
 
-void ProcessEvent(TGraph* g, TGraph* glong, double params[20], bool plot){
+void ProcessEvent(TGraph* g, TGraph* glong,double params[20], bool plot){
 
   TGraph* gs=Smooth(g,10); //smutta il grafico per eliminare punti brutti,
   gs->GetXaxis()->SetTitle(g->GetXaxis()->GetTitle());
@@ -459,7 +459,7 @@ void ProcessEvent(TGraph* g, TGraph* glong, double params[20], bool plot){
   c1->cd(3);
   gPad->SetRightMargin(0.04);
   glong->Draw();// da linea successiva  (462) fino a 491 da togliere
-  TLine* lp2=new TLine(endpl2,glong->GetYaxis()->GetXmin(),endpl2,glong->GetYaxis()->GetXmax());
+  /*TLine* lp2=new TLine(endpl2,glong->GetYaxis()->GetXmin(),endpl2,glong->GetYaxis()->GetXmax());
   lp2->SetLineColor(2);
   lp2->SetLineStyle(2);
   lp2->Draw();
@@ -488,7 +488,7 @@ void ProcessEvent(TGraph* g, TGraph* glong, double params[20], bool plot){
   }
   c1->cd(6);
   gPad->SetRightMargin(0.04);
-  gdlong->Draw();
+  gdlong->Draw();*/
 
 }
 
@@ -502,11 +502,11 @@ void ProcessEvent(TString filnam, int ev, int chan){
   TGraph* g=(TGraph*)f->Get(Form("grEv%dChanC%dsamp25",ev,chan));
   TGraph* glong=(TGraph*)f->Get(Form("grEv%dChanC%dsamp10000",ev,chan));//togliere
   if(g==0x0){
-    printf("TGraph %s not found in root file\n",Form("grEv%dChanC%dsamp25",ev,chan));
+    //printf("TGraph %s not found in root file\n",Form("grEv%dChanC%dsamp25",ev,chan));
     return;
   }
   if(glong==0x0){
-    printf("TGraph %s not found in root file\n",Form("grEv%dChanC%dsamp10000",ev,chan));
+    //printf("TGraph %s not found in root file\n",Form("grEv%dChanC%dsamp10000",ev,chan));
     return;
   }
   ProcessEvent(g,glong,params,kTRUE);
@@ -541,7 +541,7 @@ void ProcessFile(TString filnam, int maxEv=999999){// principale
   int period;
   int lastev=0;
   int chan;
-  printf("----- Number of keys in file = %d\n",nkeys);
+  //printf("----- Number of keys in file = %d\n",nkeys);
 //   for(Int_t j=0; j<nkeys; j++){
 //     TKey* k=(TKey*)lkeys->At(j);
 //     TString cname=k->GetClassName();
@@ -564,22 +564,22 @@ void ProcessFile(TString filnam, int maxEv=999999){// principale
       lastev=ev;
     }
   }  
-  printf("----- Number of events = %d\n",lastev);
+  //printf("----- Number of events = %d\n",lastev);
   if(lastev>maxEv) lastev=maxEv;
 
   int dum;
   char ddum[2];
   for(int iev=0; iev<=lastev; iev++){
-    printf("----- Event %d -----\n",iev);
+    //printf("----- Event %d -----\n",iev);
     for(int ichan=1; ichan<=4; ichan++){
-      printf("--- Channel %d ---\n",ichan);
+      //printf("--- Channel %d ---\n",ichan);
       TGraph* g=(TGraph*)f->Get(Form("grEv%dChanC%dsamp25",iev,ichan));// cosa rappresentano i due file diverisi a 25 fa vedere solo la discesa
       TGraph* glong=(TGraph*)f->Get(Form("grEv%dChanC%dsamp10000",iev,ichan));//ora non si fa più così, i due servivano per vedere forma d'onda completa e solo discesa, ora facciamo solo la discesa
       if(!g ||!glong) continue;//se non ci sono i grafici va avanti lo stesso
       const char* grtit=g->GetTitle();
       sscanf(grtit,"Event %d Channel %2s Time %ld",&dum,ddum,&timest);
       ev=iev;
-      ProcessEvent(g,glong,paramschan,kFALSE);//questo va tolto
+      //ProcessEvent(g,glong,paramschan,kFALSE);//questo va tolto
       for(int ivar=0; ivar<nParsPerChan; ivar++) params[ivar+(ichan-1)*nParsPerChan]=paramschan[ivar];
       delete g;
       delete glong;//tolto
