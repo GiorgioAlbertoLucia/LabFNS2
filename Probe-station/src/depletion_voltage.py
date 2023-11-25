@@ -281,10 +281,10 @@ class DepletionAnalysis:
         latex.SetTextSize(0.04)
         latex.SetNDC()
         if self.sensor == 'LGAD':
-            latex.DrawLatex(plt_cfg['latex'][0][0], plt_cfg['latex'][0][1], f'Sensor: ({intersection2:.2f}'+'#pm'+f'{intersection2_err:.2f}) V')
-            latex.DrawLatex(plt_cfg['latex'][1][0], plt_cfg['latex'][1][1], f'Gain layer: ({intersection1:.2f}'+'#pm'+f'{intersection1_err:.2f}) V')
-            latex.DrawLatex(plt_cfg['latex'][2][0], plt_cfg['latex'][2][1], '#textbf{Depletion voltage:}')
-        else:   latex.DrawLatex(plt_cfg['latex'][0][0], plt_cfg['latex'][0][1], '#textbf{Sensor depletion:} '+f'({intersection2:.2f}'+'#pm'+f'{intersection2_err:.2f}) V')
+            latex.DrawLatex(plt_cfg['latex'][0][0], plt_cfg['latex'][0][1], f'Sensor: ({intersection2:.2f}'+' #pm '+f'{intersection2_err:.2f}) V')
+            latex.DrawLatex(plt_cfg['latex'][1][0], plt_cfg['latex'][1][1], f'Gain layer: ({intersection1:.2f}'+' #pm '+f'{intersection1_err:.2f}) V')
+            latex.DrawLatex(plt_cfg['latex'][2][0], plt_cfg['latex'][2][1], '#bf{Depletion voltage:}')
+        else:   latex.DrawLatex(plt_cfg['latex'][0][0], plt_cfg['latex'][0][1], '#bf{Sensor depletion:} '+f'({intersection2:.2f}'+' #pm '+f'{intersection2_err:.2f}) V')
         latex.DrawLatex(plt_cfg['latex'][3][0], plt_cfg['latex'][3][1], self.text1)
         latex.DrawLatex(plt_cfg['latex'][4][0], plt_cfg['latex'][4][1], self.text2)
 
@@ -667,13 +667,14 @@ if __name__ == "__main__":
     parser.add_argument('--config_plot', type=str, default='Probe-station/src/plot_depletion_voltage_conf.yml', help='Configuration file with the sensor parameters')
     parser.add_argument('--sensor', type=str, help='Sensor name', required=True)
     parser.add_argument('--derivative_method', type=str, default='sigmoid', help='Method to calculate the derivative of 1/C^2 vs V. Options: sigmoid, numpy')
+    parser.add_argument('--no_moving_average', action='store_false', help='Do not use the moving average of the capacitance')
     parser.add_argument('--verbose', action='store_true', help='Verbose mode')
     args = parser.parse_args()
 
     df = pd.read_csv(args.input, comment='#')
     depletion_analysis = DepletionAnalysis(df=df, args=args)
 
-    depletion_analysis.preprocess_data(derivative_method=args.derivative_method, moving_average=True)
+    depletion_analysis.preprocess_data(derivative_method=args.derivative_method, moving_average=args.no_moving_average)
     sensor_depletion = depletion_analysis.inverseC2_vs_V()
     depletion_analysis.print_zoom(0., 33., -0.2e-4, 1.4e-4)
 

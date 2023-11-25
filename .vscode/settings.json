@@ -87,6 +87,7 @@
         "PlotWaveforms.C": "cpp",
         "Fkab2.C": "cpp",
         "PlotFromTree1.C": "cpp",
-        "PlotWaveforms1.C": "cpp"
+        "PlotWaveforms1.C": "cpp",
+        "wfm.C": "cpp"
     }
 }
