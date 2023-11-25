@@ -92,6 +92,11 @@ void Preprocessor::ReadInput()
     
 }
 
+/**
+ * @brief Function to build the tree with the preprocessed data. All events in the input files will be processed.
+ * 
+ * @param outFilePath 
+ */
 void Preprocessor::BuildTree(const char * outFilePath)
 {
     TString sOutFilePath(outFilePath);
@@ -233,6 +238,13 @@ bool Preprocessor::ProcessEvent(const int event, const int channel, PixelData& c
     return 1;
 }
 
+/**
+ * @brief For a single event, draws the waveform and its derivative.
+ * 
+ * @param event 
+ * @param channel 
+ * @param outFilePath 
+ */
 void Preprocessor::DrawEvent(const int event, const int channel, const char * outFilePath)
 {
     TString sOutFilePath(outFilePath);
