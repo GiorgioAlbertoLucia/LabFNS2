@@ -108,14 +108,14 @@ void RiseTime::drawWaveform(const char * outputPath, const int nEvent, const dou
 std::pair<double, double> RiseTime::findRiseTimeExtremes(const double minAmplitude)
 {
     // Find the beginning of the signal
-    //auto derivative = RiseTime::computeDerivative();
-    //
-    //auto max_der = std::max_element(derivative.begin(), derivative.end());
-    //auto begin = std::distance(derivative.begin(), max_der) * fWindow;  // Index of the maximum derivative in the waveform vector
+    auto derivative = RiseTime::computeDerivative();
     
+    auto max_der = std::max_element(derivative.begin(), derivative.end());
+    auto begin = std::distance(derivative.begin(), max_der) * fWindow;  // Index of the maximum derivative in the waveform vector
+
     //auto zero = std::find(fTimeFrame.begin(), fTimeFrame.end(), 0.);
     //auto begin = std::distance(fTimeFrame.begin(), zero);
-    const int begin = fTimeFrame.size() / 2;
+    //const int begin = fTimeFrame.size() / 2;
 
     // find last point of the fit
     auto max = std::max_element(fWaveform.begin(), fWaveform.end());
