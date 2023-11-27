@@ -66,11 +66,10 @@ void Preprocessor::ReadInput()
     {   
         updateProgressBar(i, nKeys, startTime);
 
-        
         TKey* key = (TKey*)listKeys->At(i);             // get the ith object
         if(!key) 
         {
-            //std::cerr << "\tError: key " << i << " not found." << std::endl;
+            std::cerr << "\tError: key " << i << " not found." << std::endl;
             continue;              
         }            
         TString className = key->GetClassName();        // get the type of the object
@@ -79,13 +78,10 @@ void Preprocessor::ReadInput()
         if (className == "TGraph")  sscanf(objectName.Data(), "grEv%dChanC%dsamp%d", &event, &channel, &fSamplingPeriod);
         if (event > fNEvents) fNEvents = event;    
         if (channel > fNChannels) fNChannels = channel;
-
-        delete key;
     }
 
     std::cout << std::endl;
     fNEvents++;
-    fNChannels++;
 
     //delete listKeys;
     inFile->Close();
@@ -359,8 +355,6 @@ int FindChangingDerivative(TGraph & grDer, const double& meanDer, const double& 
             // positive derivative
             if (y[i] > meanDer + 3 * RMSDer && y[i + 1] > meanDer + 3 * RMSDer && y[i + 2] > meanDer + 3 * RMSDer)
             {
-                std::cout << "meanDer: " << meanDer << ", RMSDer: " << RMSDer << std::endl;
-                std::cout << "y["<<i<<"]: " << y[i] << ", y["<<i<<"+1]: " << y[i+1] << ", y["<<i<<"+2]: " << y[i+2] << std::endl;
                 changingPoint = i;
                 break;
             }
