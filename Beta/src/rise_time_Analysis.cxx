@@ -87,7 +87,16 @@ void RiseTimeAnalysis::buildRiseTime(const char* w_branchname, const char* t_bra
         double rise_time = rt.findRiseTime(minAmplitude);
         
         fRiseTime.push_back(rise_time);
-        if(ientry == 100)   rt.drawWaveform(wfmDrawPath, ientry, minAmplitude);
+        if(ientry == 100)   
+        {
+            rt.drawWaveform(wfmDrawPath, ientry, minAmplitude);
+            TString wfmDrawPathFit = wfmDrawPath;
+            wfmDrawPathFit.ReplaceAll(".pdf", "_fit.pdf"); 
+            rt.drawLinearFit(wfmDrawPathFit.Data(), ientry, minAmplitude);
+            TString wfmDrawPathDerivative = wfmDrawPath;
+            wfmDrawPathDerivative.ReplaceAll(".pdf", "_derivative.pdf");
+            rt.drawDerivative(wfmDrawPathDerivative.Data(), ientry, minAmplitude);
+        }
     }
 
     preprocessedFile->Close();
@@ -143,7 +152,7 @@ void RiseTimeAnalysis::saveRiseTime(const char * branchname)
  */
 void RiseTimeAnalysis::analyseRiseTime(const int channel)
 {
-    auto riseTimeHist = new TH1D(Form("RThist%d", channel), Form("Rise Time - Channel %d; Rise Time (ps); Counts", channel), 160, -2000, 2000);
+    auto riseTimeHist = new TH1D(Form("RThist%d", channel), Form("Rise Time - Channel %d; Rise Time (ps); Counts", channel), 320, -2000, 2000);
     for(unsigned long ientry=0; ientry<fRiseTime.size(); ++ientry)  riseTimeHist->Fill(fRiseTime.at(ientry)*1000);
 
     riseTimeHist->SetStats(0);

@@ -24,6 +24,8 @@ class RiseTime
         
         double findRiseTime(const double minAmplitude = 0.);
         void drawWaveform(const char * outputPath, const int nEvent, const double minAmplitude = 0.);
+        void drawLinearFit(const char * outputPath, const int nEvent, const double minAmplitude = 0.);
+        void drawDerivative(const char * outputPath, const int nEvent, const double minAmplitude = 0.);
 
         void reset() { fRiseTime = 0.; fWaveform.clear(); fTimeFrame.clear(); };
 

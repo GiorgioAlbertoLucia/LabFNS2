@@ -11,6 +11,8 @@
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
+#include <TH1D.h>
+#include <TF1.h>
 
 // Header file for the classes stored in the TTree if any.
 #include "vector"
