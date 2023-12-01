@@ -3,6 +3,10 @@
 #include "preprocessor.hh"
 #include "colorTerminal.hh"
 
+#include <iostream>
+#include <fstream>
+#include <streambuf>
+
 #include <TFile.h>
 #include <TGraph.h>
 #include <TF1.h>
@@ -16,7 +20,8 @@
 // functions used in this file
 
 std::pair<double, double> FindEdge(TGraph & gr);
-double FindMinimumIndex(TGraph & gr);
+int FindMinimumIndex(TGraph & gr);
+int FindMaximumIndex(TGraph & gr);
 int FindChangingDerivative(TGraph & grDer, const double& meanDer, const double& RMSDer, const int ignorePoints, const bool backwards = false);
 std::pair<double, double> GetMeanAndRMS(TGraph & gr, const int& begin, const int& end);
 TGraph* SmoothGraph(TGraph& gr, const int nSmoothingPoints = 2);
@@ -27,7 +32,6 @@ TGraph* DerivativeGraph(TGraph& gr);
 
 // progress bar section
 // -------------------------------------------------------------------------------------
-#include <Riostream.h>
 #include <chrono>
 #include <thread>
 void updateProgressBar(int progress, int total, const std::chrono::steady_clock::time_point& startTime);
@@ -36,18 +40,21 @@ void updateProgressBar(int progress, int total, const std::chrono::steady_clock:
 
 Preprocessor::Preprocessor(const char * inFilePath, const double threshold): 
     fInFilePath(inFilePath), 
-    fNChannels(0), 
+    fNPixels(0), 
     fNEvents(0), 
-    fSamplingPeriod(0), 
+    fSamplingPeriodDictionary(NULL), 
     fThreshold(threshold)
 {
     Preprocessor::ReadInput();   
+    Preprocessor::GenerateSamplingDictionary();
 }
 
 Preprocessor::~Preprocessor()
 {
-
+    delete fSamplingPeriodDictionary;
 }
+
+/*  PROTECTED */
 
 /**
  * @brief Loops throught the whole file and finds information such as number of channels and number of events.
@@ -56,37 +63,78 @@ Preprocessor::~Preprocessor()
 void Preprocessor::ReadInput()
 {
     auto inFile = TFile::Open(fInFilePath.Data());
-    long int nKeys = inFile->GetNkeys();
-    auto listKeys = inFile->GetListOfKeys();
-    int event{0}, channel{0};
+    const int nKeys = inFile->GetNkeys();
+    TIter next(inFile->GetListOfKeys());
+
+    int event{0}, pixel{0}, samplingPeriod{0}, index{0};
     const auto startTime = std::chrono::steady_clock::now();
+    TKey *key;
 
     std::cout << "Reading input file: " << BLUE << UNDERLINE << fInFilePath << RESET << std::endl;
-    for (long int i = 0; i < nKeys; i++)             // get the information looping through the names of the objects in the file
-    {   
-        updateProgressBar(i, nKeys, startTime);
+    while ((key = (TKey*)next())) 
+    {
+        updateProgressBar(index, nKeys, startTime);
 
-        TKey* key = (TKey*)listKeys->At(i);             // get the ith object
-        if(!key) 
+        if (strncmp(key->GetClassName(), "TGraph", 6) == 0)  
         {
-            std::cerr << "\tError: key " << i << " not found." << std::endl;
-            continue;              
-        }            
-        TString className = key->GetClassName();        // get the type of the object
-        TString objectName = key->GetName();            // get the name of the object
+            sscanf(key->GetName(), "grEv%dPx%dsamp%d", &event, &pixel, &samplingPeriod);
+            fNEvents = (event > fNEvents) ? event : fNEvents;
+            fNPixels = (pixel > fNPixels) ? pixel : fNPixels;
+        }
 
-        if (className == "TGraph")  sscanf(objectName.Data(), "grEv%dChanC%dsamp%d", &event, &channel, &fSamplingPeriod);
-        if (event > fNEvents) fNEvents = event;    
-        if (channel > fNChannels) fNChannels = channel;
+        index++;
+    }
+    std::cout << std::endl;
+}
+
+/**
+ * @brief Function to generate a dictionary which associates the sampling period to each pixel index.
+ * Assume that the correct information can be found in event 0.
+ * 
+ */
+void Preprocessor::GenerateSamplingDictionary()
+{
+    auto inFile = TFile::Open(fInFilePath.Data());
+    auto listKeys = inFile->GetListOfKeys();
+    long int nKeys = inFile->GetNkeys();
+
+    int event{0}, pixel{0}, samplingPeriod{0};
+    fSamplingPeriodDictionary = new int[fNPixels];
+
+    std::cout << "Generating sampling period dictionary... " << std::endl;
+
+    for (long int ipixel = 0; ipixel < fNPixels; ipixel++) 
+    {
+        fSamplingPeriodDictionary[ipixel] = 0;
+
+        for (long int i = 0; i < nKeys; i++)             // get the information looping through the names of the objects in the file
+        {   
+            TKey* key = (TKey*)listKeys->At(i);             // get the ith object
+            if(!key) 
+            {
+                std::cerr << "\tError: key " << i << " not found." << std::endl;
+                continue;              
+            }            
+            TString className = key->GetClassName();        // get the type of the object
+            TString objectName = key->GetName();            // get the name of the object
+
+            if (className == "TGraph")  
+            {
+                sscanf(objectName.Data(), "grEv%dPx%dsamp%d", &event, &pixel, &samplingPeriod);
+                if (event == 0 && pixel == ipixel) 
+                {
+                    fSamplingPeriodDictionary[pixel] = samplingPeriod;
+                    break;    
+                }
+            }
+        }
     }
 
-    std::cout << std::endl;
-    fNEvents++;
-
-    //delete listKeys;
     inFile->Close();
-    
 }
+
+
+/*  PUBLIC  */
 
 /**
  * @brief Function to build the tree with the preprocessed data. All events in the input files will be processed.
@@ -102,15 +150,16 @@ void Preprocessor::BuildTree(const char * outFilePath)
         sOutFilePath.ReplaceAll(".root", "_preprocessed.root");
     }
 
-    const int nChannels = fNChannels;
-    PixelData channelData[nChannels];
+    const int nPixels = fNPixels;
+    PixelData pixelData[nPixels];
 
+    auto inFile = TFile::Open(fInFilePath.Data());
     TFile outFile(sOutFilePath.Data(), "RECREATE");
     TTree outTree("PreprocessedData", "outTree");
 
     int event{0};
     outTree.Branch("Event", &event, "Event/I");
-    for(int i = 1; i < fNChannels + 1; i++) outTree.Branch(Form("Channel%d", i), &channelData[i-1]);//, PixelData::GetBranchList().Data());
+    for(int i = 0; i < fNPixels; i++) outTree.Branch(Form("pixel%d", i), &pixelData[i]);//, PixelData::GetBranchList().Data());
     
     const auto startTime = std::chrono::steady_clock::now();
 
@@ -119,118 +168,223 @@ void Preprocessor::BuildTree(const char * outFilePath)
         updateProgressBar(ievent, fNEvents, startTime);
         
         event = ievent;
-        for (int ichannel = 1; ichannel < fNChannels + 1; ichannel++)   // channels start from 1
+        for (int ipixel = 0; ipixel < fNPixels; ipixel++)   
         {
-            bool outcome = Preprocessor::ProcessEvent(ievent, ichannel, channelData[ichannel-1]);
-            if (!outcome) continue;                                     // if the event is not found, skip it
+            if (fSamplingPeriodDictionary[ipixel] == 25)            Preprocessor::ProcessEventScope(ievent, ipixel, pixelData[ipixel], inFile);
+            else if (fSamplingPeriodDictionary[ipixel] == 250000)   Preprocessor::ProcessEventADC(ievent, ipixel, pixelData[ipixel], inFile);
         }
-        
+
         outTree.Fill();
     }
+
+    inFile->Close();
 
     std::cout << std::endl;
     outFile.cd();
     outTree.Write();
     outFile.Close();
+    
 }
 
 /**
- * @brief Function to process a single event. It reads the graph from the input file and computes the variables of interest.
+ * @brief Function to process a single event read by the oscilloscope. 
+ * It reads the graph from the input file and computes the variables of interest.
  * If no signal is found (i.e. the signal amplitude is below the set threshold) the time variables are set to -1.
  * If a graph is not found, the function returns false.
  * 
  * @param event 
- * @param channel 
- * @param channelData 
+ * @param pixel 
+ * @param pixelData 
  * @return true 
  * @return false 
  */
-bool Preprocessor::ProcessEvent(const int event, const int channel, PixelData& channelData)
+bool Preprocessor::ProcessEventScope(const int event, const int pixel, PixelData & pixelData, TFile * inFile)
 {
-    channelData.channel = channel;  
-    channelData.baseline = 0.;
-    channelData.minLevel = 0.;
-    channelData.t10 = 0.;
-    channelData.t90 = 0.;
-    channelData.t50 = 0.;
-    channelData.fallTime = 0.;
-    channelData.amplitude = 0.;
-    channelData.RMS = 0.;
+    pixelData.pixel = pixel;  
+    pixelData.samplingPeriod = fSamplingPeriodDictionary[pixel];
+    pixelData.baseline = -1.;
+    pixelData.minLevel = -1.;
+    pixelData.t10 = -1.;
+    pixelData.t90 = -1.;
+    pixelData.t50 = -1.;
+    pixelData.fallTime = -1.;
+    pixelData.amplitude = -1.;
+    pixelData.RMS = -1.;
 
-    auto inFile = TFile::Open(fInFilePath.Data());
-    TString grName = Form("grEv%dChanC%dsamp%d", event, channel, fSamplingPeriod);
+    TString grName = Form("grEv%dPx%dsamp%d", event, pixel, fSamplingPeriodDictionary[pixel]);
     auto gr = (TGraph*)inFile->Get(grName.Data());
 
     if(!gr) 
     {
-        std::cerr << "Error: graph " << grName << " not found." << std::endl;
+        std::cerr << std::endl << "Error: graph " << grName << " not found." << std::endl;
         return 0;
     }
 
     const int minimumIndex = FindMinimumIndex(*gr);
     const double minimum = gr->GetPointY(minimumIndex);
     auto edges = FindEdge(*gr);
-    const double edgeLeft = edges.first;
+    const double edgeLeft = (edges.first < 1e-5) ? gr->GetPointX(FindMaximumIndex(*gr)) : edges.first;
     const double edgeRight = edges.second;
+    // if edgeLeft is too little, it means that the signal is not present in the graph
+    // therefore, in order to have a meaningful value for the baseline, we take the maximum of the graph as the edgeLeft
 
-    // Debugging session
+    // avoid automatic output due to TF1s not being able to fit the graph
+    std::streambuf* coutBuffer = std::cout.rdbuf();
+    std::streambuf* cerrBuffer = std::cerr.rdbuf();
+    std::ofstream nullStream("/dev/null"); 
+    std::cout.rdbuf(nullStream.rdbuf());
+    std::cerr.rdbuf(nullStream.rdbuf());
 
-    TF1 baselineFit("baselineFit", "[0]");
+    TF1 baselineFit(Form("baselineFit%d", pixel), "[0]");
     gr->Fit(&baselineFit, "Q", "", gr->GetPointX(0), edgeLeft);
-    channelData.baseline = baselineFit.GetParameter(0);
+    pixelData.baseline = baselineFit.GetParameter(0);
 
-    TF1 minLevelFit("minLevelFit", "[0]");
+    TF1 minLevelFit(Form("minLevelFit%d", pixel), "[0]");
     gr->Fit(&minLevelFit, "Q", "", edgeRight, gr->GetPointX(minimumIndex));
-    channelData.minLevel = minLevelFit.GetParameter(0);
+    pixelData.minLevel = minLevelFit.GetParameter(0);
 
-    channelData.amplitude = abs(channelData.minLevel - channelData.baseline);
+    std::cout.rdbuf(coutBuffer);        // restore the original state of std::cout
+    std::cerr.rdbuf(cerrBuffer);        // restore the original state of std::cerr
 
-    if (channelData.amplitude < fThreshold) 
+    pixelData.amplitude = abs(pixelData.minLevel - pixelData.baseline);
+
+    if (pixelData.amplitude < fThreshold) 
     {
-        channelData.t10 = -1.;
-        channelData.t50 = -1.;
-        channelData.t90 = -1.;
-        channelData.fallTime = -1.;
+        pixelData.t10 = -1.;
+        pixelData.t50 = -1.;
+        pixelData.t90 = -1.;
+        pixelData.fallTime = -1.;
     }
     else
     {
-        TF1 fit("fit", "pol1", edgeLeft, edgeRight);
+        TF1 fit(Form("fit%d", pixel), "pol1", edgeLeft, edgeRight);
         gr->Fit(&fit, "RMLQ+");
-        channelData.t10 = fit.GetX(channelData.baseline - 0.1 * channelData.amplitude);
-        channelData.t50 = fit.GetX(channelData.baseline - 0.5 * channelData.amplitude);
-        channelData.t90 = fit.GetX(channelData.baseline - 0.9 * channelData.amplitude);
-        channelData.fallTime = channelData.t50 - channelData.t10;
+        pixelData.t10 = fit.GetX(pixelData.baseline - 0.1 * pixelData.amplitude);
+        pixelData.t50 = fit.GetX(pixelData.baseline - 0.5 * pixelData.amplitude);
+        pixelData.t90 = fit.GetX(pixelData.baseline - 0.9 * pixelData.amplitude);
+        pixelData.fallTime = pixelData.t50 - pixelData.t10;
     }
 
     const int nSamples = 80;
     auto grMeanAndRMS = GetMeanAndRMS(*gr, 0, nSamples);
-    channelData.RMS = grMeanAndRMS.second;
+    pixelData.RMS = grMeanAndRMS.second;
 
     // Debugging session
     /*
-    if (channel == 1)
+    if (pixel == 1)
     {
         std::cout << std::endl;
         std::cout << GREEN << "Event: " << event << RESET << std::endl;
-        std::cout << "Channel: " << channel << std::endl;
+        std::cout << "pixel: " << pixel << std::endl;
         std::cout << "MinimumPos: " << gr->GetPointX(minimumIndex) << std::endl;
         std::cout << "Minimum: " << minimum << std::endl;
         std::cout << "EdgeLeft: " << edgeLeft << std::endl;
         std::cout << "EdgeRight: " << edgeRight << std::endl;
-        std::cout << "Baseline: " << channelData.baseline << std::endl;
-        std::cout << "MinLevel: " << channelData.minLevel << std::endl;
-        std::cout << "Amplitude: " << channelData.amplitude << std::endl;
-        std::cout << "t10: " << channelData.t10 << std::endl;
-        std::cout << "t50: " << channelData.t50 << std::endl;
-        std::cout << "t90: " << channelData.t90 << std::endl;
-        std::cout << "FallTime: " << channelData.fallTime << std::endl;
-        std::cout << "RMS: " << channelData.RMS << std::endl;
+        std::cout << "Baseline: " << pixelData.baseline << std::endl;
+        std::cout << "MinLevel: " << pixelData.minLevel << std::endl;
+        std::cout << "Amplitude: " << pixelData.amplitude << std::endl;
+        std::cout << "t10: " << pixelData.t10 << std::endl;
+        std::cout << "t50: " << pixelData.t50 << std::endl;
+        std::cout << "t90: " << pixelData.t90 << std::endl;
+        std::cout << "FallTime: " << pixelData.fallTime << std::endl;
+        std::cout << "RMS: " << pixelData.RMS << std::endl;
     }
     */
 
     delete gr;
-    inFile->Close();
+    return 1;
+}
 
+/**
+ * @brief Function to process a single event read by the oscilloscope. 
+ * It reads the graph from the input file and computes the variables of interest.
+ * If no signal is found (i.e. the signal amplitude is below the set threshold) the time variables are set to -1.
+ * If a graph is not found, the function returns false.
+ * 
+ * @param event 
+ * @param pixel 
+ * @param pixelData 
+ * @return true 
+ * @return false 
+ */
+bool Preprocessor::ProcessEventADC(const int event, const int pixel, PixelData & pixelData, TFile * inFile)
+{
+    pixelData.pixel = pixel;  
+    pixelData.samplingPeriod = fSamplingPeriodDictionary[pixel];
+    pixelData.baseline = -1.;
+    pixelData.minLevel = -1.;
+    pixelData.t10 = -2.;
+    pixelData.t90 = -2.;
+    pixelData.t50 = -2.;
+    pixelData.fallTime = -2.;
+    pixelData.amplitude = -1.;
+    pixelData.RMS = -1.;
+
+    TString grName = Form("grEv%dPx%dsamp%d", event, pixel, fSamplingPeriodDictionary[pixel]);
+    auto gr = (TGraph*)inFile->Get(grName.Data());
+
+    if(!gr) 
+    {
+        std::cerr << std::endl << "Error: graph " << grName << " not found." << std::endl;
+        return 0;
+    }
+
+    const int minimumIndex = FindMinimumIndex(*gr);
+    const double minimum = gr->GetPointY(minimumIndex);
+    pixelData.minLevel = minimum;
+    auto edges = FindEdge(*gr);
+    //const double edgeLeft = gr->GetPointX(99);              // take the 100th point as the edgeLeft
+    const double edgeLeft = 250*99;
+
+    // avoid automatic output due to TF1s not being able to fit the graph
+    std::streambuf* coutBuffer = std::cout.rdbuf();
+    std::streambuf* cerrBuffer = std::cerr.rdbuf();
+    std::ofstream nullStream("/dev/null"); 
+    std::cout.rdbuf(nullStream.rdbuf());
+    std::cerr.rdbuf(nullStream.rdbuf());
+
+    TF1 baselineFit(Form("baselineFit%d", pixel), "[0]");
+    gr->Fit(&baselineFit, "Q", "", gr->GetPointX(0), edgeLeft);
+    pixelData.baseline = baselineFit.GetParameter(0);
+
+    std::cout.rdbuf(coutBuffer);        // restore the original state of std::cout
+    std::cerr.rdbuf(cerrBuffer);        // restore the original state of std::cerr
+
+    pixelData.amplitude = abs(gr->GetPointY(FindMinimumIndex(*gr)) - pixelData.baseline);
+
+    // for the ADC data, time variables cannot be computed. They are set to -2.
+    pixelData.t10 = -2.;
+    pixelData.t50 = -2.;
+    pixelData.t90 = -2.;
+    pixelData.fallTime = -2.;
+
+    const int nSamples = 80;
+    auto grMeanAndRMS = GetMeanAndRMS(*gr, 0, nSamples);
+    pixelData.RMS = grMeanAndRMS.second;
+
+    // Debugging session
+    /*
+    if (pixel == 1)
+    {
+        std::cout << std::endl;
+        std::cout << GREEN << "Event: " << event << RESET << std::endl;
+        std::cout << "pixel: " << pixel << std::endl;
+        std::cout << "MinimumPos: " << gr->GetPointX(minimumIndex) << std::endl;
+        std::cout << "Minimum: " << minimum << std::endl;
+        std::cout << "EdgeLeft: " << edgeLeft << std::endl;
+        std::cout << "EdgeRight: " << edgeRight << std::endl;
+        std::cout << "Baseline: " << pixelData.baseline << std::endl;
+        std::cout << "MinLevel: " << pixelData.minLevel << std::endl;
+        std::cout << "Amplitude: " << pixelData.amplitude << std::endl;
+        std::cout << "t10: " << pixelData.t10 << std::endl;
+        std::cout << "t50: " << pixelData.t50 << std::endl;
+        std::cout << "t90: " << pixelData.t90 << std::endl;
+        std::cout << "FallTime: " << pixelData.fallTime << std::endl;
+        std::cout << "RMS: " << pixelData.RMS << std::endl;
+    }
+    */
+
+    delete gr;
     return 1;
 }
 
@@ -238,22 +392,22 @@ bool Preprocessor::ProcessEvent(const int event, const int channel, PixelData& c
  * @brief For a single event, draws the waveform and its derivative.
  * 
  * @param event 
- * @param channel 
+ * @param pixel 
  * @param outFilePath 
  */
-void Preprocessor::DrawEvent(const int event, const int channel, const char * outFilePath)
+void Preprocessor::DrawEvent(const int event, const int pixel, const char * outFilePath)
 {
     TString sOutFilePath(outFilePath);
-    if (sOutFilePath.EqualTo("default"))    sOutFilePath = Form("ITS3/Data/Event%dChannel%d.root", event, channel);
+    if (sOutFilePath.EqualTo("default"))    sOutFilePath = Form("ITS3/Data/Event%dPixel%d.root", event, pixel);
     
-    if (channel > fNChannels || event > fNEvents)
+    if (pixel > fNPixels || event > fNEvents)
     {
-        std::cerr << RED << "Error: channel or event out of range." << RESET << std::endl;
+        std::cerr << RED << "Error: pixel or event out of range." << RESET << std::endl;
         return;
     }
 
     auto inFile = TFile::Open(fInFilePath.Data());
-    TString grName = Form("grEv%dChanC%dsamp%d", event, channel, fSamplingPeriod);
+    TString grName = Form("grEv%dPx%dsamp%d", event, pixel, fSamplingPeriodDictionary[pixel]);
     auto gr = (TGraph*)inFile->Get(grName.Data());
     auto grDerivative = DerivativeGraph(*gr);
 
@@ -311,13 +465,13 @@ std::pair<double, double> FindEdge(TGraph & gr)
  * @param gr 
  * @return double 
  */
-double FindMinimumIndex(TGraph & gr)
+int FindMinimumIndex(TGraph & gr)
 {
     const int nSamples = gr.GetN();
     double * x = gr.GetX();
     double * y = gr.GetY();
 
-    double minimum{0.};
+    double minimum{999999.};
     int minimumIndex{0};
     for (int i = 0; i < nSamples; ++i)
     {
@@ -329,6 +483,32 @@ double FindMinimumIndex(TGraph & gr)
     }
 
     return minimumIndex;
+}
+
+/**
+ * @brief Function to find the maximum value in a graph.
+ * 
+ * @param gr 
+ * @return double 
+ */
+int FindMaximumIndex(TGraph & gr)
+{
+    const int nSamples = gr.GetN();
+    double * x = gr.GetX();
+    double * y = gr.GetY();
+
+    double maximum{-9999999.};
+    int maximumIndex{0};
+    for (int i = 0; i < nSamples; ++i)
+    {
+        if (y[i] > maximum)     
+        {
+            maximum = y[i];
+            maximumIndex = i;
+        }   
+    }
+
+    return maximumIndex;
 }
 
 /**
@@ -434,6 +614,7 @@ TGraph* SmoothGraph(TGraph& gr, const int nSmoothingPoints)
     double * y = gr.GetY();
 
     auto grSmooth = new TGraph(0);
+    grSmooth->SetName(Form("%s_smoothed", gr.GetName()));
     for (int i = 0; i < nSamples; ++i)
     {
         double sum{0.};
@@ -462,6 +643,7 @@ TGraph* DerivativeGraph(TGraph& gr)
     double * y = gr.GetY();
 
     auto grDerivative = new TGraph(0);
+    grDerivative->SetName(Form("%s_derivative", gr.GetName()));
     for (int i = 0; i < nSamples; ++i)
     {
         double der{0.};
