@@ -64,7 +64,7 @@ detector:
       der_ymin: 1e12
       der_ymax: 5e17
 
-  PiN:
+  PIN:
     color: 3
     fits:
       #######################
