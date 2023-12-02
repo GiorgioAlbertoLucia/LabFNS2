@@ -60,7 +60,7 @@ if __name__=='__main__':
     outputfile2 = 'TCT/data/output/Noise_vs_Bias.root'
     
     canvas = TCanvas("canvas","canvas",1000,1000)
-    hFrame = canvas.cd().DrawFrame(10,0,500,150,"Jitter vs Gain for LGAD sensor;Gain; Jitter (ps)")
+    hFrame = canvas.cd().DrawFrame(10,0,500,300,"Jitter vs Gain for LGAD sensor;Gain; Jitter (ps)")
 
     Graphs = []
     legend = TLegend(0.5, legendmax-len(infiles)*legendstep, 0.7, legendmax)
@@ -78,11 +78,10 @@ if __name__=='__main__':
 
     canvas.Modified()
     canvas.Update()
-    
     canvas.SaveAs('TCT/data/output/Jitter_vs_gain.pdf')
 
     canvas1 = TCanvas("canvas1","canvas1",1000,1000)
-    hFrame = canvas1.cd().DrawFrame(120,10,280,25,"Noise for LGAD sensor;Bias; Noise (mV)")
+    hFrame = canvas1.cd().DrawFrame(120,10,280,25,"Noise for LGAD sensor;Bias (V); Noise (mV)")
     gNoise.Draw("p,same")
     legend1 = TLegend(0.6, 0.6, 0.8, 0.8)
     legend1.AddEntry(gNoise,'Noise','p')

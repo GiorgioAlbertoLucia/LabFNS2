@@ -358,7 +358,7 @@ void ProcessEvent(TGraph* g, TGraph* glong,double params[20], bool plot){
   params[5]=t90;
   params[6]=t90-t10;//fall time
 
-  TGraph* gdlong=GetDerivative(glong,2);//questo noi no
+  /*TGraph* gdlong=GetDerivative(glong,2);//questo noi no
   double MaxTimeLong=GetMaxX(glong);
   gdlong->GetXaxis()->SetTitle(g->GetXaxis()->GetTitle());
   gdlong->SetTitle(g->GetTitle());
@@ -409,7 +409,7 @@ void ProcessEvent(TGraph* g, TGraph* glong,double params[20], bool plot){
     delete fexp2;
     delete flin2;
     return;
-  }// fin qui dovremmo togliere da line 361
+  }// fin qui dovremmo togliere da line 361*/
   
   TCanvas* c1= new TCanvas("c1","",1600,800);
   c1->Divide(3,2);

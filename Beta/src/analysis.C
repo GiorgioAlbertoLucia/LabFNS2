@@ -77,14 +77,13 @@ void analysis::Loop(const bool FillTTree = true)
     TH1D * histoAmpli3 = new TH1D("histoAmpli3","histoAmpli3",200,0.,400);
     TH1D * histoAmpli2_sel = new TH1D("histoAmpli2_sel","histoAmpli2_Sel",200,0.,400); //mV
     TH1D * histoAmpli3_sel = new TH1D("histoAmpli3_sel","histoAmpli3_Sel",200,0.,400);
-    TH1D * histoToA2 = new TH1D("histoToA2","histoToA2",100,0.,1.2); //ns
-    TH1D * histoToA3 = new TH1D("histoToA3","histoToA3",100,0.,1.2);
+    TH1D * histoToA2 = new TH1D("histoToA2","histoToA2",25,-0.025,1.225); //ns
+    TH1D * histoToA3 = new TH1D("histoToA3","histoToA3",25,-0.025,1.225);
     TH1D * histoRMS2 = new TH1D("histoRMS2","histoRMS2",150,0.3,0.8); //mV
     TH1D * histoRMS3 = new TH1D("histoRMS3","histoRMS3",150,0.3,0.8);
     TH1D * histoChiSquare2 = new TH1D("histoChiSquare2","histoChiSquare2",nentries,0.,nentries);
     TH1D * histoChiSquare3 = new TH1D("histoChiSquare3","histoChiSquare3",nentries,0.,nentries);
-    
-       
+
     TFile outFile("Beta/data/output/BetaOutput.root", "recreate");
     TTree * tree;
     if (FillTTree)
@@ -125,8 +124,8 @@ void analysis::Loop(const bool FillTTree = true)
         const int numPoints = w2->size();
         TH1D* histoNoise2 = new TH1D("histoNoise2","histoNoise2",200,-1.,1.);   // histograms to measure rms
         TH1D* histoNoise3 = new TH1D("histoNoise3","histoNoise3",200,-1.,1.);
-        TH1D* histoTime2 = new TH1D("histoTime2","histoTime2",t2->size(),1000000000*t2->front(),1000000000*t2->back());     // histograms to measure ToA
-        TH1D* histoTime3 = new TH1D("histoTime3","histoTime3",t3->size(),1000000000*t3->front(),1000000000*t3->back());
+        TH1D* histoTime2 = new TH1D("histoTime2","histoTime2",500,-1.5,2.5);     // histograms to measure ToA
+        TH1D* histoTime3 = new TH1D("histoTime3","histoTime3",500,-1.5,2.5);
 
         if (jentry==100)
         {
@@ -135,8 +134,8 @@ void analysis::Loop(const bool FillTTree = true)
         }
         for(int ii=0;ii<numPoints;ii++)
         {
-            histoTime2->Fill(1000000000*(t2->at(ii)),1000*(w2->at(ii)));
-            histoTime3->Fill(1000000000*(t3->at(ii)),1000*(w3->at(ii)));
+            histoTime2->Fill(1.e9*(t2->at(ii)),1000*(w2->at(ii)));
+            histoTime3->Fill(1.e9*(t3->at(ii)),1000*(w3->at(ii)));
             
             if (jentry==100)
             {
@@ -149,76 +148,57 @@ void analysis::Loop(const bool FillTTree = true)
                 histoNoise2->Fill(w2->at(ii)*1000);
                 histoNoise3->Fill(w3->at(ii)*1000);
             }
-            if(w2->at(ii)*1000>Amp2)
-            {
-                Amp2=w2->at(ii)*1000;
-                xx=ii;
-            }
-            if(w3->at(ii)*1000>Amp3)
-            {
-                Amp3=w3->at(ii)*1000;
-                yy=ii;
-            }
         }
-        baseline2=histoNoise2->GetMean();
-        baseline3=histoNoise3->GetMean();
-        RMS2=histoNoise2->GetRMS();
-        RMS3=histoNoise3->GetRMS();
-        
-        
-        ToA2 = t2->at(xx)*1000000000;
-        ToA3 = t3->at(yy)*1000000000;
+
+        xx = findIndexOfMaxElement(w2);
+        yy = findIndexOfMaxElement(w3);
+        Amp2 = w2->at(xx)*1000;
+        Amp3 = w3->at(yy)*1000;
+
+        ToA2 = t2->at(xx)*1.e9;
+        ToA3 = t3->at(yy)*1.e9;
         if(jentry==100 || jentry==200 || jentry==300) cout<<"tempo 2: "<<ToA2<<" tempo 3: "<<ToA3<<endl;
         if(jentry==100 || jentry==200 || jentry==300) cout<<"tempo 2bis: "<<t2->at(xx)<<" tempo 3bis: "<<t3->at(yy)<<endl;
-        if(Amp2 > 50. && Amp3 > 50.)
+
+        if(Amp2>amplitude_cut2 && Amp3>amplitude_cut3)
         {
-            TF1* fit2 = new TF1("fit2","gaus",1000000000*(t2->at(xx-7)),1000000000*(t2->at(xx+7)));//TO DO:check with other range
-            TF1* fit3 = new TF1("fit3","gaus",1000000000*(t3->at(yy-7)),1000000000*(t3->at(yy+7)));
-            for(int a=0;a<t2->size();a++)
-            {
-                histoTime2->SetBinError(a, 6/sqrt(12));
-            }
-             for(int a=0;a<t3->size();a++)
-            {
-                histoTime3->SetBinError(a, 6/sqrt(12));
-            }
-            histoTime2->Fit(fit2,"rmlQ+");
-            histoTime3->Fit(fit3,"rmlQ+");
-            //check NaN values
+            histoAmpli2_sel->Fill(Amp2);
+            histoAmpli3_sel->Fill(Amp3);
+            
+            TF1* fit2 = new TF1("fit2","gaus",1.e9*(t2->at(xx-10)),1.e9*(t2->at(xx+10)));
+            TF1* fit3 = new TF1("fit3","gaus",1.e9*(t3->at(yy-10)),1.e9*(t3->at(yy+10)));
+            FitSignal(histoTime2, histoTime3, ToA2f, ToA3f, fit2, fit3);
             if (fit2->GetChisquare()/fit2->GetNDF() == fit2->GetChisquare()/fit2->GetNDF())
                 histoChiSquare2->Fill(jentry, fit2->GetChisquare()/fit2->GetNDF());
             if (fit3->GetChisquare()/fit3->GetNDF() == fit3->GetChisquare()/fit3->GetNDF())
                 histoChiSquare3->Fill(jentry, fit3->GetChisquare()/fit3->GetNDF());
-            ToA2f=fit2->GetParameter(1);
-            ToA3f=fit3->GetParameter(1);
+                
             if(jentry==100 ){
-            TCanvas * canvas11 = new TCanvas("canvas11","canvas11",1000,700);
-            canvas11->Divide(2,1);
-            canvas11->cd(1);
-            histoTime2->SetLineColor(kBlue);
-            histoTime2->SetTitle("Sensor A - Channel 2");
-            histoTime2->GetXaxis()->SetTitle("Time (ns)");
-            histoTime2->GetYaxis()->SetTitle("Amplitude (mV)");
-            histoTime2->Draw("hist");
-            histoTime2->GetXaxis()->SetRangeUser(-2.5,3.5);
-            fit2->Draw("same");
-            fit2->SetLineColor(kBlack);
-            fit2->SetLineWidth(2);
-            gStyle->SetOptFit(1111);
-            canvas11->cd(2);
-            histoTime3->SetLineColor(kRed);
-            histoTime3->SetTitle("Sensor B - Channel 3");
-            histoTime3->GetXaxis()->SetTitle("Time (ns)");
-            histoTime3->GetYaxis()->SetTitle("Amplitude (mV)");
-            histoTime3->Draw("hist");
-            histoTime3->GetXaxis()->SetRangeUser(-2.5,3.5);
-            fit3->Draw("same");
-            fit3->SetLineColor(kBlack);
-            fit3->SetLineWidth(2);
-            gStyle->SetOptFit(1111);
-            cout<<"chi2/dof fit2: "<<fit2->GetChisquare()<<"/"<<fit2->GetNDF()<<endl;
-            cout<<"chi2/dof fit3: "<<fit3->GetChisquare()<<"/"<<fit3->GetNDF()<<endl;
-            canvas11->SaveAs("Beta/data/output/checkfit.pdf");
+                TCanvas * canvas1 = new TCanvas("canvas1","canvas1",1000,700);
+                canvas1->Divide(2,1);
+                canvas1->cd(1);
+                histoTime2->SetLineColor(kBlue -10);
+                histoTime2->SetTitle("Sensor A - Channel 2");
+                histoTime2->GetXaxis()->SetTitle("Time (ns)");
+                histoTime2->GetYaxis()->SetTitle("Amplitude (mV)");
+                histoTime2->Draw("hist");
+                fit2->Draw("same");
+                fit2->SetLineColor(kRed);
+                fit2->SetLineWidth(2);
+                gStyle->SetOptFit(11111111);
+                canvas1->cd(2);
+                histoTime3->SetLineColor(kRed -10);
+                histoTime3->SetTitle("Sensor B - Channel 3");
+                histoTime3->GetXaxis()->SetTitle("Time (ns)");
+                histoTime3->GetYaxis()->SetTitle("Amplitude (mV)");
+                histoTime3->Draw("hist");
+                fit3->Draw("same");
+                fit3->SetLineColor(kRed);
+                fit3->SetLineWidth(2);
+                gStyle->SetOptFit(11111111);
+                cout<<"chi2/dof fit2: "<<fit2->GetChisquare()<<"/"<<fit2->GetNDF()<<endl;
+                cout<<"chi2/dof fit3: "<<fit3->GetChisquare()<<"/"<<fit3->GetNDF()<<endl;
+                canvas1->SaveAs("Beta/data/output/checkfit.pdf");
             }
             delete fit2;
             delete fit3;
@@ -232,14 +212,10 @@ void analysis::Loop(const bool FillTTree = true)
         if(jentry==100 || jentry==200 || jentry==300) cout<<"tempo 2: "<<ToA2<<" tempo 2 con fit: "<<ToA2f<<endl;
         if(jentry==100 || jentry==200 || jentry==300) cout<<"tempo 3: "<<ToA3<<" tempo 3 con fit: "<<ToA3f<<endl;
 
-        if(Amp2>amplitude_cut2 && Amp3>amplitude_cut3)
-        {
-            histoAmpli2_sel->Fill(Amp2);
-            histoAmpli3_sel->Fill(Amp3);
-            //Add code here
-        }
-
-        
+        baseline2=histoNoise2->GetMean();
+        baseline3=histoNoise3->GetMean();
+        RMS2=histoNoise2->GetRMS();
+        RMS3=histoNoise3->GetRMS();
         histoAmpli2->Fill(Amp2);
         histoAmpli3->Fill(Amp3);
         histoToA2->Fill(ToA2);
@@ -303,25 +279,41 @@ void analysis::Loop(const bool FillTTree = true)
       histoAmpli3_sel->SetTitle("Sensor B - Channel 3");
       canvasA_Sel->SaveAs("Beta/data/output/Amplitude_selected.pdf");
 
-      TCanvas * canvasT = new TCanvas("canvasT","canvasT",900,600);
+      TCanvas * canvasT = new TCanvas("canvasT","canvasT",1000,1000);
       canvasT->Divide(2,1);
       canvasT->cd(1);
       histoToA2->Draw("hist");
       histoToA2->GetXaxis()->SetTitle("Time of arrival (ns)"); 
       histoToA2->GetYaxis()->SetTitle("Entries (a.u.)");
       histoToA2->SetTitle("Sensor A - Channel 2");
-      TF1 * fitToA2 = new TF1("fitToA2","gaus",0.4,0.8);
-      histoToA2->Fit(fitToA2,"rmlQ+");
+      TF1 * fitToA2 = new TF1("fitToA2","gaus",0.5,0.9);
+      histoToA2->Fit(fitToA2,"rm+");
       fitToA2->SetLineColor(kBlue+2);
+      fitToA2->Draw("same");
+      gStyle->SetOptFit(1111);
+      TLegend * legend1 = new TLegend(0.2,0.7,0.4,0.8);
+      legend1->AddEntry(histoToA2,"Sensor A - Channel 2","l");
+      legend1->AddEntry(fitToA2,"p0*exp(#frac{-(x-p1)^{2}}{2*p2^{2}})","l");
+      legend1->SetTextSize(0.03);
+      legend1->Draw("same");
       canvasT->cd(2);
       histoToA3->Draw("hist");
       histoToA3->SetLineColor(kRed);
       histoToA3->GetXaxis()->SetTitle("Time of arrival (ns)");
       histoToA3->GetYaxis()->SetTitle("Entries (a.u.)");
       histoToA3->SetTitle("Sensor B - Channel 3");
-      TF1 * fitToA3 = new TF1("fitToA3","gaus",0.5,0.9);
-      histoToA3->Fit(fitToA3,"rmlQ+");
+      TF1 * fitToA3 = new TF1("fitToA3","gaus",0.4,0.8);
+      histoToA3->Fit(fitToA3,"rm+");
       fitToA3->SetLineColor(kRed+2);
+      fitToA3->Draw("same");
+      gStyle->SetOptFit(1111);
+      TLegend * legend2 = new TLegend(0.15,0.7,0.35,0.8);
+      legend2->AddEntry(histoToA3,"Sensor B - Channel 3","l");
+      legend2->AddEntry(fitToA3,"p0*exp(#frac{-(x-p1)^{2}}{2*p2^{2}})","l");
+      legend2->SetTextSize(0.03);
+      legend2->Draw("same");
+      cout<<"chi2/dof fit2: "<<fitToA2->GetChisquare()<<"/"<<fitToA2->GetNDF()<<endl;
+      cout<<"chi2/dof fit3: "<<fitToA3->GetChisquare()<<"/"<<fitToA3->GetNDF()<<endl;
       canvasT->SaveAs("Beta/data/output/time.pdf");
 
       TCanvas * canvasRMS = new TCanvas("canvasRMS","canvasRMS",1000,1000);
@@ -361,7 +353,7 @@ void analysis::Loop(const bool FillTTree = true)
       legend->AddEntry(histoEvent100_ch2,"Sensor A - Channel 2","l");
       legend->AddEntry(histoEvent100_ch3,"Sensor B - Channel 3","l");
       legend->SetTextSize(0.03);
-      legend->Draw("same");
+      legend->Draw();
       canvas100->Modified();
       canvas100->Update();
       canvas100->SaveAs("Beta/data/output/Event_100.pdf");
