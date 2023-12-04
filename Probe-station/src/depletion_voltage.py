@@ -222,6 +222,7 @@ class DepletionAnalysis:
         graph.SetMarkerSize(1)
         graph.SetMarkerColor(kAzure+1)
         graph.SetTitle('1/C^{2} vs V '+f'{args.sensor}'+'; Reverse bias (V); 1/C^{2} (pF^{-2})')
+        if self.sensor == 'Strip':  graph.SetTitle('1/C^{2} vs V '+f'{args.sensor}'+'; Bias voltage (V); 1/C^{2} (pF^{-2})')
 
         self.graph = graph.Clone()
         
@@ -256,9 +257,12 @@ class DepletionAnalysis:
         intersection2 = self.find_intersection(fit3, fit2)
         intersection2_err = np.sqrt((fit2.GetParError(0))**2 + (fit3.GetParError(0))**2 + (np.mean(self.df['1_C2_err'])/(fit3.GetParameter(1)-fit2.GetParameter(1)))**2)
 
-        canvas = TCanvas('1C2', 'canvas', 800, 600)
+        canvas = TCanvas('1C2', 'canvas', 800, 800)
+        canvas.SetLeftMargin(0.15)
         canvas.DrawFrame(self.config['canvas_limits']['xmin'], self.config['canvas_limits']['ymin'],
                          self.config['canvas_limits']['xmax'], self.config['canvas_limits']['ymax'], '1/C^{2} vs V '+f'{args.sensor}'+'; Reverse bias (V); 1/C^{2} (pF^{-2})')
+        if self.sensor == 'Strip':  canvas.DrawFrame(self.config['canvas_limits']['xmin'], self.config['canvas_limits']['ymin'],
+                         self.config['canvas_limits']['xmax'], self.config['canvas_limits']['ymax'], '1/C^{2} vs V '+f'{args.sensor}'+'; Bias voltage (V); 1/C^{2} (pF^{-2})')
         #canvas.SetGrid()
 
         graph.Draw('P')

@@ -81,17 +81,6 @@ detector:
             min: 0
             max: 0
       #######################
-      - fit_range: [4.9, 10.1]
-        draw_range: [2, 10]
-        parameters:
-          - name: a
-            value: 0.0
-            min: 0
-            max: 0
-          - name: b
-            value: 0.01
-            min: 0
-            max: 0
       - fit_range: [0.1, 2.6]
         draw_range: [0, 3]
         parameters:
@@ -101,6 +90,17 @@ detector:
             max: 0
           - name: b
             value: 0.1
+            min: 0
+            max: 0
+      - fit_range: [4.9, 10.1]
+        draw_range: [2, 10]
+        parameters:
+          - name: a
+            value: 0.0
+            min: 0
+            max: 0
+          - name: b
+            value: 0.01
             min: 0
             max: 0
       # sigmoid
