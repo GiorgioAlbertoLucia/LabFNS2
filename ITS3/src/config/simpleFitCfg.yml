@@ -1,0 +1,108 @@
+pixel5:
+  spectrumSpec: [160, 1, 81]
+  nFits: 2
+  fits:
+    - name: "K-alpha"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2))" #+ [3] + [4] * x"
+      range: [66.5, 72.5]
+      nParams: 3
+      param:
+        - 480
+        - 70
+        - 0.9
+        #- 1539
+        #- -21
+      color: 2
+
+    - name: "K-beta"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2)) + [3]"
+      range: [73, 80]
+      nParams: 4
+      param:
+        - 57
+        - 76
+        - 0.7
+        - 7
+      color: 3
+
+pixel6:
+  spectrumSpec: [180, 1, 91]
+  nFits: 2
+  fits:
+    - name: "K-alpha"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2))" #+ [3] + [4] * x"
+      range: [66.5, 72.5]
+      nParams: 3
+      param:
+        - 480
+        - 70
+        - 0.9
+        #- 1539
+        #- -21
+      color: 2
+
+    - name: "K-beta"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2)) + [3]"
+      range: [73, 80]
+      nParams: 4
+      param:
+        - 57
+        - 76
+        - 0.7
+        - 7
+      color: 3
+
+pixel9:
+  spectrumSpec: [160, 1, 81]
+  nFits: 2
+  fits:
+    - name: "K-alpha"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2))" #+ [3] + [4] * x"
+      range: [66.5, 72.5]
+      nParams: 3
+      param:
+        - 480
+        - 70
+        - 0.9
+        #- 1539
+        #- -21
+      color: 2
+
+    - name: "K-beta"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2)) + [3]"
+      range: [73, 80]
+      nParams: 4
+      param:
+        - 57
+        - 76
+        - 0.7
+        - 7
+      color: 3
+
+pixel10:
+  spectrumSpec: [180, 1, 91]
+  nFits: 2
+  fits:
+    - name: "K-alpha"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2))" #+ [3] + [4] * x"
+      range: [66.5, 72.5]
+      nParams: 3
+      param:
+        - 480
+        - 70
+        - 0.9
+        #- 1539
+        #- -21
+      color: 2
+
+    - name: "K-beta"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2)) + [3]"
+      range: [73, 80]
+      nParams: 4
+      param:
+        - 57
+        - 76
+        - 0.7
+        - 7
+      color: 3
+

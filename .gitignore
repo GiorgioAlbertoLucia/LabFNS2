@@ -9,6 +9,4 @@ Beta/src/BetaMeas_Lab2.root
 Beta/data/output/BetaOutput.root
 ITS3/Usefull_macros/Data
 ITS3/Data/
-ITS3/src/*.so
-ITS3/src/*.d
-ITS3/src/*.pcm
+ITS3/src/build/
