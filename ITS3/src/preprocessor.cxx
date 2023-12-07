@@ -150,7 +150,7 @@ void Preprocessor::BuildTree(const char * outFilePath)
         sOutFilePath.ReplaceAll(".root", "_preprocessed.root");
     }
 
-    const int nPixels = fNPixels;
+    int nPixels = fNPixels;
     PixelData pixelData[nPixels];
 
     auto inFile = TFile::Open(fInFilePath.Data());
@@ -159,6 +159,7 @@ void Preprocessor::BuildTree(const char * outFilePath)
 
     int event{0};
     outTree.Branch("Event", &event, "Event/I");
+    outTree.Branch("nPixels", &nPixels, "nPixels/I");
     for(int i = 0; i < fNPixels; i++) outTree.Branch(Form("pixel%d", i), &pixelData[i]);//, PixelData::GetBranchList().Data());
     
     const auto startTime = std::chrono::steady_clock::now();
