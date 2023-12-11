@@ -344,7 +344,8 @@ void ProcessEvent(TGraph* g, double params[20], bool plot){
   
   // printf("--- Edge parameters ---\n");
   g->Fit(flow,"Q+","",edgeright,maxTime);
-  g->Fit(fbas,"Q+","",0.,endpl);
+  //g->Fit(fbas,"Q+","", 0.,endpl);   original line !!!!!
+  g->Fit(fbas,"Q+","",2500.,endpl); 
   double basel=fbas->GetParameter(0);
   double baselsig=fbas->GetParError(0);
   double baselc,baselsigc;

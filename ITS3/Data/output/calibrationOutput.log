@@ -1,64 +1,64 @@
 pixel5:
   calibrationPars:
-    -  1.74356
-    -  11.6145
+    -  0.651253
+    -  11.8824
   calibrationParsError:
-    -  0.632968
-    -  0.105945
+    -  0.834392
+    -  0.140644
   calibrationParsElectrons:
-    -  1.74356
-    -  0.00322625
+    -  0.651253
+    -  0.00330066
   calibrationParsErrorElectrons:
-    -  0.632967
-    -  2.94291e-05
-  chi2: 1.24367e-16
+    -  0.834389
+    -  3.90677e-05
+  chi2: 5.5281e-16
   NDF: 0
 
 pixel6:
   calibrationPars:
-    -  3.57438
-    -  11.7904
+    -  3.96253
+    -  11.8592
   calibrationParsError:
-    -  0.66145
-    -  0.111146
+    -  0.825216
+    -  0.139094
   calibrationParsElectrons:
-    -  3.57438
-    -  0.00327512
+    -  3.96253
+    -  0.00329423
   calibrationParsErrorElectrons:
-    -  0.661453
-    -  3.08739e-05
-  chi2: 3.53826e-16
+    -  0.825215
+    -  3.86371e-05
+  chi2: 2.15682e-16
   NDF: 0
 
 pixel9:
   calibrationPars:
-    -  -1.64338
-    -  12.2204
+    -  -0.460952
+    -  12.1232
   calibrationParsError:
-    -  0.804461
-    -  0.135537
+    -  0.790198
+    -  0.133048
   calibrationParsElectrons:
-    -  -1.64338
-    -  0.00339455
+    -  -0.460952
+    -  0.00336756
   calibrationParsErrorElectrons:
-    -  0.804461
-    -  3.76493e-05
-  chi2: 1.54635e-16
+    -  0.790198
+    -  3.69579e-05
+  chi2: 1.96351e-16
   NDF: 0
 
 pixel10:
   calibrationPars:
-    -  6.97834
-    -  11.4979
+    -  6.39183
+    -  11.7004
   calibrationParsError:
-    -  0.950625
-    -  0.160402
+    -  0.62767
+    -  0.104985
   calibrationParsElectrons:
-    -  6.97834
-    -  0.00319386
+    -  6.39183
+    -  0.0032501
   calibrationParsErrorElectrons:
-    -  0.950626
-    -  4.45561e-05
-  chi2: 2.32054e-16
+    -  0.627672
+    -  2.91626e-05
+  chi2: 6.07602e-18
   NDF: 0
 

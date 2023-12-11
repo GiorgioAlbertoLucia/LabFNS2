@@ -28,14 +28,14 @@ void GetMeanAndRMSCountsPRINO(TGraph* g, double xmin, double xmax, double& mean,
 double GetMaxXPRINO(TGraph* g);
 //TGraph* SmoothPRINO(TGraph* g, int nsm=2);
 
-std::pair<double, double> FindEdge(TGraph & gr, int nIgnorePoints = 0);
-std::pair<int, int> FindEdgeIndex(TGraph & gr, int nIgnorePoints = 0);
+std::pair<double, double> FindEdge(TGraph & gr, int nIgnorePoints = 0, int nSample = 200, const int nDerivativePoints = 40, const int nSmoothingPoints = 10);
+std::pair<int, int> FindEdgeIndex(TGraph & gr, int nIgnorePoints = 0, int nSample = 200, const int nDerivativePoints = 40, const int nSmoothingPoints = 10);
 int FindMinimumIndex(TGraph & gr);
 int FindMaximumIndex(TGraph & gr);  
 int FindChangingDerivative(TGraph & grDer, const double& meanDer, const double& RMSDer, const int ignorePoints, const bool backwards = false);
 std::pair<double, double> GetMeanAndRMS(TGraph & gr, const int& begin, const int& end);
 TGraph* SmoothGraph(TGraph& gr, const int nSmoothingPoints = 2);
-TGraph* DerivativeGraph(TGraph& gr);
+TGraph* DerivativeGraph(TGraph& gr, const int nDerivativePoints = 40);
 int FindPointIndex(TGraph& gr, const double& x, const int nIgnorePoints = 0);
 
 // -------------------------------------------------------------------------------------
@@ -55,7 +55,10 @@ Preprocessor::Preprocessor(const char * inFilePath, const double threshold):
     fNEvents(0), 
     fSamplingPeriodDictionary(NULL), 
     fThreshold(threshold), 
-    fIgnorePoints(0)
+    fIgnorePoints(0),
+    fNSample(200),
+    fNDerivativePoints(40),
+    fNSmoothingPoints(10)
 {
     Preprocessor::ReadInput();   
     Preprocessor::GenerateSamplingDictionary();
@@ -199,6 +202,7 @@ void Preprocessor::BuildTree(const char * outFilePath)
     outTree.Branch("nPixels", &nPixels, "nPixels/I");
     for(int i = 0; i < fNPixels; i++) outTree.Branch(Form("pixel%d", i), &pixelData[i]);//, PixelData::GetBranchList().Data());
     
+    std::cout << "Writing output file: " << BLUE << UNDERLINE << sOutFilePath << RESET << std::endl;
     const auto startTime = std::chrono::steady_clock::now();
 
     for (int ievent = 0; ievent < fNEvents; ++ievent)
@@ -261,7 +265,7 @@ bool Preprocessor::ProcessEventScope(const int event, const int pixel, PixelData
 
     const int minimumIndex = FindMinimumIndex(*gr);
     const double minimum = gr->GetPointY(minimumIndex);
-    auto edges = FindEdge(*gr, fIgnorePoints);
+    auto edges = FindEdge(*gr, fIgnorePoints, fNSample, fNDerivativePoints, fNSmoothingPoints);
     //auto edges = FindEdgePRINO(gr);
     const double edgeLeft = (edges.first < 1e-5) ? gr->GetPointX(FindMaximumIndex(*gr)) : edges.first;
     const double edgeRight = edges.second;
@@ -302,8 +306,7 @@ bool Preprocessor::ProcessEventScope(const int event, const int pixel, PixelData
 
     gErrorIgnoreLevel = oldVerbosity;                   // re-enable implicit multithreading
 
-    const int nSamples = 80;
-    auto grMeanAndRMS = GetMeanAndRMS(*gr, 0, nSamples);
+    auto grMeanAndRMS = GetMeanAndRMS(*gr, fIgnorePoints, fIgnorePoints + fNSample);
     pixelData.RMS = grMeanAndRMS.second;
 
     // Debugging session
@@ -371,14 +374,13 @@ bool Preprocessor::ProcessEventADC(const int event, const int pixel, PixelData &
     const double minimum = gr->GetPointY(minimumIndex);
     pixelData.minLevel = minimum;
     auto edges = FindEdge(*gr);
-    //const double edgeLeft = gr->GetPointX(99);            // take the 100th point as the edgeLeft
-    const double edgeLeft = 250*99;
+    const double edgeLeft = gr->GetPointX(99);            // take the 100th point as the edgeLeft
 
     int oldVerbosity = gErrorIgnoreLevel;
     gErrorIgnoreLevel = kFatal;                             // disable implicit multithreading
 
     TF1 baselineFit(Form("baselineFit%d", pixel), "[0]");
-    gr->Fit(&baselineFit, "Q+", "", gr->GetPointX(0), edgeLeft);
+    gr->Fit(&baselineFit, "Q+", "", gr->GetPointX(0), gr->GetPointX(0));
     pixelData.baseline = baselineFit.GetParameter(0);
 
     gErrorIgnoreLevel = oldVerbosity;                       // re-enable implicit multithreading
@@ -394,8 +396,7 @@ bool Preprocessor::ProcessEventADC(const int event, const int pixel, PixelData &
     pixelData.t90 = -2.;
     pixelData.fallTime = -2.;
 
-    const int nSamples = 80;
-    auto grMeanAndRMS = GetMeanAndRMS(*gr, 0, nSamples);
+    auto grMeanAndRMS = GetMeanAndRMS(*gr, fIgnorePoints, fIgnorePoints + fNSample);
     pixelData.RMS = grMeanAndRMS.second;
 
     // Debugging session
@@ -494,7 +495,7 @@ void Preprocessor::DrawEvent(const int event, const char * outFilePath)
         auto grSmooth = SmoothGraph(*gr, 10);
         canvas->Divide(2);
 
-        auto edgesIdx = FindEdgeIndex(*gr, fIgnorePoints);
+        auto edgesIdx = FindEdgeIndex(*gr, fIgnorePoints, fNSample, fNDerivativePoints, fNSmoothingPoints);
         auto grEdge = new TGraph(2);
         grEdge->SetPoint(0, gr->GetPointX(edgesIdx.first), gr->GetPointY(edgesIdx.first));
         grEdge->SetPoint(1, gr->GetPointX(edgesIdx.second), gr->GetPointY(edgesIdx.second));
@@ -851,9 +852,9 @@ std::pair<double, double> FindEdgePRINO(TGraph* g)
  * peculiarity of the waveform)
  * @return std::tuple<double, double, double> edgeLeft, edgeRight
  */
-std::pair<double, double> FindEdge(TGraph & gr, int nIgnorePoints)
+std::pair<double, double> FindEdge(TGraph & gr, int nIgnorePoints, int nSample, const int nDerivativePoints, const int nSmoothingPoints)
 {
-    auto edgesIdx = FindEdgeIndex(gr, nIgnorePoints);
+    auto edgesIdx = FindEdgeIndex(gr, nIgnorePoints, nSample, nDerivativePoints, nSmoothingPoints);
     return std::make_pair(gr.GetPointX(edgesIdx.first), gr.GetPointX(edgesIdx.second));
 }
 
@@ -863,30 +864,17 @@ std::pair<double, double> FindEdge(TGraph & gr, int nIgnorePoints)
  * @param gr 
  * @return std::tuple<double, double, double> edgeLeft, edgeRight
  */
-std::pair<int, int> FindEdgeIndex(TGraph & gr, int nIgnorePoints)
+std::pair<int, int> FindEdgeIndex(TGraph & gr, int nIgnorePoints, int nSample, const int nDerivativePoints, const int nSmoothingPoints)
 {
-    const int nSmoothingPoints = 10;                        // number of points to consider for the smoothing
-    auto grSmooth = SmoothGraph(gr, nSmoothingPoints);      // smooth the graph to find the edge more easily
-    auto grDerivative = DerivativeGraph(*grSmooth);         // take the derivative of the smoothed graph
+    auto grSmooth = SmoothGraph(gr, nSmoothingPoints);                  // smooth the graph to find the edge more easily
+    auto grDerivative = DerivativeGraph(*grSmooth, nDerivativePoints);  // take the derivative of the smoothed graph
 
-    int nSamples = 200;                                     // number of samples to consider for the plateau
-    if (nSamples > gr.GetN())   nSamples = int(gr.GetN()/2);
     double meanDer{0.}, RMSDer{0.};
+    if (nSample > gr.GetN())  nSample = int(gr.GetN()/2);
     if (nIgnorePoints == 0)  nIgnorePoints = nSmoothingPoints;
-    auto resultDer = GetMeanAndRMS(*grDerivative, nIgnorePoints, nIgnorePoints+nSamples);
+    auto resultDer = GetMeanAndRMS(*grDerivative, nIgnorePoints, nIgnorePoints+nSample);
     meanDer = resultDer.first;
     RMSDer = resultDer.second;
-
-    // begin to search for the edge from the point at which the signal reaches 50% of its amplitude
-    // const int nPoints = gr.GetN();
-    // TF1 baselineFit("baselineFit", "[0]");
-    // gr.Fit(&baselineFit, "Q+", "", gr.GetPointX(0), gr.GetPointX(500));
-    // double baseline = baselineFit.GetParameter(0);
-    // TF1 minLevelFit("minLevelFit", "[0]");
-    // gr.Fit(&minLevelFit, "Q+", "", gr.GetPointX(nPoints-500), gr.GetPointX(nPoints-1));
-    // double minLevel = minLevelFit.GetParameter(0);
-    // const double t50 = baseline + 0.5 * (minLevel - baseline);
-    // const int begin = FindPointIndex(gr, t50, nIgnorePoints);
 
     double edgeLeft{0.}, edgeRight{0.};    
     int edgeLeftIndex = FindChangingDerivative(*grDerivative, meanDer, RMSDer, nIgnorePoints);          // correct for smoothing
@@ -1069,12 +1057,14 @@ TGraph* SmoothGraph(TGraph& gr, const int nSmoothingPoints)
 }
 
 /**
- * @brief Function to obtain the derivative of a TGraph point by point.
+ * @brief Function to obtain the derivative of a TGraph point by point. The derivative is computed as the average of the derivative done on 
+ * nDerivativePoints points before and after the point in which the derivative is evaluated.
  * 
  * @param gr 
+ * @param nDerivativePoints
  * @return TGraph* 
  */
-TGraph* DerivativeGraph(TGraph& gr)
+TGraph* DerivativeGraph(TGraph& gr, const int nDerivativePoints)
 {
     // compute the derivative of a TGraph point by point considering nDerivativePoints points before and after the point in which the derivative is evaluated
     const int nSamples = gr.GetN();
@@ -1084,12 +1074,11 @@ TGraph* DerivativeGraph(TGraph& gr)
     auto grDerivative = new TGraph(0);
     grDerivative->SetName(Form("%s_derivative", gr.GetName()));
     
-    const int nPoints{40};     // calculate the derivative in a point as the average of the derivative in nPoints points before and after the point
-    for (int i = 1; i < nSamples - nPoints - 1; ++i)
+    for (int i = 1; i < nSamples - nDerivativePoints - 1; ++i)
     {
         double der{0.};
-        for (int j = i; j < i + nPoints; j++)   der += (y[j + 1] - y[j - 1]) / (x[j + 1] - x[j - 1]);
-        der /= nPoints;
+        for (int j = i; j < i + nDerivativePoints; j++)   der += (y[j + 1] - y[j - 1]) / (x[j + 1] - x[j - 1]);
+        der /= nDerivativePoints;
         grDerivative->SetPoint(i, x[i], der);
     }
     grDerivative->SetPoint(0, x[0], grDerivative->GetPointY(1));

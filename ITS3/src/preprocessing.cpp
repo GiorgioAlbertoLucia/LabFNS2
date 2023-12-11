@@ -15,7 +15,10 @@ void preprocessing()
 
     const double threshold = 1.;        // using 1 mV threshold
     Preprocessor p(inFilePath, threshold);
-    p.SetIgnorePoints(100);              // ignore the first 25 points of the signal
+    p.SetIgnorePoints(100);              // ignore the first 100 points of the signal
+    p.SetNSample(100);                   // use 100 points to calculate the mean and the RMS
+    p.SetNDerivativePoints(40);          // use 40 points to calculate the derivative
+    p.SetNSmoothingPoints(10);           // use 10 points to calculate the smoothing of the waveform for the derivative
 
     const int nPixels = p.GetNPixels();
     double mV_to_electrons[nPixels][2];
@@ -35,6 +38,6 @@ void preprocessing()
 
     //p.DrawEvent(1);
 
-    //p.UploadConversionValues(mV_to_electrons);
+    p.UploadConversionValues(mV_to_electrons);
     p.BuildTree();
 }

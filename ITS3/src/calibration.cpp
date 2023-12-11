@@ -132,6 +132,8 @@ void calibration()
         std::cout << "  NDF: " << f->GetNDF() << std::endl;
         std::cout << std::endl;
 
+        std::cout.rdbuf(originalCoutBuffer);
+
         delete f;
         delete fe;
         delete g;
