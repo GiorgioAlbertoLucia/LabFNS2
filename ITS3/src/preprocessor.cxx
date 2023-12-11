@@ -14,18 +14,29 @@
 #include <TTree.h>
 #include <TList.h>
 #include <TCanvas.h>
+#include <TAxis.h>
 
 
 // -------------------------------------------------------------------------------------
 // functions used in this file
 
-std::pair<double, double> FindEdge(TGraph & gr);
+std::pair<double, double> FindEdgePRINO(TGraph* g);
+TGraph* GetDerivativePRINO(TGraph* g, int nsm);
+TGraph* CountNextNegativeDerPRINO(TGraph* g);
+void GetMeanAndRMSCountsPRINO(TGraph* g, double xmin, double xmax, double& mean, double& rms);
+//double FindOnGraphPRINO(TGraph* gcount, double y, double xmin, double xmax, int interpolate, bool backw=kFALSE);
+double GetMaxXPRINO(TGraph* g);
+//TGraph* SmoothPRINO(TGraph* g, int nsm=2);
+
+std::pair<double, double> FindEdge(TGraph & gr, int nIgnorePoints = 0);
+std::pair<int, int> FindEdgeIndex(TGraph & gr, int nIgnorePoints = 0);
 int FindMinimumIndex(TGraph & gr);
-int FindMaximumIndex(TGraph & gr);
+int FindMaximumIndex(TGraph & gr);  
 int FindChangingDerivative(TGraph & grDer, const double& meanDer, const double& RMSDer, const int ignorePoints, const bool backwards = false);
 std::pair<double, double> GetMeanAndRMS(TGraph & gr, const int& begin, const int& end);
 TGraph* SmoothGraph(TGraph& gr, const int nSmoothingPoints = 2);
 TGraph* DerivativeGraph(TGraph& gr);
+int FindPointIndex(TGraph& gr, const double& x, const int nIgnorePoints = 0);
 
 // -------------------------------------------------------------------------------------
 
@@ -43,15 +54,25 @@ Preprocessor::Preprocessor(const char * inFilePath, const double threshold):
     fNPixels(0), 
     fNEvents(0), 
     fSamplingPeriodDictionary(NULL), 
-    fThreshold(threshold)
+    fThreshold(threshold), 
+    fIgnorePoints(0)
 {
     Preprocessor::ReadInput();   
     Preprocessor::GenerateSamplingDictionary();
+
+    fmVToElectrons = new double*[fNPixels];
+    for (int i = 0; i < fNPixels; i++)
+    {
+        fmVToElectrons[i] = new double[2];
+        fmVToElectrons[i][0] = 0.;
+        fmVToElectrons[i][1] = 0.;
+    }
 }
 
 Preprocessor::~Preprocessor()
 {
     delete fSamplingPeriodDictionary;
+    delete fmVToElectrons;
 }
 
 /*  PROTECTED */
@@ -85,6 +106,8 @@ void Preprocessor::ReadInput()
         index++;
     }
     std::cout << std::endl;
+
+    fNPixels++;
 }
 
 /**
@@ -135,6 +158,20 @@ void Preprocessor::GenerateSamplingDictionary()
 
 
 /*  PUBLIC  */
+
+/**
+ * @brief Upload a dictionary to convert mV to electrons.
+ * 
+ * @param mV_to_electrons 
+ */
+void Preprocessor::UploadConversionValues(double (* mVToElectrons)[2])
+{
+    for (int i = 0; i < fNPixels; i++)
+    {
+        fmVToElectrons[i][0] = mVToElectrons[i][0];
+        fmVToElectrons[i][1] = mVToElectrons[i][1];
+    }
+}
 
 /**
  * @brief Function to build the tree with the preprocessed data. All events in the input files will be processed.
@@ -210,6 +247,7 @@ bool Preprocessor::ProcessEventScope(const int event, const int pixel, PixelData
     pixelData.t50 = -1.;
     pixelData.fallTime = -1.;
     pixelData.amplitude = -1.;
+    pixelData.electrons = -1.;
     pixelData.RMS = -1.;
 
     TString grName = Form("grEv%dPx%dsamp%d", event, pixel, fSamplingPeriodDictionary[pixel]);
@@ -223,34 +261,30 @@ bool Preprocessor::ProcessEventScope(const int event, const int pixel, PixelData
 
     const int minimumIndex = FindMinimumIndex(*gr);
     const double minimum = gr->GetPointY(minimumIndex);
-    auto edges = FindEdge(*gr);
+    auto edges = FindEdge(*gr, fIgnorePoints);
+    //auto edges = FindEdgePRINO(gr);
     const double edgeLeft = (edges.first < 1e-5) ? gr->GetPointX(FindMaximumIndex(*gr)) : edges.first;
     const double edgeRight = edges.second;
     // if edgeLeft is too little, it means that the signal is not present in the graph
     // therefore, in order to have a meaningful value for the baseline, we take the maximum of the graph as the edgeLeft
 
-    // avoid automatic output due to TF1s not being able to fit the graph
-    std::streambuf* coutBuffer = std::cout.rdbuf();
-    std::streambuf* cerrBuffer = std::cerr.rdbuf();
-    std::ofstream nullStream("/dev/null"); 
-    std::cout.rdbuf(nullStream.rdbuf());
-    std::cerr.rdbuf(nullStream.rdbuf());
+    int oldVerbosity = gErrorIgnoreLevel;
+    gErrorIgnoreLevel = kFatal;                         // disable implicit multithreading
 
     TF1 baselineFit(Form("baselineFit%d", pixel), "[0]");
-    gr->Fit(&baselineFit, "Q", "", gr->GetPointX(0), edgeLeft);
+    gr->Fit(&baselineFit, "Q+", "", gr->GetPointX(fIgnorePoints), edgeLeft);
     pixelData.baseline = baselineFit.GetParameter(0);
 
     TF1 minLevelFit(Form("minLevelFit%d", pixel), "[0]");
-    gr->Fit(&minLevelFit, "Q", "", edgeRight, gr->GetPointX(minimumIndex));
+    gr->Fit(&minLevelFit, "Q+", "", edgeRight, gr->GetPointX(gr->GetN()-1-fIgnorePoints));
     pixelData.minLevel = minLevelFit.GetParameter(0);
 
-    std::cout.rdbuf(coutBuffer);        // restore the original state of std::cout
-    std::cerr.rdbuf(cerrBuffer);        // restore the original state of std::cerr
-
     pixelData.amplitude = abs(pixelData.minLevel - pixelData.baseline);
+    if (fmVToElectrons) pixelData.electrons = (pixelData.amplitude - fmVToElectrons[pixel][0]) / fmVToElectrons[pixel][1];
 
-    if (pixelData.amplitude < fThreshold) 
+    if (edgeLeft > edgeRight) 
     {
+        pixelData.amplitude = -1.;
         pixelData.t10 = -1.;
         pixelData.t50 = -1.;
         pixelData.t90 = -1.;
@@ -265,6 +299,8 @@ bool Preprocessor::ProcessEventScope(const int event, const int pixel, PixelData
         pixelData.t90 = fit.GetX(pixelData.baseline - 0.9 * pixelData.amplitude);
         pixelData.fallTime = pixelData.t50 - pixelData.t10;
     }
+
+    gErrorIgnoreLevel = oldVerbosity;                   // re-enable implicit multithreading
 
     const int nSamples = 80;
     auto grMeanAndRMS = GetMeanAndRMS(*gr, 0, nSamples);
@@ -319,6 +355,7 @@ bool Preprocessor::ProcessEventADC(const int event, const int pixel, PixelData &
     pixelData.t50 = -2.;
     pixelData.fallTime = -2.;
     pixelData.amplitude = -1.;
+    pixelData.electrons = -1.;
     pixelData.RMS = -1.;
 
     TString grName = Form("grEv%dPx%dsamp%d", event, pixel, fSamplingPeriodDictionary[pixel]);
@@ -334,24 +371,22 @@ bool Preprocessor::ProcessEventADC(const int event, const int pixel, PixelData &
     const double minimum = gr->GetPointY(minimumIndex);
     pixelData.minLevel = minimum;
     auto edges = FindEdge(*gr);
-    //const double edgeLeft = gr->GetPointX(99);              // take the 100th point as the edgeLeft
+    //const double edgeLeft = gr->GetPointX(99);            // take the 100th point as the edgeLeft
     const double edgeLeft = 250*99;
 
-    // avoid automatic output due to TF1s not being able to fit the graph
-    std::streambuf* coutBuffer = std::cout.rdbuf();
-    std::streambuf* cerrBuffer = std::cerr.rdbuf();
-    std::ofstream nullStream("/dev/null"); 
-    std::cout.rdbuf(nullStream.rdbuf());
-    std::cerr.rdbuf(nullStream.rdbuf());
+    int oldVerbosity = gErrorIgnoreLevel;
+    gErrorIgnoreLevel = kFatal;                             // disable implicit multithreading
 
     TF1 baselineFit(Form("baselineFit%d", pixel), "[0]");
-    gr->Fit(&baselineFit, "Q", "", gr->GetPointX(0), edgeLeft);
+    gr->Fit(&baselineFit, "Q+", "", gr->GetPointX(0), edgeLeft);
     pixelData.baseline = baselineFit.GetParameter(0);
 
-    std::cout.rdbuf(coutBuffer);        // restore the original state of std::cout
-    std::cerr.rdbuf(cerrBuffer);        // restore the original state of std::cerr
+    gErrorIgnoreLevel = oldVerbosity;                       // re-enable implicit multithreading
 
-    pixelData.amplitude = abs(gr->GetPointY(FindMinimumIndex(*gr)) - pixelData.baseline);
+
+    if (pixelData.baseline - pixelData.minLevel < fThreshold)   pixelData.amplitude = -1.;
+    else                                                        pixelData.amplitude = abs(pixelData.minLevel - pixelData.baseline);
+    if (fmVToElectrons) pixelData.electrons = (pixelData.amplitude - fmVToElectrons[pixel][0]) / fmVToElectrons[pixel][1];
 
     // for the ADC data, time variables cannot be computed. They are set to -2.
     pixelData.t10 = -2.;
@@ -390,13 +425,13 @@ bool Preprocessor::ProcessEventADC(const int event, const int pixel, PixelData &
 }
 
 /**
- * @brief For a single event, draws the waveform and its derivative.
+ * @brief For a single event and pixel, draws the waveform and its derivative.
  * 
  * @param event 
  * @param pixel 
  * @param outFilePath 
  */
-void Preprocessor::DrawEvent(const int event, const int pixel, const char * outFilePath)
+void Preprocessor::DrawPixel(const int event, const int pixel, const char * outFilePath)
 {
     TString sOutFilePath(outFilePath);
     if (sOutFilePath.EqualTo("default"))    sOutFilePath = Form("ITS3/Data/Event%dPixel%d.root", event, pixel);
@@ -427,8 +462,400 @@ void Preprocessor::DrawEvent(const int event, const int pixel, const char * outF
     outFile->Close();
 }
 
+/**
+ * @brief For a single event, draws the waveform and its derivative for all the pixels.
+ * 
+ * @param event 
+ * @param outFilePath 
+ * @param preprocessed 
+ */
+void Preprocessor::DrawEvent(const int event, const char * outFilePath)
+{
+    TString sOutFilePath(outFilePath);
+    if (sOutFilePath.EqualTo("default"))    sOutFilePath = Form("ITS3/Data/Event%d.root", event);
+    
+    if (event > fNEvents)
+    {
+        std::cerr << RED << "Error: event out of range." << RESET << std::endl;
+        return;
+    }
+
+    auto inFile = TFile::Open(fInFilePath.Data());
+    auto outFile = TFile::Open(sOutFilePath.Data(), "RECREATE");
+    std::cout << "Writing output file: " << BLUE << UNDERLINE << sOutFilePath << RESET << std::endl;
+
+    for (int i = 0; i < fNPixels; i++)
+    {
+        TString grName = Form("grEv%dPx%dsamp%d", event, i, fSamplingPeriodDictionary[i]);
+        auto canvas = new TCanvas(Form("cEv%dPx%dsamp%d", event, i, fSamplingPeriodDictionary[i]), "", 1000, 1000);
+        auto gr = (TGraph*)inFile->Get(grName.Data());
+        auto grDerivative = DerivativeGraph(*gr);
+        auto grSecondDerivative = DerivativeGraph(*grDerivative);
+        auto grSmooth = SmoothGraph(*gr, 10);
+        canvas->Divide(2);
+
+        auto edgesIdx = FindEdgeIndex(*gr, fIgnorePoints);
+        auto grEdge = new TGraph(2);
+        grEdge->SetPoint(0, gr->GetPointX(edgesIdx.first), gr->GetPointY(edgesIdx.first));
+        grEdge->SetPoint(1, gr->GetPointX(edgesIdx.second), gr->GetPointY(edgesIdx.second));
+        grEdge->SetMarkerStyle(20);
+        grEdge->SetMarkerColor(kOrange-3);
+
+        canvas->cd(1);
+        gr->Draw("AL");
+        grEdge->Draw("same");
+        canvas->cd(2);
+        grDerivative->Draw("same");
+
+        gr->Write();
+        grDerivative->Write();
+        grSecondDerivative->Write();
+        grSmooth->Write();
+        canvas->Write();
+
+        delete gr;
+        delete grDerivative;
+        delete canvas;
+    }
+
+    outFile->Close();
+    inFile->Close();    
+}
+
 // -------------------------------------------------------------------------------------
 // functions used in this file
+
+TGraph* SmoothPRINO(TGraph* g, int nsm=2){
+  TGraph* gsm=new TGraph(0);
+  int npts=0;
+  for(int j=nsm; j<g->GetN()-nsm; j++){
+    double x,y,x1,y1;
+    g->GetPoint(j,x,y);
+    double sum=y;
+    for(int k=1; k<=nsm;k++){
+      g->GetPoint(j-k,x1,y1);
+      sum+=y1;
+      g->GetPoint(j+k,x1,y1);
+      sum+=y1;
+    }
+    sum/=(2*nsm+1);
+    gsm->SetPoint(npts++,x,sum);
+  }
+  return gsm;
+}
+
+// Get max x point on the TGraph
+double GetMaxXPRINO(TGraph* g){
+  double xmax=0.;
+  for(int j=0; j<g->GetN(); j++){
+    double x,y;
+    g->GetPoint(j,x,y);
+    if(x>xmax) xmax=x;
+  }
+  return xmax;
+}
+
+// Compute the signal derivative to find the time in which the signal starts
+double ComputeDerivativePRINO(TGraph* g, int j, int npts=5){
+  if(npts==3){
+    double xm1,ym1,xp1,yp1;
+    g->GetPoint(j-1,xm1,ym1);
+    g->GetPoint(j+1,xp1,yp1);
+    double der=(yp1-ym1)/(xp1-xm1);
+    return der;
+  }else{
+    double xm2,ym2,xm1,ym1,xp1,yp1,xp2,yp2;
+    g->GetPoint(j-2,xm2,ym2);
+    g->GetPoint(j-1,xm1,ym1);
+    g->GetPoint(j+1,xp1,yp1);
+    g->GetPoint(j+2,xp2,yp2);
+    double der=(ym2-8*ym1+8*yp1-yp2)/(xp2-xp1)/12.;
+    return der;
+  }
+}
+
+// Creates the TGraph of the signal derivative
+TGraph* GetDerivativePRINO(TGraph* g, int nsm=4){
+  TGraph* gder=new TGraph(0);
+  int npts=0;
+  for(int j=2; j<g->GetN()-nsm-2; j++){
+    double x,y;
+    g->GetPoint(j,x,y);
+    double der=0;
+    double nnn=0;
+    for(int k=0; k<=nsm;k++){
+      der+=ComputeDerivativePRINO(g,j+k);
+      nnn+=1.;
+    }
+    if(nnn>0){
+      der/=nnn;
+      gder->SetPoint(npts++,x,der);
+    }
+  }
+  return gder;
+}
+
+// Create the TGraph of the negative derivative of the signal
+TGraph* CountNextNegativeDerPRINO(TGraph* g){
+  TGraph* gn=new TGraph(0);
+  for(int j=0; j<g->GetN()-1; j++){
+    double x,y;
+    g->GetPoint(j,x,y);
+    int cntneg=0;
+    for(Int_t k=j; k<g->GetN()-1; k++){
+      double der=ComputeDerivativePRINO(g,k);
+      if(der>=0) break;
+      else cntneg++;
+    }
+    gn->SetPoint(j,x,cntneg);
+  }
+  return gn;
+}
+
+// Compute average and RMS
+void GetMeanAndRMSCountsPRINO(TGraph* g, double xmin, double xmax, double& mean, double& rms){
+  double sum=0,sum2=0,cnts=0;
+  for(int j=0; j<g->GetN(); j++){
+    double x,c;
+    g->GetPoint(j,x,c);
+    if(x>xmin && x<xmax){
+      cnts+=1.;
+      sum+=c;
+      sum2+=(c*c);
+    }
+  }
+  if(cnts>0){
+    mean=sum/cnts;
+    rms=TMath::Sqrt(sum2/cnts-mean*mean);
+  }else{
+    mean=0;
+    rms=0;
+  }
+  return;
+}
+
+// Find a specific point on a TGraph
+double FindOnGraphPRINO(TGraph* gcount, double y, double xmin, double xmax, int interpolate, bool backw=kFALSE){
+  int jfirst=0;
+  int dstep=1;
+  if(backw){
+    jfirst=gcount->GetN();
+    dstep=-1;
+  }
+  for(int jstep=0; jstep<gcount->GetN(); jstep++){
+    int j=jfirst+dstep*jstep;
+    double x,c,xbef,cbef,xaft,caft,xaft2,caft2;
+    gcount->GetPoint(j,x,c);
+    gcount->GetPoint(j-dstep,xbef,cbef);
+    gcount->GetPoint(j+dstep,xaft,caft);
+    gcount->GetPoint(j+2*dstep,xaft2,caft2);
+    if((dstep==1 && c<y && cbef>y && caft<y) || (dstep==-1 && c>y && cbef<y && caft>y) ){
+      if(interpolate==0) return x;
+      else{
+	double sumx=0,sumx2=0,sumy=0,sumxy=0,npts=0;
+	for(int k=j-interpolate; k<=j+interpolate; k++){
+	  double xP,yP;
+	  gcount->GetPoint(k,xP,yP);
+	  sumx+=xP;
+	  sumy+=yP;
+	  sumxy+=(xP*yP);
+	  sumx2+=(xP*xP);
+	  npts+=1;
+	}
+	double m=(npts*sumxy-sumx*sumy)/(npts*sumx2-sumx*sumx);
+	double q=(sumy*sumx2-sumx*sumxy)/(npts*sumx2-sumx*sumx);
+	double xinterp=(y-q)/m;
+	if(xinterp<xmin || xinterp>xmax || TMath::Abs(xinterp-x)>1000.) continue;
+	return xinterp;
+      }
+    }
+  }
+  return -999.;
+}
+
+std::pair<double, double> FindEdgePRINO(TGraph* g)
+{
+  
+  // originally from ProcessEvent
+  TGraph* gs=SmoothPRINO(g,10);
+  gs->GetXaxis()->SetTitle(g->GetXaxis()->GetTitle());
+  gs->SetTitle(g->GetTitle());
+  gs->GetYaxis()->SetTitle("Amplitude (smoothened)");
+  TGraph* gnegd=CountNextNegativeDerPRINO(g);
+  gnegd->GetXaxis()->SetTitle(g->GetXaxis()->GetTitle());
+  gnegd->SetTitle(g->GetTitle());
+  gnegd->GetYaxis()->SetTitle("N. adjacent samplings with negative derivative");
+  TGraph* gsnegd=CountNextNegativeDerPRINO(gs);
+  TGraph* gd=GetDerivativePRINO(gs,40);
+  gd->GetXaxis()->SetTitle(g->GetXaxis()->GetTitle());
+  gd->SetTitle(g->GetTitle());
+  gd->GetYaxis()->SetTitle("Amplitude derivative (smoothened)");
+
+  // HERE BEGINS FINDEDGE
+
+
+  // first very rough: compute flat levels on the left and on the right and check their difference
+  double maxTime=GetMaxXPRINO(gs);
+  double levleft,rmsleft,levright,rmsright; 
+  double endplateau{0.}, edgeleft{0.}, edgeright{0.};
+
+  GetMeanAndRMSCountsPRINO(gs,0.,2000.,levleft,rmsleft);
+  GetMeanAndRMSCountsPRINO(gs,maxTime-2000,maxTime,levright,rmsright);
+  double y50=0.5*(levleft+levright);
+  
+  double t50fromleft=FindOnGraphPRINO(gs,y50,0.,maxTime,4);
+  double t50fromright=FindOnGraphPRINO(gs,y50,0.,maxTime,4,kTRUE);
+  double roughsig=levleft-levright;
+  // printf("roughsig=%f\n",roughsig);
+  // printf("Rough signal = %f Rough edge position = %f %f\n",roughsig,t50fromleft,t50fromright);
+  double minSearchWindow=0;
+  double maxSearchWindow=maxTime;
+  if(roughsig>0.0005){
+    minSearchWindow=TMath::Min(t50fromleft,t50fromright)-6000.;
+    if(minSearchWindow<0) minSearchWindow=0;
+    maxSearchWindow=TMath::Max(t50fromleft,t50fromright)+6000.;
+    if(maxSearchWindow>maxTime) maxSearchWindow=maxTime;
+  }
+  // printf("Search window = %f %f\n",minSearchWindow,maxSearchWindow);
+  
+  // second step: search for accumulation of adjacent points with negative derivative
+  double xmaxn=-1;
+  double cmaxn=-1;
+  int jmaxn=-1;
+  if(gnegd){
+    for(int j=0; j<gnegd->GetN(); j++){
+      double x,c;
+      gnegd->GetPoint(j,x,c);
+      if(x<minSearchWindow || x>maxSearchWindow) continue;
+      if(c>cmaxn){
+	cmaxn=c;
+	xmaxn=x;
+	jmaxn=j;
+      }
+      if(c==cmaxn){
+	int sum0=0;
+	int sum1=0;
+	for(int k=1; k<20; k++){
+	  double xk,ck;
+	  gnegd->GetPoint(jmaxn+k,xk,ck);
+	  sum0+=ck;
+	  gnegd->GetPoint(j+k,xk,ck);
+	  sum1+=ck;
+	}
+	if(sum1>sum0){
+	  cmaxn=c;
+	  xmaxn=x;
+	  jmaxn=j;
+	}
+      }
+    }
+    // printf("Maximum adjacent points with negative derivative: t_maxn=%f   n_neg=%f\n",xmaxn,cmaxn);
+  }
+  
+  // third step: search for minimum of derivative and range where derivative differs from 0
+  double xminder=-1;
+  double dermin=99999.;
+  int jminder=-1;
+  for(int j=0; j<gd->GetN(); j++){
+    double x,d;
+    gd->GetPoint(j,x,d);
+    if(x<minSearchWindow || x>maxSearchWindow) continue;
+    if(d<dermin){
+      dermin=d;
+      xminder=x;
+      jminder=j;
+    }
+  }
+  if(jminder<0){
+    endplateau=0;
+    edgeleft=0;
+    edgeright=0;
+    return std::make_pair(edgeleft, edgeright);
+  }
+  // printf("Minimum of derivative: xminder=%f   dermin=%f\n",xminder,dermin);
+  int jleft=-1;
+  double dthresh=-1e-7;
+  for(int j=jminder; j>0; j--){
+    double x,d;
+    gd->GetPoint(j,x,d);
+    if(d>dthresh){
+      jleft=j;
+      break;
+    }
+  }
+  int jright=-1;
+  for(int j=jminder; j<gd->GetN(); j++){
+    double x,d;
+    gd->GetPoint(j,x,d);
+    if(d>dthresh){
+      jright=j;
+      break;
+    }
+  }
+  double xleft,xright,dum;
+  gd->GetPoint(jleft,xleft,dum);
+  gd->GetPoint(jright,xright,dum);
+  // printf("Region of negative derivative: xleft=%f   xright=%f\n",xleft,xright);
+  if(xmaxn>0 && TMath::Abs(xmaxn-xleft)<5000 && TMath::Abs(xmaxn-xright)<5000){
+    if(xleft>xmaxn) xleft=xmaxn;
+    if(xright<xmaxn) xright=xmaxn;
+  }
+  // printf("Edge range after analysis of derivative: xleft=%f   xright=%f\n",xleft,xright);
+
+  // Fourth step: start from left and seach for N points with couns < baseline-3sigma
+  double cmean,crms;
+  GetMeanAndRMSCountsPRINO(gs,0.,xleft,cmean,crms);
+  // printf("Mean before edge = %f rms = %f\n",cmean,crms);
+  double thresh=cmean-3*crms;
+  int threshbin=TMath::Nint(TMath::Max(10.,cmaxn/3.));
+  if(cmaxn<0) threshbin=3;
+  double xleft2=-1.;
+  for(int j=0; j<gs->GetN(); j++){
+    double x,c;
+    gs->GetPoint(j,x,c);
+    int nbelow=0;
+    for(Int_t k=j; k<gs->GetN()-1; k++){
+      double x2,c2;
+      gs->GetPoint(k,x2,c2);
+      if(c2<thresh) nbelow++;
+      else break;
+    }
+    if(nbelow>threshbin){
+      xleft2=x;
+      break;
+    }
+  }
+  // printf("Left Edge from baseline-N*rms = %f\n",xleft2);
+  if(xleft2>0){
+    endplateau=TMath::Min(xleft,xleft2);
+    edgeleft=TMath::Max(xleft,xleft2);
+    edgeright=xright;
+    // printf("Edge range after all steps: endplateau=%f   edgeleft=%f   edgeright=%f\n",endplateau,edgeleft,edgeright);
+    return std::make_pair(edgeleft, edgeright);
+  }
+  endplateau=0;
+  edgeleft=0;
+  edgeright=0;
+  return std::make_pair(edgeleft, edgeright);
+}
+
+
+
+
+
+/**
+ * @brief Function to find the edge of the signal.
+ * 
+ * @param gr 
+ * @param nIgnorePoints number of points to ignore at the beginning and at the end of the TGraph (due to the smoothing and/or 
+ * peculiarity of the waveform)
+ * @return std::tuple<double, double, double> edgeLeft, edgeRight
+ */
+std::pair<double, double> FindEdge(TGraph & gr, int nIgnorePoints)
+{
+    auto edgesIdx = FindEdgeIndex(gr, nIgnorePoints);
+    return std::make_pair(gr.GetPointX(edgesIdx.first), gr.GetPointX(edgesIdx.second));
+}
 
 /**
  * @brief Function to find the edge of the signal.
@@ -436,28 +863,39 @@ void Preprocessor::DrawEvent(const int event, const int pixel, const char * outF
  * @param gr 
  * @return std::tuple<double, double, double> edgeLeft, edgeRight
  */
-std::pair<double, double> FindEdge(TGraph & gr)
+std::pair<int, int> FindEdgeIndex(TGraph & gr, int nIgnorePoints)
 {
-    const int nSmoothingPoints = 5;                         // number of points to consider for the smoothing
+    const int nSmoothingPoints = 10;                        // number of points to consider for the smoothing
     auto grSmooth = SmoothGraph(gr, nSmoothingPoints);      // smooth the graph to find the edge more easily
     auto grDerivative = DerivativeGraph(*grSmooth);         // take the derivative of the smoothed graph
 
-    const int nSamples = 80;                                // number of samples to consider for the plateau
+    int nSamples = 200;                                     // number of samples to consider for the plateau
+    if (nSamples > gr.GetN())   nSamples = int(gr.GetN()/2);
     double meanDer{0.}, RMSDer{0.};
-    auto resultDer = GetMeanAndRMS(*grDerivative, nSmoothingPoints, nSmoothingPoints+nSamples);
+    if (nIgnorePoints == 0)  nIgnorePoints = nSmoothingPoints;
+    auto resultDer = GetMeanAndRMS(*grDerivative, nIgnorePoints, nIgnorePoints+nSamples);
     meanDer = resultDer.first;
     RMSDer = resultDer.second;
 
-    double edgeLeft{0.}, edgeRight{0.};
-    int edgeLeftIndex = FindChangingDerivative(*grDerivative, meanDer, RMSDer, nSmoothingPoints);          // correct for smoothing
-    int edgeRightIndex = FindChangingDerivative(*grDerivative, meanDer, RMSDer, nSmoothingPoints, true);   // correct for smoothing
-    edgeLeft = gr.GetPointX(edgeLeftIndex);
-    edgeRight = gr.GetPointX(edgeRightIndex);
+    // begin to search for the edge from the point at which the signal reaches 50% of its amplitude
+    // const int nPoints = gr.GetN();
+    // TF1 baselineFit("baselineFit", "[0]");
+    // gr.Fit(&baselineFit, "Q+", "", gr.GetPointX(0), gr.GetPointX(500));
+    // double baseline = baselineFit.GetParameter(0);
+    // TF1 minLevelFit("minLevelFit", "[0]");
+    // gr.Fit(&minLevelFit, "Q+", "", gr.GetPointX(nPoints-500), gr.GetPointX(nPoints-1));
+    // double minLevel = minLevelFit.GetParameter(0);
+    // const double t50 = baseline + 0.5 * (minLevel - baseline);
+    // const int begin = FindPointIndex(gr, t50, nIgnorePoints);
+
+    double edgeLeft{0.}, edgeRight{0.};    
+    int edgeLeftIndex = FindChangingDerivative(*grDerivative, meanDer, RMSDer, nIgnorePoints);          // correct for smoothing
+    int edgeRightIndex = FindChangingDerivative(*grDerivative, meanDer, RMSDer, nIgnorePoints, true);   // correct for smoothing
 
     delete grSmooth;
     delete grDerivative;
     
-    return std::make_pair(edgeLeft, edgeRight);
+    return std::make_pair(edgeLeftIndex, edgeRightIndex);
 }
 
 /**
@@ -522,7 +960,7 @@ int FindMaximumIndex(TGraph & gr)
  * @param backwards if true, the function loops through the TGraph from the last point to the first one
  * @return const int 
  */
-int FindChangingDerivative(TGraph & grDer, const double& meanDer, const double& RMSDer, const int ignorePoints, const bool backwards)
+int FindChangingDerivative(TGraph & grDer, const double & meanDer, const double & RMSDer, const int ignorePoints, const bool backwards)
 {
     const int nSamples = grDer.GetN();
     double * x = grDer.GetX();
@@ -577,7 +1015,7 @@ int FindChangingDerivative(TGraph & grDer, const double& meanDer, const double& 
  * @param end 
  * @return std::pair<double, double> 
  */
-std::pair<double, double> GetMeanAndRMS(TGraph & gr, const int& begin, const int& end)
+std::pair<double, double> GetMeanAndRMS(TGraph & gr, const int & begin, const int & end)
 {
     const int nSamples = gr.GetN();
     double * x = gr.GetX();
@@ -645,22 +1083,41 @@ TGraph* DerivativeGraph(TGraph& gr)
 
     auto grDerivative = new TGraph(0);
     grDerivative->SetName(Form("%s_derivative", gr.GetName()));
-    for (int i = 0; i < nSamples; ++i)
+    
+    const int nPoints{40};     // calculate the derivative in a point as the average of the derivative in nPoints points before and after the point
+    for (int i = 1; i < nSamples - nPoints - 1; ++i)
     {
         double der{0.};
-        for (int j = i - 1; j < i + 1; ++j)
-        {
-            if (j < 0 || j > nSamples) continue;
-            der = (y[j + 1] - y[j - 1]) / (x[j + 1] - x[j - 1]);
-        }
+        for (int j = i; j < i + nPoints; j++)   der += (y[j + 1] - y[j - 1]) / (x[j + 1] - x[j - 1]);
+        der /= nPoints;
         grDerivative->SetPoint(i, x[i], der);
     }
+    grDerivative->SetPoint(0, x[0], grDerivative->GetPointY(1));
+    grDerivative->SetPoint(nSamples - 1, x[nSamples - 1], grDerivative->GetPointY(nSamples - 2));
 
     // set the first and last point of the derivative graph to the second and second to last point of the original graph
     grDerivative->SetPoint(0, x[0], grDerivative->GetPointY(1));
     grDerivative->SetPoint(nSamples - 1, x[nSamples - 1], grDerivative->GetPointY(nSamples - 2));
 
     return grDerivative;
+}
+
+/**
+ * @brief Find the first point in the TGraph with given value. The first skipPoints points are ignored.
+ * 
+ * @param gr 
+ * @param x 
+ * @param skipPoints 
+ * @return int 
+ */
+int FindPointIndex(TGraph & gr, const double & x, const int nIgnorePoints)
+{
+    const int nSamples = gr.GetN();
+    double * xGraph = gr.GetX();
+    double * yGraph = gr.GetY();
+
+    for (int i = nIgnorePoints; i < nSamples; ++i)  if (xGraph[i] == x) return i;
+    return 0;
 }
 
 // -------------------------------------------------------------------------------------

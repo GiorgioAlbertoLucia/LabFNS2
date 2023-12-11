@@ -6,7 +6,7 @@
 
 #include "spectrum.hh"
 
-void testSpectrum()
+void analyseSpectra()
 {
     const char * inFilePath = "ITS3/Data/run175174828_230428174901_preprocessed.root";
     const char * inTreeName = "PreprocessedData";
@@ -19,13 +19,19 @@ void testSpectrum()
     auto inTree = (TTree*)inFile->Get(inTreeName);
     auto outFile = new TFile(outFilePath, "recreate");
 
+    std::ofstream createOutput(outLogPath);
+    createOutput.close();
+
     int pixels[] = {5, 6, 9, 10};
     for (int iPixel: pixels)
     {
         Yaml::Node cfg;
         Yaml::Parse(cfg, cfgPath);
         
-        auto spectrum = new TH1D(Form("spectrumPx%d", iPixel), "", 160, 1, 81);
+        auto spectrum = new TH1D(Form("spectrumPx%d", iPixel), "", cfg[Form("pixel%d", iPixel)]["spectrumSpec"][0].As<int>(), 
+            cfg[Form("pixel%d", iPixel)]["spectrumSpec"][1].As<double>(), cfg[Form("pixel%d", iPixel)]["spectrumSpec"][2].As<double>());
+        
+        Yaml::Node cfgHist = cfg[Form("pixel%d", iPixel)]["spectrumSpec"];
         inTree->Draw(Form("pixel%d.amplitude>>spectrumPx%d", iPixel, iPixel));
         for (int iBin = 1; iBin < spectrum->GetEntries(); iBin++)   spectrum->SetBinError(iBin, sqrt(spectrum->GetBinContent(iBin)));
 
@@ -34,10 +40,17 @@ void testSpectrum()
         s->EstimateBackground();
         //s->DrawSpectrumAndBackground();
 
+        std::streambuf* originalCoutBuffer = std::cout.rdbuf();
+        std::ofstream outputFile(outLogPath, std::ios::app);
+        std::cout.rdbuf(outputFile.rdbuf());
+        std::cout << "pixel" << iPixel << ":" << std::endl;
+        std::cout.rdbuf(originalCoutBuffer);
+
         s->SimpleFitSpectrum(outLogPath, cfg[Form("pixel%d", iPixel)]);
 
         delete s;
     }
 
     outFile->Close();
+    inFile->Close();
 }

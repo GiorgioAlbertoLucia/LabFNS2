@@ -77,8 +77,11 @@ void Spectrum::EstimateBackground()
 void Spectrum::SimpleFitSpectrum(const char * outLogPath, Yaml::Node & cfgFits)
 {
     std::streambuf* originalCoutBuffer = std::cout.rdbuf();
-    std::ofstream outputFile(outLogPath);
+    std::ofstream outputFile(outLogPath, std::ios_base::app);
     std::cout.rdbuf(outputFile.rdbuf());
+
+    std::cout << "  nFits: " << cfgFits["nFits"].As<int>() << std::endl;
+    std::cout << "  fits:" << std::endl;
 
     for (int iFit = 0; iFit < cfgFits["nFits"].As<int>(); iFit++)
     {
@@ -86,9 +89,18 @@ void Spectrum::SimpleFitSpectrum(const char * outLogPath, Yaml::Node & cfgFits)
         
         TF1 fit(cfgFit["name"].As<std::string>().c_str(), cfgFit["func"].As<std::string>().c_str(), cfgFit["range"][0].As<double>(), cfgFit["range"][1].As<double>());
         for (int iParam = 0; iParam < cfgFit["nParams"].As<int>(); iParam++)    fit.SetParameter(iParam, cfgFit["param"][iParam].As<double>());
-
         fSpectrum->Fit(&fit, "RM+", "", cfgFit["range"][0].As<double>(), cfgFit["range"][1].As<double>());
-        std::cout << "chi2 / ndf = " << fit.GetChisquare() << " / " << fit.GetNDF() << std::endl;
+        
+        // write fit results to log file
+        std::cout << "    - params:" << std::endl;
+        for (int iParam = 0; iParam < cfgFit["nParams"].As<int>(); iParam++)    std::cout << "        - " << fit.GetParameter(iParam) << std::endl;
+        std::cout << "      parerrors:" << std::endl;
+        for (int iParam = 0; iParam < cfgFit["nParams"].As<int>(); iParam++)    std::cout << "        - " << fit.GetParError(iParam) << std::endl;
+        std::cout << "      chi2: " << fit.GetChisquare() << std::endl;
+        std::cout << "      NDF: " << fit.GetNDF() << std::endl;
+        std::cout << "      peak: " << fit.GetParameter(1) << std::endl;
+        std::cout << "      peakerror: " << fit.GetParError(1) << std::endl; 
+        std::cout << std::endl;
 
         fit.SetLineColor(cfgFit["color"].As<int>());
         fit.SetRange(cfgFit["range"][0].As<double>(), cfgFit["range"][1].As<double>());

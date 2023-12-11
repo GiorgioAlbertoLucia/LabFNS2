@@ -49,15 +49,20 @@ class Preprocessor
         Preprocessor(const char * inFilePath, const double threshold = 10);
         ~Preprocessor();
 
+        void SetIgnorePoints(const int ignorePoints) { fIgnorePoints = ignorePoints; }
+
         TString GetInFilePath() const { return fInFilePath; }
         int GetNPixels() const { return fNPixels; }
         int GetNEvents() const { return fNEvents; }
         int GetSamplingPeriod(const int pixel) const { return fSamplingPeriodDictionary[pixel]; }
-   
+
+        void UploadConversionValues(double (* mvToElectrons)[2]);
+
         void BuildTree(const char * outFilePath = "default");
         bool ProcessEventScope(const int event, const int pixel, PixelData & pixelData, TFile * inFile);
         bool ProcessEventADC(const int event, const int pixel, PixelData & pixelData, TFile * inFile);
-        void DrawEvent(const int event, const int pixel, const char * outFilePath = "default");
+        void DrawPixel(const int event, const int pixel, const char * outFilePath = "default");
+        void DrawEvent(const int event, const char * outFilePath = "default");
 
     protected:
         void ReadInput();
@@ -71,8 +76,10 @@ class Preprocessor
         int fNEvents;
 
         int * fSamplingPeriodDictionary;    // in ps
-        
+        double ** fmVToElectrons;         // dictionary to convert mV to electrons
+
         double fThreshold;                  // in mV
+        int fIgnorePoints;                  // number of points to ignore at the beginning and at the end of the waveform 
 };
 
 #endif 

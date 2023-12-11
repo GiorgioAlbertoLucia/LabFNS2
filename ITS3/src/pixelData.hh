@@ -24,9 +24,10 @@ struct PixelData
     double t50;         // time of arrival at 50% of the amplitude
     double fallTime;    // fall time of the waveform
     double amplitude;   // amplitude of the waveform
+    double electrons;   // deposited charge in electrons
     double RMS;         // RMS of the waveform
 
-    static TString GetBranchList()  { return "pixel/I:samplingPeriod/I:baseline/D:minLevel/D:t10/D:t90/D:t50/D:fallTime/D:amplitude/D:RMS/D"; }
+    static TString GetBranchList()  { return "pixel/I:samplingPeriod/I:baseline/D:minLevel/D:t10/D:t90/D:t50/D:fallTime/D:amplitude/D:electrons/D:RMS/D"; }
 };
 
 #endif // PIXELDATA_HH
