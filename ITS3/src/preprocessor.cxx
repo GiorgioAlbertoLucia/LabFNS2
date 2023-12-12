@@ -286,7 +286,7 @@ bool Preprocessor::ProcessEventScope(const int event, const int pixel, PixelData
     pixelData.amplitude = abs(pixelData.minLevel - pixelData.baseline);
     if (fmVToElectrons) pixelData.electrons = (pixelData.amplitude - fmVToElectrons[pixel][0]) / fmVToElectrons[pixel][1];
 
-    if (edgeLeft > edgeRight) 
+    if (edgeLeft > edgeRight || pixelData.minLevel > pixelData.baseline) 
     {
         pixelData.amplitude = -1.;
         pixelData.t10 = -1.;
