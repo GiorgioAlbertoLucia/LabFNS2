@@ -1,0 +1,64 @@
+pixel5:
+  calibrationPars:
+    -  0.651253
+    -  11.8824
+  calibrationParsError:
+    -  0.834392
+    -  0.140644
+  calibrationParsElectrons:
+    -  0.651253
+    -  0.00330066
+  calibrationParsErrorElectrons:
+    -  0.834389
+    -  3.90677e-05
+  chi2: 5.5281e-16
+  NDF: 0
+
+pixel6:
+  calibrationPars:
+    -  3.96253
+    -  11.8592
+  calibrationParsError:
+    -  0.825216
+    -  0.139094
+  calibrationParsElectrons:
+    -  3.96253
+    -  0.00329423
+  calibrationParsErrorElectrons:
+    -  0.825215
+    -  3.86371e-05
+  chi2: 2.15682e-16
+  NDF: 0
+
+pixel9:
+  calibrationPars:
+    -  -0.460952
+    -  12.1232
+  calibrationParsError:
+    -  0.790198
+    -  0.133048
+  calibrationParsElectrons:
+    -  -0.460952
+    -  0.00336756
+  calibrationParsErrorElectrons:
+    -  0.790198
+    -  3.69579e-05
+  chi2: 1.96351e-16
+  NDF: 0
+
+pixel10:
+  calibrationPars:
+    -  6.39183
+    -  11.7004
+  calibrationParsError:
+    -  0.62767
+    -  0.104985
+  calibrationParsElectrons:
+    -  6.39183
+    -  0.0032501
+  calibrationParsErrorElectrons:
+    -  0.627672
+    -  2.91626e-05
+  chi2: 6.07602e-18
+  NDF: 0
+

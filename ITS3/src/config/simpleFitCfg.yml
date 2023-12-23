@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 pixel5:
   spectrumSpec: [160, 1, 81]
   nFits: 2
@@ -106,3 +107,144 @@ pixel10:
         - 7
       color: 3
 
+=======
+# Configuration file for spectrum.cxx. In the function expression, the peak position should always be parameter [1]
+#
+
+pixel5:
+  spectrumSpec: 
+    - 160
+    - 1
+    - 81
+  nFits: 2
+  fits:
+    - name: "K-alpha"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2))" #" + [3] + [4] * x"
+      range: 
+        - 69
+        - 73.5
+      nParams: 3
+      param:
+        - 600
+        - 71
+        - 0.7
+        - 1539
+        - -21
+      color: 2
+
+    - name: "K-beta"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2)) + [3]"
+      range: 
+        - 74.5
+        - 79
+      nParams: 4
+      param:
+        - 68
+        - 77
+        - 0.7
+        - 7
+      color: 3
+
+pixel6:
+  spectrumSpec: 
+    - 180
+    - 1
+    - 91
+  nFits: 2
+  fits:
+    - name: "K-alpha"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2))" # + [3] + [4] * x"
+      range: 
+        - 72
+        - 77
+      nParams: 3
+      param:
+        - 600
+        - 74
+        - 0.7
+        - 1539
+        - -21
+      color: 2
+
+    - name: "K-beta"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2)) + [3]"
+      range: 
+        - 78
+        - 82.5
+      nParams: 4
+      param:
+        - 62
+        - 80
+        - 0.7
+        - 7
+      color: 3
+
+pixel9:
+  spectrumSpec: 
+    - 160
+    - 1
+    - 81
+  nFits: 2
+  fits:
+    - name: "K-alpha"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2))" # + [3] + [4] * x"
+      range: 
+        - 69.5 
+        - 73.5
+      nParams: 3
+      param:
+        - 600
+        - 71
+        - 0.9
+        - 1539
+        - -21
+      color: 2
+
+    - name: "K-beta"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2)) + [3]"
+      range: 
+        - 74.5
+        - 79.5
+      nParams: 4
+      param:
+        - 65
+        - 77.5
+        - 0.7
+        - 11
+      color: 3
+
+pixel10:
+  spectrumSpec: 
+    - 180
+    - 1
+    - 91
+  nFits: 2
+  fits:
+    - name: "K-alpha"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2))" # + [3] + [4] * x"
+      range: 
+        - 74
+        - 78.5
+      nParams: 5
+      param:
+        - 600
+        - 75
+        - 0.9
+        - 1400
+        - -28
+      color: 2
+
+    - name: "K-beta"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2)) + [3]"
+      range: 
+        - 79
+        - 84
+      nParams: 4
+      param:
+        - 67
+        - 82
+        - 0.7
+        - 7
+      color: 3
+
+>>>>>>> 426078767d4e7cb224e63f70c50666d91a8e9623

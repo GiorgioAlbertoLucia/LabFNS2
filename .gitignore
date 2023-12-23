@@ -8,7 +8,10 @@ Beta/src/build/
 Beta/src/BetaMeas_Lab2.root
 Beta/data/output/BetaOutput.root
 ITS3/Usefull_macros/Data
-ITS3/Data/
+ITS3/Data/run175174828_230428174901_preprocessed.root
+ITS3/Data/run175174828_230428174901_TTree.root
+ITS3/Data/run175174828_230428174901.root
+ITS3/Data/AO10P_B6_Vbb_4.0V_09092022.root
 ITS3/src/build/
 ITS3/src/*.so
 ITS3/src/*.d
