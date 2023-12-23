@@ -10,3 +10,6 @@ Beta/data/output/BetaOutput.root
 ITS3/Usefull_macros/Data
 ITS3/Data/
 ITS3/src/build/
+ITS3/src/*.so
+ITS3/src/*.d
+ITS3/src/*.pcm
