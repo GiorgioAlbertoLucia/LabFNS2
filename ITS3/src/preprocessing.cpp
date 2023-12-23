@@ -26,7 +26,8 @@ void preprocessing()
 
 void preprocessing()
 {
-    const char * inFilePath = "ITS3/Data/run175174828_230428174901.root";
+    //const char * inFilePath = "ITS3/Data/run175174828_230428174901.root";
+    const char * inFilePath = "ITS3/Data/55Fe_Vbb_4.8V.root";
     const char * conversionLogPath = "ITS3/Data/output/calibrationOutput.log";
 
     const double threshold = 1.;        // using 1 mV threshold
@@ -54,7 +55,7 @@ void preprocessing()
 
     //p.DrawEvent(1);
 
-    p.UploadConversionValues(mV_to_electrons);
+    //p.UploadConversionValues(mV_to_electrons);
     p.BuildTree();
 }
 >>>>>>> 426078767d4e7cb224e63f70c50666d91a8e9623
