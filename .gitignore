@@ -12,6 +12,7 @@ ITS3/Data/run175174828_230428174901_preprocessed.root
 ITS3/Data/run175174828_230428174901_TTree.root
 ITS3/Data/run175174828_230428174901.root
 ITS3/Data/AO10P_B6_Vbb_4.0V_09092022.root
+ITS3/Data/55Fe_Vbb_4.8V.root
 ITS3/src/build/
 ITS3/src/*.so
 ITS3/src/*.d
