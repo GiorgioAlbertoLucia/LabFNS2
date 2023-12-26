@@ -11,6 +11,7 @@
 #include <TStyle.h>
 #include <TTree.h>
 #include <TF1.h>
+#include <THStack.h>
 #include <iostream>
 
 void SetStyle(bool graypalette)
@@ -56,6 +57,15 @@ void SetStyle(bool graypalette)
   gStyle->SetLegendFont(42);
 }
 
+void setHistos(TH1D * histo, const char * title, const char * xtitle, const char * ytitle, const int color)
+{
+    histo->SetTitle(title);
+    histo->GetXaxis()->SetTitle(xtitle);
+    histo->GetYaxis()->SetTitle(ytitle);
+    histo->SetFillColor(color);
+    histo->SetLineColor(color);
+}
+
 
 void analysis::Loop(const bool FillTTree = true)
 {
@@ -75,6 +85,18 @@ void analysis::Loop(const bool FillTTree = true)
 
     TH1D * histoAmpli2 = new TH1D("histoAmpli2","histoAmpli2",200,0.,400); //mV
     TH1D * histoAmpli3 = new TH1D("histoAmpli3","histoAmpli3",200,0.,400);
+    TH1D * histoAmpli2A0 = new TH1D("histoAmpli2","histoAmpli2",200,0.,400); //mV
+    TH1D * histoAmpli3A0 = new TH1D("histoAmpli3","histoAmpli3",200,0.,400);
+    TH1D * histoAmpli2A1 = new TH1D("histoAmpli2","histoAmpli2",200,0.,400); //mV
+    TH1D * histoAmpli3A1 = new TH1D("histoAmpli3","histoAmpli3",200,0.,400);
+    TH1D * histoAmpli2A2 = new TH1D("histoAmpli2","histoAmpli2",200,0.,400); //mV
+    TH1D * histoAmpli3A2 = new TH1D("histoAmpli3","histoAmpli3",200,0.,400);
+    TH1D * histoAmpli2A3 = new TH1D("histoAmpli2","histoAmpli2",200,0.,400); //mV
+    TH1D * histoAmpli3A3 = new TH1D("histoAmpli3","histoAmpli3",200,0.,400);
+    TH1D * histoAmpli2A4 = new TH1D("histoAmpli2","histoAmpli2",200,0.,400); //mV
+    TH1D * histoAmpli3A4 = new TH1D("histoAmpli3","histoAmpli3",200,0.,400);
+    TH1D * histoAmpli2A5 = new TH1D("histoAmpli2","histoAmpli2",200,0.,400); //mV
+    TH1D * histoAmpli3A5 = new TH1D("histoAmpli3","histoAmpli3",200,0.,400);
     TH1D * histoAmpli2_sel = new TH1D("histoAmpli2_sel","histoAmpli2_Sel",200,0.,400); //mV
     TH1D * histoAmpli3_sel = new TH1D("histoAmpli3_sel","histoAmpli3_Sel",200,0.,400);
     TH1D * histoToA2 = new TH1D("histoToA2","histoToA2",25,-0.025,1.225); //ns
@@ -218,6 +240,36 @@ void analysis::Loop(const bool FillTTree = true)
         RMS3=histoNoise3->GetRMS();
         histoAmpli2->Fill(Amp2);
         histoAmpli3->Fill(Amp3);
+        if(jentry<nentries/6)
+        { 
+            if(Amp2>15) histoAmpli2A0->Fill(Amp2);
+            if(Amp3>15) histoAmpli3A0->Fill(Amp3);
+        }
+        if(jentry>nentries/6 && jentry<2*nentries/6)
+        { 
+            if(Amp2>15) histoAmpli2A1->Fill(Amp2);
+            if(Amp3>15) histoAmpli3A1->Fill(Amp3);
+        }
+        if(jentry>2*nentries/6 && jentry<3*nentries/6)
+        { 
+            if(Amp2>15) histoAmpli2A2->Fill(Amp2);
+            if(Amp3>15) histoAmpli3A2->Fill(Amp3);
+        }
+        if(jentry>3*nentries/6 && jentry<4*nentries/6)
+        { 
+            if(Amp2>15) histoAmpli2A3->Fill(Amp2);
+            if(Amp3>15) histoAmpli3A3->Fill(Amp3);
+        }
+        if(jentry>4*nentries/6 && jentry<5*nentries/6)
+        { 
+            if(Amp2>15) histoAmpli2A4->Fill(Amp2);
+            if(Amp3>15) histoAmpli3A4->Fill(Amp3);
+        }
+        if(jentry>5*nentries/6 && jentry<6*nentries/6)
+        { 
+            if(Amp2>15) histoAmpli2A5->Fill(Amp2);
+            if(Amp3>15) histoAmpli3A5->Fill(Amp3);
+        }
         histoToA2->Fill(ToA2);
         histoToA3->Fill(ToA3);
         histoRMS2->Fill(RMS2);
@@ -349,14 +401,95 @@ void analysis::Loop(const bool FillTTree = true)
       histoEvent100_ch3->GetXaxis()->SetTitle("Baseline 100 (mV)"); 
       histoEvent100_ch3->GetYaxis()->SetTitle("Entries (a.u.)");
       histoEvent100_ch3->SetTitle("Sensor B - Channel 3");
-      TLegend * legend = new TLegend(0.2,0.7,0.4,0.8);
+      TLegend * legend = new TLegend(0.6,0.65,0.8,0.8);
       legend->AddEntry(histoEvent100_ch2,"Sensor A - Channel 2","l");
       legend->AddEntry(histoEvent100_ch3,"Sensor B - Channel 3","l");
-      legend->SetTextSize(0.03);
+      legend->SetTextSize(0.05);
       legend->Draw();
       canvas100->Modified();
       canvas100->Update();
       canvas100->SaveAs("Beta/data/output/Event_100.pdf");
+
+        TCanvas * canvasAmpliScan = new TCanvas("canvasAmpliScan","canvasAmpliScan",2000,1000);
+        canvasAmpliScan->Divide(2,1);
+        canvasAmpliScan->cd(1);
+        cout<<" aaaaa2"<<endl;
+        setHistos(histoAmpli2A0,"Sensor A - Channel 2","Amplitude (mV)","Entries (a.u.)",kBlue-10);
+        setHistos(histoAmpli2A1,"Sensor A - Channel 2","Amplitude (mV)","Entries (a.u.)",kBlue-7);
+        setHistos(histoAmpli2A2,"Sensor A - Channel 2","Amplitude (mV)","Entries (a.u.)",kBlue-4);
+        setHistos(histoAmpli2A3,"Sensor A - Channel 2","Amplitude (mV)","Entries (a.u.)",kBlue-1);
+        setHistos(histoAmpli2A4,"Sensor A - Channel 2","Amplitude (mV)","Entries (a.u.)",kBlue+2);
+        setHistos(histoAmpli2A5,"Sensor A - Channel 2","Amplitude (mV)","Entries (a.u.)",kBlue+4);
+        cout<<" aaaaa3"<<endl;
+        auto hs1 = new THStack("hs1","Sensor A - Channel 2");
+        cout<<" aaaaa4"<<endl;
+        hs1->Add(histoAmpli2A0);
+        hs1->Add(histoAmpli2A1);
+        hs1->Add(histoAmpli2A2);
+        hs1->Add(histoAmpli2A3);
+        hs1->Add(histoAmpli2A4);
+        hs1->Add(histoAmpli2A5);
+        //hs1->GetXaxis()->SetTitle("Amplitude (mV)");
+        //hs1->GetYaxis()->SetTitle("Entries (a.u.)");
+        //hs1->GetXaxis()->SetRangeUser(20,400);
+        hs1->Draw("hist");
+        //hs1->GetXaxis()->SetTitle("Amplitude (mV)");  
+        //hs1->GetYaxis()->SetTitle("Entries (a.u.)"); 
+        cout<<" aaaaa"<<endl;
+        /*histoAmpli2A0->Draw("hist");
+        histoAmpli2A1->Draw("hist,same");
+        histoAmpli2A2->Draw("hist,same");
+        histoAmpli2A3->Draw("hist,same");
+        histoAmpli2A4->Draw("hist,same");
+        histoAmpli2A5->Draw("hist,same");*/
+        TLegend * legendA = new TLegend(0.5,0.5,0.8,0.8);
+        legendA->AddEntry(histoAmpli2A0,"Events 0 - 5385","f");
+        legendA->AddEntry(histoAmpli2A1,"Events 5385 - 10771","f");
+        legendA->AddEntry(histoAmpli2A2,"Events 10771 - 16154 ","f");
+        legendA->AddEntry(histoAmpli2A3,"Events 16154 - 21539","f");
+        legendA->AddEntry(histoAmpli2A4,"Events 21539 - 26992 ","f");
+        legendA->AddEntry(histoAmpli2A5,"Events 26992 - 32315 ","f");
+        legendA->SetTextSize(0.03);
+        legendA->Draw();
+        cout<<" aaaaadddd"<<endl;
+        canvasAmpliScan->cd(2);
+        setHistos(histoAmpli3A0,"Sensor B - Channel 3","Amplitude (mV)","Entries (a.u.)",kRed-10);
+        setHistos(histoAmpli3A1,"Sensor B - Channel 3","Amplitude (mV)","Entries (a.u.)",kRed-7);
+        setHistos(histoAmpli3A2,"Sensor B - Channel 3","Amplitude (mV)","Entries (a.u.)",kRed-4);
+        setHistos(histoAmpli3A3,"Sensor B - Channel 3","Amplitude (mV)","Entries (a.u.)",kRed-1);
+        setHistos(histoAmpli3A4,"Sensor B - Channel 3","Amplitude (mV)","Entries (a.u.)",kRed+2);
+        setHistos(histoAmpli3A5,"Sensor B - Channel 3","Amplitude (mV)","Entries (a.u.)",kRed+4);
+        //histoAmpli3A0->Draw("hist");
+        /*histoAmpli3A1->Draw("hist,same");
+        histoAmpli3A2->Draw("hist,same");
+        histoAmpli3A3->Draw("hist,same");
+        histoAmpli3A4->Draw("hist,same");
+        histoAmpli3A5->Draw("hist,same");*/
+        auto hs2 = new THStack("hs2","Sensor B - Channel 3");
+        hs2->Add(histoAmpli3A0);
+        hs2->Add(histoAmpli3A1);
+        hs2->Add(histoAmpli3A2);
+        hs2->Add(histoAmpli3A3);
+        hs2->Add(histoAmpli3A4);
+        hs2->Add(histoAmpli3A5);
+        //hs2->GetXaxis()->SetTitle("Amplitude (mV)");
+        //hs2->GetYaxis()->SetTitle("Entries (a.u.)");
+        hs2->Draw("hist");
+        //hs2->GetXaxis()->SetTitle("Amplitude (mV)");  
+        //hs2->GetYaxis()->SetTitle("Entries (a.u.)"); 
+        //hs2->GetXaxis()->SetRangeUser(20,400);
+        TLegend * legendB = new TLegend(0.5,0.55,0.8,0.85);
+        legendB->AddEntry(histoAmpli3A0,"Events 0 - 5385","f");
+        legendB->AddEntry(histoAmpli3A1,"Events 5385 - 10771","f");
+        legendB->AddEntry(histoAmpli3A2,"Events 10771 - 16154","f");
+        legendB->AddEntry(histoAmpli3A3,"Events 16154 - 21539","f");
+        legendB->AddEntry(histoAmpli3A4,"Events 21539 - 26992","f");
+        legendB->AddEntry(histoAmpli3A5,"Events 26992 - 32315","f");
+        legendB->SetTextSize(0.03);
+        legendB->Draw();
+        cout<<" aaaddffddfsda"<<endl;
+        canvasAmpliScan->SaveAs("Beta/data/output/AmplitudeScan.pdf");
+        cout<<" aafgsfhdaaa"<<endl;
    }    
    
 }
