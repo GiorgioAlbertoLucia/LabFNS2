@@ -26,15 +26,17 @@ def calibrate(inputFile: str, outputPDF: str, output: TFile, color: int = kGreen
 
     # Compute the charge
     impedance = 50 # Ohm
-    df['Charge'] = 1000 * (np.abs(df[f'Asign']) - np.abs(df[f'Anoise'])) / impedance   # fC
-    df['Charge_err'] = np.sqrt((df[f'Asign_err']/np.sqrt(1000))**2 + (df[f'Anoise_err']/np.sqrt(1000))**2) * 1000 / impedance
+    amplification = 100
+    pWb_to_fWb = 1000
+    df['Charge'] = (np.abs(df[f'Asign']) - np.abs(df[f'Anoise'])) * pWb_to_fWb / (amplification * impedance)   # fC
+    df['Charge_err'] = np.sqrt((df[f'Asign_err']/np.sqrt(1000))**2 + (df[f'Anoise_err']/np.sqrt(1000))**2) * pWb_to_fWb / (amplification * impedance)
 
     graph = TGraphErrors(len(df), np.asarray(df['Ampl_diode'], dtype=float), np.asarray(df['Charge'], dtype=float), 
                          np.asarray(df['Ampl_diode_err'], dtype=float), np.asarray(df['Charge_err'], dtype=float))
     graph.SetMarkerStyle(20)
     graph.SetMarkerSize(1)
     graph.SetMarkerColor(color)
-    graph.SetTitle('Charge vs Signal Amplitude; Signal Amplitude (reference diode) (mV); Charge (fC)')
+    graph.SetTitle('Laser system calibration; Signal Amplitude (reference diode) (mV); Charge (fC)')
 
     # Fit the graph
     fit = TF1('fit', '[0] + [1] * x', 0, 300)
@@ -52,11 +54,8 @@ def calibrate(inputFile: str, outputPDF: str, output: TFile, color: int = kGreen
     graph.Draw('AP')
     fit.Draw('same')
 
-
-    
-
     # Add the legend
-    legend = TLegend(0.65, 0.35, 0.85, 0.5)
+    legend = TLegend(0.55, 0.35, 0.75, 0.5)
     legend.AddEntry(graph, 'Data', 'p')
     legend.AddEntry(fit, 'Fit', 'l')
     legend.SetBorderSize(0)
@@ -69,9 +68,9 @@ def calibrate(inputFile: str, outputPDF: str, output: TFile, color: int = kGreen
     latex.SetNDC()
     latex.SetTextFont(42)
     latex.SetTextSize(0.04)
-    latex.DrawLatex(0.65, 0.3, f'a = ({fit.GetParameter(0):.0f} #pm {fit.GetParError(0):.0f}) fC/mV')
-    latex.DrawLatex(0.65, 0.25, f'b = ({fit.GetParameter(1):.2f} #pm {fit.GetParError(1):.2f}) fC')
-    latex.DrawLatex(0.65, 0.2, '#chi^2 / NDF ='+f'{fit.GetChisquare():.0f} / {fit.GetNDF()}')
+    latex.DrawLatex(0.55, 0.3, f'a = ({fit.GetParameter(0):.2f} #pm {fit.GetParError(0):.2f}) fC')
+    latex.DrawLatex(0.55, 0.25, f'b = ({fit.GetParameter(1):.3f} #pm {fit.GetParError(1):.3f}) fC'+' mV^{-1}')
+    latex.DrawLatex(0.55, 0.2, '#chi^{2} / NDF ='+f'{fit.GetChisquare():.0f} / {fit.GetNDF()}')
     
     # Save the plot
     canvas.SaveAs(outputPDF)

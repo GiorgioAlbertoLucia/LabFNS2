@@ -7,7 +7,7 @@
 #ifndef SPECTRUM_HH
 #define SPECTRUM_HH
 
-#include "../yaml/Yaml.hpp"
+#include "../../yaml/Yaml.hpp"
 
 #include "pixelData.hh"
 

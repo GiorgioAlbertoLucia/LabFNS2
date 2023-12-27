@@ -222,7 +222,7 @@ void Preprocessor::BuildTree(const char * outFilePath)
 /**
  * @brief Function to process a single event read by the oscilloscope. 
  * It reads the graph from the input file and computes the variables of interest.
- * If no signal is found (i.e. the signal amplitude is below the set threshold) the time variables are set to -1.
+ * If no signal is found (i.e. the signal amplitude is below the set threshold) the time variables are set to -9999.
  * If a graph is not found, the function returns false.
  * 
  * @param event 
@@ -235,15 +235,15 @@ bool Preprocessor::ProcessEventScope(const int event, const int pixel, PixelData
 {
     pixelData.pixel = pixel;  
     pixelData.samplingPeriod = fSamplingPeriodDictionary[pixel];
-    pixelData.baseline = -1.;
-    pixelData.minLevel = -1.;
-    pixelData.t10 = -1.;
-    pixelData.t90 = -1.;
-    pixelData.t50 = -1.;
-    pixelData.fallTime = -1.;
-    pixelData.amplitude = -1.;
-    pixelData.electrons = -1.;
-    pixelData.RMS = -1.;
+    pixelData.baseline = -9999.;
+    pixelData.minLevel = -9999.;
+    pixelData.t10 = -9999.;
+    pixelData.t90 = -9999.;
+    pixelData.t50 = -9999.;
+    pixelData.fallTime = -9999.;
+    pixelData.amplitude = -9999.;
+    pixelData.electrons = -9999.;
+    pixelData.RMS = -9999.;
 
     TString grName = Form("grEv%dPx%dsamp%d", event, pixel, fSamplingPeriodDictionary[pixel]);
     auto gr = (TGraph*)inFile->Get(grName.Data());
@@ -274,20 +274,21 @@ bool Preprocessor::ProcessEventScope(const int event, const int pixel, PixelData
     gr->Fit(&minLevelFit, "Q+", "", edgeRight, gr->GetPointX(gr->GetN()-1-fIgnorePoints));
     pixelData.minLevel = minLevelFit.GetParameter(0);
 
-    pixelData.amplitude = abs(pixelData.minLevel - pixelData.baseline);
+    if (pixelData.minLevel  > pixelData.baseline)   pixelData.amplitude = -9999.;
+    else                                            pixelData.amplitude = abs(pixelData.minLevel - pixelData.baseline);
     if (fmVToElectrons) 
     {
-      if (pixelData.amplitude < 0.) pixelData.electrons = -1.;
+      if (pixelData.amplitude < 0.) pixelData.electrons = -9999.;
       else                          pixelData.electrons = (pixelData.amplitude - fmVToElectrons[pixel][0]) / fmVToElectrons[pixel][1];
     }
 
     if (edgeLeft > edgeRight || pixelData.minLevel > pixelData.baseline) 
     {
-        pixelData.amplitude = -1.;
-        pixelData.t10 = -1.;
-        pixelData.t50 = -1.;
-        pixelData.t90 = -1.;
-        pixelData.fallTime = -1.;
+        pixelData.amplitude = -9999.;
+        pixelData.t10 = -9999.;
+        pixelData.t50 = -9999.;
+        pixelData.t90 = -9999.;
+        pixelData.fallTime = -9999.;
     }
     else
     {
@@ -333,7 +334,7 @@ bool Preprocessor::ProcessEventScope(const int event, const int pixel, PixelData
 /**
  * @brief Function to process a single event read by the oscilloscope. 
  * It reads the graph from the input file and computes the variables of interest.
- * If no signal is found (i.e. the signal amplitude is below the set threshold) the time variables are set to -1.
+ * If no signal is found (i.e. the signal amplitude is below the set threshold) the time variables are set to -9999.
  * If a graph is not found, the function returns false.
  * 
  * @param event 
@@ -346,15 +347,15 @@ bool Preprocessor::ProcessEventADC(const int event, const int pixel, PixelData &
 {
     pixelData.pixel = pixel;  
     pixelData.samplingPeriod = fSamplingPeriodDictionary[pixel];
-    pixelData.baseline = -1.;
-    pixelData.minLevel = -1.;
-    pixelData.t10 = -2.;
-    pixelData.t90 = -2.;
-    pixelData.t50 = -2.;
-    pixelData.fallTime = -2.;
-    pixelData.amplitude = -1.;
-    pixelData.electrons = -1.;
-    pixelData.RMS = -1.;
+    pixelData.baseline = -9999.;
+    pixelData.minLevel = -9999.;
+    pixelData.t10 = -9999.;
+    pixelData.t90 = -9999.;
+    pixelData.t50 = -9999.;
+    pixelData.fallTime = -9999.;
+    pixelData.amplitude = -9999.;
+    pixelData.electrons = -9999.;
+    pixelData.RMS = -9999.;
 
     TString grName = Form("grEv%dPx%dsamp%d", event, pixel, fSamplingPeriodDictionary[pixel]);
     auto gr = (TGraph*)inFile->Get(grName.Data());
@@ -381,15 +382,15 @@ bool Preprocessor::ProcessEventADC(const int event, const int pixel, PixelData &
     gErrorIgnoreLevel = oldVerbosity;                       // re-enable implicit multithreading
 
 
-    if (pixelData.baseline - pixelData.minLevel < fThreshold)   pixelData.amplitude = -1.;
+    if (pixelData.baseline - pixelData.minLevel < fThreshold)   pixelData.amplitude = -9999.;
     else                                                        pixelData.amplitude = abs(pixelData.minLevel - pixelData.baseline);
     if (fmVToElectrons) pixelData.electrons = (pixelData.amplitude - fmVToElectrons[pixel][0]) / fmVToElectrons[pixel][1];
 
-    // for the ADC data, time variables cannot be computed. They are set to -2.
-    pixelData.t10 = -2.;
-    pixelData.t50 = -2.;
-    pixelData.t90 = -2.;
-    pixelData.fallTime = -2.;
+    // for the ADC data, time variables cannot be computed. They are set to -9999.
+    pixelData.t10 = -9999.;
+    pixelData.t50 = -9999.;
+    pixelData.t90 = -9999.;
+    pixelData.fallTime = -9999.;
 
     auto grMeanAndRMS = GetMeanAndRMS(*gr, fIgnorePoints, fIgnorePoints + fNSample);
     pixelData.RMS = grMeanAndRMS.second;
