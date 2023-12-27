@@ -413,6 +413,7 @@ void analysis::Loop(const bool FillTTree = true)
         TCanvas * canvasAmpliScan = new TCanvas("canvasAmpliScan","canvasAmpliScan",2000,1000);
         canvasAmpliScan->Divide(2,1);
         canvasAmpliScan->cd(1);
+        TH1F * hFrame1 = canvasAmpliScan->cd(1)->DrawFrame(0,0,400,380,"Sensor A - Channel 2; Amplitude (mV); Entries (a.u.)");
         cout<<" aaaaa2"<<endl;
         setHistos(histoAmpli2A0,"Sensor A - Channel 2","Amplitude (mV)","Entries (a.u.)",kBlue-10);
         setHistos(histoAmpli2A1,"Sensor A - Channel 2","Amplitude (mV)","Entries (a.u.)",kBlue-7);
@@ -432,7 +433,7 @@ void analysis::Loop(const bool FillTTree = true)
         //hs1->GetXaxis()->SetTitle("Amplitude (mV)");
         //hs1->GetYaxis()->SetTitle("Entries (a.u.)");
         //hs1->GetXaxis()->SetRangeUser(20,400);
-        hs1->Draw("hist");
+        hs1->Draw("hist, same");
         //hs1->GetXaxis()->SetTitle("Amplitude (mV)");  
         //hs1->GetYaxis()->SetTitle("Entries (a.u.)"); 
         cout<<" aaaaa"<<endl;
@@ -453,6 +454,7 @@ void analysis::Loop(const bool FillTTree = true)
         legendA->Draw();
         cout<<" aaaaadddd"<<endl;
         canvasAmpliScan->cd(2);
+        TH1F * hFrame = canvasAmpliScan->cd(2)->DrawFrame(0,0,400,800,"Sensor B - Channel 3; Amplitude (mV); Entries (a.u.)");
         setHistos(histoAmpli3A0,"Sensor B - Channel 3","Amplitude (mV)","Entries (a.u.)",kRed-10);
         setHistos(histoAmpli3A1,"Sensor B - Channel 3","Amplitude (mV)","Entries (a.u.)",kRed-7);
         setHistos(histoAmpli3A2,"Sensor B - Channel 3","Amplitude (mV)","Entries (a.u.)",kRed-4);
@@ -474,7 +476,7 @@ void analysis::Loop(const bool FillTTree = true)
         hs2->Add(histoAmpli3A5);
         //hs2->GetXaxis()->SetTitle("Amplitude (mV)");
         //hs2->GetYaxis()->SetTitle("Entries (a.u.)");
-        hs2->Draw("hist");
+        hs2->Draw("hist,same");
         //hs2->GetXaxis()->SetTitle("Amplitude (mV)");  
         //hs2->GetYaxis()->SetTitle("Entries (a.u.)"); 
         //hs2->GetXaxis()->SetRangeUser(20,400);
@@ -488,7 +490,7 @@ void analysis::Loop(const bool FillTTree = true)
         legendB->SetTextSize(0.03);
         legendB->Draw();
         cout<<" aaaddffddfsda"<<endl;
-        canvasAmpliScan->SaveAs("Beta/data/output/AmplitudeScan.pdf");
+        canvasAmpliScan->SaveAs("Beta/data/output/AmplitudeScan1.pdf");
         cout<<" aafgsfhdaaa"<<endl;
    }    
    
