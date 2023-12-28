@@ -5,7 +5,7 @@ import uproot
 import sys
 sys.path.append('utils')
 
-from ROOT import TGraphErrors, TFile, TCanvas, TLegend, kRed, kAzure,  kOrange, kFullCircle, kFullSquare, gROOT, TF1, TGaxis, TTree, TH1D, TH2D, gStyle
+from ROOT import TGraphErrors, TFile, TCanvas, TLegend, kRed, kAzure,  kOrange, kFullCircle, kFullSquare, gROOT, TF1, TGaxis, TTree, TH1D, TH2D, gStyle, gPad
 from DfUtils import GetGraphErrorsFromCSV
 from StyleFormatter import SetObjectStyle, SetGlobalStyle
 import sys
@@ -39,6 +39,20 @@ def ComputeSystOnThresholds(df, th2, th3, Up=False):
         hResFitvsCut.SetBinContent(idx, timeresfit)
         hResDistr.Fill(timeres)
         hResFitDistr.Fill(timeresfit)
+        resolutions.append(timeres)
+        resolutionsfit.append(timeresfit)
+    
+    #Get RMS of the resolution distribution
+    print("RMS of the resolution distribution: ", np.std(resolutions))
+    print("RMS of the resolution distribution with fit: ", np.std(resolutionsfit))
+
+    #Get the mean of the resolution distribution
+    print("Mean of the resolution distribution: ", np.mean(resolutions))
+    print("Mean of the resolution distribution with fit: ", np.mean(resolutionsfit))
+
+    #Get the relative error of the resolution distribution
+    print("Relative error of the resolution distribution: ", np.std(resolutions)/np.mean(resolutions))
+    print("Relative error of the resolution distribution with fit: ", np.std(resolutionsfit)/np.mean(resolutionsfit))
         
     return resolutions, resolutionsfit, hResvsCut, hResFitvsCut, hResvsTh, hResFitvsTh, hResDistr, hResFitDistr
 
@@ -154,7 +168,7 @@ if __name__=='__main__':
 
     canvasSys=TCanvas("canvasSys","canvasSys",1900,1500)
     canvasSys.Divide(2,2)
-    canvasSys.cd(1).DrawFrame(0, 0, len(theshold2Syst)*len(theshold3Syst), 130, "Resolution vs cut;Cut;Resolution")
+    canvasSys.cd(1).DrawFrame(0, 0, len(theshold2Syst)*len(theshold3Syst), 130, "Resolution vs cut;Cut;Resolution (ps)")
     hResvsCut.SetLineColor(kRed)
     hResvsCut.Draw("hist,same")
     hResFitvsCut.SetLineColor(kAzure)
@@ -168,6 +182,8 @@ if __name__=='__main__':
     hResvsTh.SetTitle("Resolution vs threshold")
     hResvsTh.GetXaxis().SetTitle("Threshold 2")
     hResvsTh.GetYaxis().SetTitle("Threshold 3")
+    hResvsTh.GetZaxis().SetTitle("Resolution (ps)")
+    gPad.SetRightMargin(0.15)
     hResvsTh.SetStats(0)
     hResvsTh.SetAxisRange(50.,60.,"z")
     hResvsTh.Draw("colz")
@@ -175,10 +191,12 @@ if __name__=='__main__':
     hResFitvsTh.SetTitle("Resolution (fit) vs threshold")
     hResFitvsTh.GetXaxis().SetTitle("Threshold 2")
     hResFitvsTh.GetYaxis().SetTitle("Threshold 3")
+    hResFitvsTh.GetZaxis().SetTitle("Resolution (ps)")
+    gPad.SetRightMargin(0.15)
     hResFitvsTh.SetStats(0)
     hResFitvsTh.SetAxisRange(35., 45.,"z")
     hResFitvsTh.Draw("colz")
-    canvasSys.cd(4).DrawFrame(0, 0, 100, 150, "Resolution distribution;Resolution;Counts")
+    canvasSys.cd(4).DrawFrame(0, 0, 100, 150, "Resolution distribution;Resolution (ps);Counts")
     hResDistr.SetLineColor(kRed)
     hResDistr.Draw("hist,same")
     hResFitDistr.SetLineColor(kAzure)
