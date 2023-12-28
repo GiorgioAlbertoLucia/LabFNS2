@@ -4,7 +4,7 @@
 
 #include "../yaml/Yaml.hpp"
 
-#include "spectrum.hh"
+#include "lib/spectrum.hh"
 
 void analyseSpectra()
 {
