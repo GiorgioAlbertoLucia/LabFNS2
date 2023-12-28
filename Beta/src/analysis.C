@@ -297,7 +297,7 @@ void analysis::Loop(const bool FillTTree = true)
    //             plotting section
    if(!FillTTree)
    {
-      TCanvas * canvasA = new TCanvas("canvasA","canvasA",2050,1000);
+      TCanvas * canvasA = new TCanvas("canvasA","canvasA",2000,1000);
       canvasA->Divide(2,1);
       canvasA->cd(1);
       gPad->SetLogy();
@@ -430,8 +430,19 @@ void analysis::Loop(const bool FillTTree = true)
         hs1->Add(histoAmpli2A3);
         hs1->Add(histoAmpli2A4);
         hs1->Add(histoAmpli2A5);
+        //hs1->GetXaxis()->SetTitle("Amplitude (mV)");
+        //hs1->GetYaxis()->SetTitle("Entries (a.u.)");
+        //hs1->GetXaxis()->SetRangeUser(20,400);
         hs1->Draw("hist, same");
-
+        //hs1->GetXaxis()->SetTitle("Amplitude (mV)");  
+        //hs1->GetYaxis()->SetTitle("Entries (a.u.)"); 
+        cout<<" aaaaa"<<endl;
+        /*histoAmpli2A0->Draw("hist");
+        histoAmpli2A1->Draw("hist,same");
+        histoAmpli2A2->Draw("hist,same");
+        histoAmpli2A3->Draw("hist,same");
+        histoAmpli2A4->Draw("hist,same");
+        histoAmpli2A5->Draw("hist,same");*/
         TLegend * legendA = new TLegend(0.5,0.5,0.8,0.8);
         legendA->AddEntry(histoAmpli2A0,"Events 0 - 5385","f");
         legendA->AddEntry(histoAmpli2A1,"Events 5385 - 10771","f");
