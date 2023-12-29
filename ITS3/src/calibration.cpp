@@ -18,12 +18,14 @@
 */
 
 #include <iostream>
+#include <fstream>
 
 #include <TFile.h>
 #include <TTree.h>
 #include <TF1.h>
 #include <TGraphErrors.h>
 #include <TString.h>
+#include <TH1D.h>
 
 #include "../yaml/Yaml.hpp"
 
