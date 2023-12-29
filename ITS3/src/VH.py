@@ -7,7 +7,7 @@ import re
 import sys
 sys.path.append('utils')
 
-from ROOT import TGraphErrors, TFile, TCanvas, kRed, kAzure, kOrange, kFullCircle, gROOT, TLatex, gStyle, TLegend, kBlack
+from ROOT import TGraphErrors, TFile, TCanvas, kRed, kAzure, kOrange, kFullCircle, gROOT, TLatex, gStyle, TLegend, kBlack, kFullSquare,kFullTriangleUp, kFullTriangleDown
 from StyleFormatter import SetObjectStyle, SetGlobalStyle
 
 def SetGraph(graph, name, title, color, marker):
@@ -86,6 +86,7 @@ if __name__=='__main__':
 
     #inner pixel2
     colorArr = [kRed , kAzure, kBlack, kOrange-3]
+    markerArr = [kFullCircle, kFullSquare, kFullTriangleUp, kFullTriangleDown]
     pixelArr=np.array([])
     VH2=np.array([])
     dir_path2='ITS3/Data/VH2'
@@ -131,7 +132,7 @@ if __name__=='__main__':
     hFrame = canvas2.cd(1).DrawFrame(0.3,200,1.3,280,"Baseline vs VH; VH (V); Baseline (mV)")
     legend = TLegend(0.15,0.7,0.4,0.9)
     for i in range(len(pixelArr)):
-        SetGraph(BasgraphArray[i], "gBaseline" +str(i), ";VH (V); Baseline (mV)", colorArr[i], kFullCircle)
+        SetGraph(BasgraphArray[i], "gBaseline" +str(i), ";VH (V); Baseline (mV)", colorArr[i], markerArr[i])
         BasgraphArray[i].Draw("p,same")
         legend.AddEntry(BasgraphArray[i], "Pixel "+str(int(pixelArr[i])))
     legend.Draw()
@@ -139,7 +140,7 @@ if __name__=='__main__':
     hFrame = canvas2.cd(2).DrawFrame(0.3,0,1.3,80,"Amplitude vs VH; VH (V); Amplitude (mV)")
     legend2 = TLegend(0.15,0.7,0.4,0.9)
     for i in range(len(pixelArr)):
-        SetGraph(AmgraphArray[i], "gAmplitude"+str(i), ";VH (V); Amplitude (mV)", colorArr[i], kFullCircle)
+        SetGraph(AmgraphArray[i], "gAmplitude"+str(i), ";VH (V); Amplitude (mV)", colorArr[i], markerArr[i])
         AmgraphArray[i].Draw("p,same")
         legend2.AddEntry(AmgraphArray[i], "Pixel "+str(int(pixelArr[i])))
     legend2.Draw()
@@ -147,7 +148,7 @@ if __name__=='__main__':
     hFrame = canvas2.cd(3).DrawFrame(0.3,0.06,1.3,0.13,"Falltime vs VH; VH (V); Falltime (ns)")
     legend3 = TLegend(0.6,0.2,0.8,0.4)
     for i in range(len(pixelArr)):
-        SetGraph(FallgraphArray[i], "gFalltime"+str(i), ";VH (V); Falltime (ns)", colorArr[i], kFullCircle)
+        SetGraph(FallgraphArray[i], "gFalltime"+str(i), ";VH (V); Falltime (ns)", colorArr[i], markerArr[i])
         FallgraphArray[i].Draw("p,same")
         legend3.AddEntry(FallgraphArray[i], "Pixel "+str(int(pixelArr[i])))
     legend3.Draw()
