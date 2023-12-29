@@ -20,6 +20,7 @@
 #include <iostream>
 
 #include <TFile.h>
+#include <TTree.h>
 #include <TF1.h>
 #include <TGraphErrors.h>
 #include <TString.h>
@@ -105,10 +106,12 @@ void calibration()
         auto f = new TF1(Form("calibrationPx%dFit", iPixel), "[0] + [1]*x", 0, 10*keV_to_electrons);
         g->Fit(f, "RMQ+");
         g->Write();
+        f->Write();
 
         auto fe = new TF1(Form("calibrationPx%dFitElectrons", iPixel), "[0] + [1]*x", 0, 10*keV_to_electrons);
         ge->Fit(fe, "RMQ+");
         ge->Write();
+        fe->Write();
 
         // write fit results to log file
         std::streambuf* originalCoutBuffer = std::cout.rdbuf();
