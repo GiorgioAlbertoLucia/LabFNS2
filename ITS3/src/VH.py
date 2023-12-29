@@ -23,12 +23,12 @@ if __name__=='__main__':
     #dir_path='ITS3/Data/VH'
     #txt_files=glob.glob(dir_path+'/*.txt')
     #VHvalue=np.array([])
-    baseline=np.array([])
-    baseline_err=np.array([])
-    amplitude=np.array([])
-    amplitude_err=np.array([])
-    falltime=np.array([])
-    falltime_err=np.array([])
+    #baseline=np.array([])
+    #baseline_err=np.array([])
+    #amplitude=np.array([])
+    #amplitude_err=np.array([])
+    #falltime=np.array([])
+    #falltime_err=np.array([])
 
     #for file_name in txt_files:
         #parts=file_name.split('_')
@@ -94,6 +94,13 @@ if __name__=='__main__':
     AmgraphArray=np.array([], dtype=TGraphErrors)
     FallgraphArray=np.array([], dtype=TGraphErrors)
     for file_name2 in txt_files2:
+        baseline=np.array([])
+        baseline_err=np.array([])
+        amplitude=np.array([])
+        amplitude_err=np.array([])
+        falltime=np.array([])
+        falltime_err=np.array([])
+        VH2=np.array([])
         parts=file_name2.split('j')
         pixel=parts[1]
         print(pixel)
@@ -137,8 +144,8 @@ if __name__=='__main__':
         legend2.AddEntry(AmgraphArray[i], "Pixel "+str(int(pixelArr[i])))
     legend2.Draw()
     canvas2.cd(3)
-    hFrame = canvas2.cd(3).DrawFrame(0.3,0.04,1.3,0.15,"Falltime vs VH; VH (V); Falltime (ns)")
-    legend3 = TLegend(0.15,0.7,0.4,0.9)
+    hFrame = canvas2.cd(3).DrawFrame(0.3,0.06,1.3,0.13,"Falltime vs VH; VH (V); Falltime (ns)")
+    legend3 = TLegend(0.6,0.2,0.8,0.4)
     for i in range(len(pixelArr)):
         SetGraph(FallgraphArray[i], "gFalltime"+str(i), ";VH (V); Falltime (ns)", colorArr[i], kFullCircle)
         FallgraphArray[i].Draw("p,same")
