@@ -10,7 +10,7 @@
 
 void preprocessing()
 {
-    const char * inFilePath = "ITS3/Data/run175174828_230428174901.root";
+    const char * inFilePath = "ITS3/Data/opamp_20231120_114415_{1200}_mV.root";
     //const char * inFilePath = "ITS3/Data/55Fe_Vbb_4.8V.root";
     const char * conversionLogPath = "ITS3/Data/output/calibrationOutput.log";
 

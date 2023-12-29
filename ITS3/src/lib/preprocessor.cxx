@@ -813,7 +813,7 @@ void updateProgressBar(int progress, int total, const std::chrono::steady_clock:
             std::cout << " ";
         }
     }
-    std::cout << "] " << std::setw(3) << static_cast<int>(percentage * 100.0) << "%";
+    //std::cout << "] " << std::setw(3) << static_cast<int>(percentage * 100.0) << "%";
     std::cout << "  Elapsed Time: " << elapsedTime << "s";
     std::cout.flush();
 }

@@ -3,11 +3,13 @@ import pandas as pd
 import numpy as np
 import glob
 import re
+import uproot
+import seaborn as sns
 
 import sys
 sys.path.append('utils')
 
-from ROOT import TGraphErrors, TFile, TCanvas, kRed, kAzure, kOrange, kFullCircle, gROOT, TLatex, gStyle, TLegend, kBlack, kFullSquare,kFullTriangleUp, kFullTriangleDown
+from ROOT import TGraphErrors, TFile, TCanvas, kRed, kAzure, kOrange, kFullCircle, gROOT, TLatex, gStyle, TLegend, kBlack, kFullSquare,kFullTriangleUp, kFullTriangleDown, TH1D
 from StyleFormatter import SetObjectStyle, SetGlobalStyle
 
 def SetGraph(graph, name, title, color, marker):
@@ -85,6 +87,7 @@ if __name__=='__main__':
     #canvas.SaveAs('ITS3/data/output/VH.pdf')
 
     #inner pixel2
+    '''
     colorArr = [kRed , kAzure, kBlack, kOrange-3]
     markerArr = [kFullCircle, kFullSquare, kFullTriangleUp, kFullTriangleDown]
     pixelArr=np.array([])
@@ -153,6 +156,43 @@ if __name__=='__main__':
         legend3.AddEntry(FallgraphArray[i], "Pixel "+str(int(pixelArr[i])))
     legend3.Draw()
     canvas2.SaveAs('ITS3/data/output/VH2.pdf')
+    '''
+    #outer pixels
+    
+    VHEx=np.array([])
+    AmpliPx0=np.array([]) #plot only 2 corner pixels and 2 side pixels
+    AmpliPx15=np.array([])
+    AmpliPx2=np.array([])
+    AmpliPx11=np.array([])
+    BasePx0=np.array([])
+    BasePx15=np.array([])
+    BasePx2=np.array([])
+    BasePx11=np.array([])
+    adc_unit=0.03881
+    dir_path='ITS3/Data/VH_external_pixel'
+    root_files=glob.glob(dir_path+'/*.root')
+    for file_name in root_files:
+        parts=file_name.split('{')
+        VHpart=parts[1]
+        match= re.search(r'(\d+)(?=})',VHpart)
+        VHex=np.append(VHex, int(match.group()))
+        df=uproot.open(file_name)['tree']
+        ArrHistoAmp=np.array([], dtype=TH1D)
+        ArrHistoBase=np.array([], dtype=TH1D)
+        amplitudePx=np.array([],dtype = float)
+        baselinePx=np.array([],dtype = float)
+        nPixels = 16 
+        dfs = {}
 
-        
+        for i in range(nPixels):
+            dfs[i] = df[f"pixel{i}"].arrays(library="pd")
+        dfs
+        for j in range(nPixels):
+            ArrHistoAmp[j]=TH1D("Amplitude"+str(j),"Amplitude"+str(j),100,0,100)
+            ArrHistoBase[j]=TH1D("Baseline"+str(j),"Baseline"+str(j),100,0,1000)
+            for i in range(len(dfs[j])):
+                ArrHistoAmp[j].Fill(dfs[j].loc[i]["amplitude"]*adc_unit)
+                ArrHistoBase[j].Fill(dfs[j].loc[i]["baseline"]*adc_unit)
+            amplitudePx[j]=ArrHistoAmp[j].GetMean()
+            baselinePx[j]=ArrHistoBase[j].GetMean()
  
