@@ -182,7 +182,7 @@ if __name__=='__main__':
         parts=file_name.split('{')
         VHpart=parts[1]
         match= re.search(r'(\d+)(?=})',VHpart)
-        VHex=np.append(VHex, int(match.group()))
+        VHex=np.append(VHex, 0.001*int(match.group()))
         df=uproot.open(file_name)['PreprocessedData;1']
         ArrHistoAmp=[]
         ArrHistoBase=[]
@@ -209,39 +209,50 @@ if __name__=='__main__':
         indexFile+=1
     print(len(BasePx))
     for i in range(len(AmpliPx[0])):
-            base_px_values = [row[i] for row in BasePx]
-            print(base_px_values)
-            base_err_px_values = [row[i] for row in BaseErrPx]
-            ampli_px_values = [row[i] for row in AmpliPx]
-            ampli_err_px_values = [row[i] for row in AmpliErrPx]
+        base_px_values = [row[i] for row in BasePx]
+        print(base_px_values)
+        base_err_px_values = [row[i] for row in BaseErrPx]
+        ampli_px_values = [row[i] for row in AmpliPx]
+        ampli_err_px_values = [row[i] for row in AmpliErrPx]
 
-
-            BasgraphArray.append(TGraphErrors(len(VHex), np.asarray(VHex, dtype=float), np.asarray(base_px_values, dtype=float), np.zeros(len(VHex)), np.asarray(base_err_px_values, dtype=float)))
-            AmgraphArray.append(TGraphErrors(len(VHex), np.asarray(VHex), np.asarray(ampli_px_values, dtype=float), np.zeros(len(VHex)), np.asarray(ampli_err_px_values, dtype=float)))
-            SetGraph(BasgraphArray[i], "gBaseline" + str(i), ";VH (V); Baseline (mV)", colorArr[i], markerArr[i])
-            SetGraph(AmgraphArray[i], "gAmplitude" + str(i), ";VH (V); Amplitude (mV)", colorArr[i], markerArr[i])
-       
-        #BasgraphArray.append(TGraphErrors(len(VHex), np.asarray(VHex, dtype=float), np.asarray([row[i] for row in BasePx], dtype=float), np.zeros(len(VHex)), np.asarray([row[i] for row in BaseErrPx], dtype=float)))
-        #AmgraphArray.append(TGraphErrors(len(VHex), np.asarray(VHex, dtype=float), np.asarray([row[i] for row in AmpliPx], dtype=float), np.zeros(len(VHex)), np.asarray([row[i] for row in AmpliErrPx], dtype=float)))
-        #SetGraph(BasgraphArray[i], "gBaseline" + str(i), ";VH (V); Baseline (mV)", colorArr[i], markerArr[i])
-        #SetGraph(AmgraphArray[i], "gAmplitude" + str(i), ";VH (V); Amplitude (mV)", colorArr[i], markerArr[i])
+        BasgraphArray.append(TGraphErrors(len(VHex), np.asarray(VHex, dtype=float), np.asarray(base_px_values, dtype=float), np.zeros(len(VHex)), np.asarray(base_err_px_values, dtype=float)))
+        AmgraphArray.append(TGraphErrors(len(VHex), np.asarray(VHex), np.asarray(ampli_px_values, dtype=float), np.zeros(len(VHex)), np.asarray(ampli_err_px_values, dtype=float)))
+        SetGraph(BasgraphArray[i], "gBaseline" + str(i), ";VH (V); Baseline (mV)", colorArr[i], markerArr[i])
+        SetGraph(AmgraphArray[i], "gAmplitude" + str(i), ";VH (V); Amplitude (mV)", colorArr[i], markerArr[i])
     canvas3 = TCanvas("canvas3","canvas3",2200,600)
     canvas3.Divide(2,1)
     canvas3.cd(1)
-    hFrame = canvas3.cd(1).DrawFrame(0,0,1.3,1000,"Baseline vs VH; VH (V); Baseline (mV)")
-    legend = TLegend(0.15,0.7,0.4,0.9)
-    print(len(BasgraphArray))
+    hFrame = canvas3.cd(1).DrawFrame(0.3,200,1.300,330,"Baseline vs VH; VH (V); Baseline (mV)")
+    legend = TLegend(0.15,0.65,0.35,0.9)
     for i in range(len(AmpliPx[0])):
         if(i==0 or i==15 or i==7 or i==8):
             BasgraphArray[i].Draw("p,same")
             legend.AddEntry(BasgraphArray[i], "Pixel "+str(int(i)))
     legend.Draw()
+    text =TLatex(0.6, 0.8,"APTS_AO10P_B6")
+    text2 =TLatex(0.6, 0.73,"External Pixels")
+    text1 =TLatex(0.6, 0.4,"APTS_AO10P_B6")
+    text3 =TLatex(0.6, 0.33,"External Pixels")
+    text.SetNDC()
+    text.SetTextSize(gStyle.GetTextSize())
+    text.Draw()
+    text2.SetNDC()
+    text2.SetTextSize(gStyle.GetTextSize())
+    text2.SetTextFont(42)
+    text2.Draw()
     canvas3.cd(2)
-    hFrame = canvas3.cd(2).DrawFrame(0,0,1.3,100,"Amplitude vs VH; VH (V); Amplitude (mV)")
-    legend2 = TLegend(0.15,0.7,0.4,0.9)
+    hFrame = canvas3.cd(2).DrawFrame(0.3,0,1.300,80,"Amplitude vs VH; VH (V); Amplitude (mV)")
+    legend2 = TLegend(0.15,0.65,0.35,0.9)
     for i in range(len(AmpliPx[0])):
         if(i==0 or i==15 or i==7 or i==8):
             AmgraphArray[i].Draw("p,same")
             legend2.AddEntry(AmgraphArray[i], "Pixel "+str(int(i)))
     legend2.Draw()
+    text1.SetNDC()
+    text1.SetTextSize(gStyle.GetTextSize())
+    text3.SetTextFont(42)
+    text3.SetNDC()
+    text3.SetTextSize(gStyle.GetTextSize())
+    text1.Draw()
+    text3.Draw()
     canvas3.SaveAs('ITS3/data/output/VH_external_pixel.pdf')
