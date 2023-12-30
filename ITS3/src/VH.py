@@ -168,23 +168,17 @@ if __name__=='__main__':
     BasePx=[]
     AmpliErrPx=[]
     BaseErrPx=[]
-    innerlist=[]
-    innerlist1=[]
-    innerlist2=[]
-    innerlist3=[]
-    for i in range(16):
-        AmpliPx.append(innerlist)
-        BasePx.append(innerlist1)
-        AmpliErrPx.append(innerlist2)
-        BaseErrPx.append(innerlist3)
-    BasgraphArray=np.array([], dtype=TGraphErrors)
-    AmgraphArray=np.array([], dtype=TGraphErrors)
-    FallgraphArray=np.array([], dtype=TGraphErrors)
+    AmpliPx = [[] for _ in range(9)]
+    BasePx = [[] for _ in range(9)]
+    AmpliErrPx = [[] for _ in range(9)]
+    BaseErrPx = [[] for _ in range(9)]
+    BasgraphArray = []
+    AmgraphArray = []
     adc_unit=0.03881
     indexFile=0
     dir_path='ITS3/Data/VH_external_pixel'
     root_files=glob.glob(dir_path+'/*.root')
-    for file_name in root_files:
+    for indexFile, file_name in enumerate(root_files):
         parts=file_name.split('{')
         VHpart=parts[1]
         match= re.search(r'(\d+)(?=})',VHpart)
@@ -206,22 +200,37 @@ if __name__=='__main__':
             for i in range(len(dfs[j])):
                 ArrHistoAmp[j].Fill(dfs[j].loc[i]["amplitude"]*adc_unit)
                 ArrHistoBase[j].Fill(dfs[j].loc[i]["baseline"]*adc_unit)
-            AmpliPx[indexFile][j]=ArrHistoAmp[0].GetMean()
-            BasePx[indexFile][j]=ArrHistoBase[j].GetMean()
-            AmpliErrPx[indexFile][j]=ArrHistoAmp[j].GetRMS()
-            BaseErrPx[indexFile][j]=ArrHistoBase[j].GetRMS()
+            AmpliPx[indexFile].append(ArrHistoAmp[j].GetMean())
+            BasePx[indexFile].append(ArrHistoBase[j].GetMean())
+            if(j==0):
+                print(indexFile)
+            AmpliErrPx[indexFile].append(ArrHistoAmp[j].GetRMS())
+            BaseErrPx[indexFile].append(ArrHistoBase[j].GetRMS())
         indexFile+=1
+    print(len(BasePx))
     for i in range(len(AmpliPx[0])):
-        BasgraphArray[i]=TGraphErrors(len(VHex), np.asarray(VHex, dtype=float), np.asarray(BasePx[:,i], dtype=float), np.zeros(len(VHex)), np.asarray(BaseErrPx[:,i], dtype=float))
-        AmgraphArray[i]=TGraphErrors(len(VHex), np.asarray(VHex, dtype=float), np.asarray(AmpliPx[:,i], dtype=float), np.zeros(len(VHex)), np.asarray(AmpliErrPx[:,i], dtype=float))
-        SetGraph(BasgraphArray[i], "gBaseline" +str(i), ";VH (V); Baseline (mV)", colorArr[i], markerArr[i])
-        SetGraph(AmgraphArray[i], "gAmplitude"+str(i), ";VH (V); Amplitude (mV)", colorArr[i], markerArr[i])
-    
+            base_px_values = [row[i] for row in BasePx]
+            print(base_px_values)
+            base_err_px_values = [row[i] for row in BaseErrPx]
+            ampli_px_values = [row[i] for row in AmpliPx]
+            ampli_err_px_values = [row[i] for row in AmpliErrPx]
+
+
+            BasgraphArray.append(TGraphErrors(len(VHex), np.asarray(VHex, dtype=float), np.asarray(base_px_values, dtype=float), np.zeros(len(VHex)), np.asarray(base_err_px_values, dtype=float)))
+            AmgraphArray.append(TGraphErrors(len(VHex), np.asarray(VHex), np.asarray(ampli_px_values, dtype=float), np.zeros(len(VHex)), np.asarray(ampli_err_px_values, dtype=float)))
+            SetGraph(BasgraphArray[i], "gBaseline" + str(i), ";VH (V); Baseline (mV)", colorArr[i], markerArr[i])
+            SetGraph(AmgraphArray[i], "gAmplitude" + str(i), ";VH (V); Amplitude (mV)", colorArr[i], markerArr[i])
+       
+        #BasgraphArray.append(TGraphErrors(len(VHex), np.asarray(VHex, dtype=float), np.asarray([row[i] for row in BasePx], dtype=float), np.zeros(len(VHex)), np.asarray([row[i] for row in BaseErrPx], dtype=float)))
+        #AmgraphArray.append(TGraphErrors(len(VHex), np.asarray(VHex, dtype=float), np.asarray([row[i] for row in AmpliPx], dtype=float), np.zeros(len(VHex)), np.asarray([row[i] for row in AmpliErrPx], dtype=float)))
+        #SetGraph(BasgraphArray[i], "gBaseline" + str(i), ";VH (V); Baseline (mV)", colorArr[i], markerArr[i])
+        #SetGraph(AmgraphArray[i], "gAmplitude" + str(i), ";VH (V); Amplitude (mV)", colorArr[i], markerArr[i])
     canvas3 = TCanvas("canvas3","canvas3",2200,600)
     canvas3.Divide(2,1)
     canvas3.cd(1)
     hFrame = canvas3.cd(1).DrawFrame(0,0,1.3,1000,"Baseline vs VH; VH (V); Baseline (mV)")
     legend = TLegend(0.15,0.7,0.4,0.9)
+    print(len(BasgraphArray))
     for i in range(len(AmpliPx[0])):
         if(i==0 or i==15 or i==7 or i==8):
             BasgraphArray[i].Draw("p,same")
