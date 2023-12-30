@@ -18,7 +18,7 @@ def SetGraph(graph, name, title, color, marker):
     graph.SetName(name)
     graph.SetTitle(title)
     graph.SetMarkerStyle(marker)
-    graph.SetMarkerSize(1.5)
+    graph.SetMarkerSize(2)
     graph.SetMarkerColor(color)
     graph.SetLineColor(color)
 
@@ -90,7 +90,7 @@ if __name__=='__main__':
     #canvas.SaveAs('ITS3/data/output/VH.pdf')
 
     #inner pixel2 if you have txt file with dato of all pixel, one txt file for VH value
-    '''
+    
     colorArr = [kRed , kAzure, kBlack, kOrange-3]
     markerArr = [kFullCircle, kFullSquare, kFullTriangleUp, kFullTriangleDown]
     pixelArr=np.array([])
@@ -132,36 +132,60 @@ if __name__=='__main__':
         AmgraphArray=np.append(AmgraphArray,TGraphErrors(len(VH2), np.asarray(VH2, dtype=float), np.asarray(amplitude, dtype=float), np.zeros(len(VH2)), np.asarray(amplitude_err, dtype=float)))
         FallgraphArray=np.append(FallgraphArray,TGraphErrors(len(VH2), np.asarray(VH2, dtype=float), np.asarray(falltime, dtype=float), np.zeros(len(VH2)), np.asarray(falltime_err, dtype=float)))
     
-    canvas2 = TCanvas("canvas2","canvas2",2200,600)
+    canvas2 = TCanvas("canvas2","canvas2",2450,700)
     canvas2.Divide(3,1)
     canvas2.cd(1)
     hFrame = canvas2.cd(1).DrawFrame(0.3,200,1.3,280,"Baseline vs VH; VH (V); Baseline (mV)")
-    legend = TLegend(0.15,0.7,0.4,0.9)
+    legend = TLegend(0.15,0.65,0.4,0.9)
+    text =TLatex(0.45, 0.8,"APTS_AO10P_B6")
+    text2 =TLatex(0.45, 0.73,"Inner Pixels")
+    text.SetNDC()
+    text2.SetTextSize(gStyle.GetTextSize())
+    text2.SetTextFont(42)
+    text2.SetNDC()
+    text1 =TLatex(0.45, 0.4,"APTS_AO10P_B6")
+    text3 =TLatex(0.45, 0.33,"Inner Pixels")
+    text4 =TLatex(0.45, 0.85,"APTS_AO10P_B6")
+    text5 =TLatex(0.45, 0.78,"Inner Pixels")
+    text1.SetNDC()
+    text3.SetTextSize(gStyle.GetTextSize())
+    text3.SetTextFont(42)
+    text3.SetNDC()
+    text4.SetNDC()
+    text5.SetTextSize(gStyle.GetTextSize())
+    text5.SetTextFont(42)
+    text5.SetNDC()
     for i in range(len(pixelArr)):
         SetGraph(BasgraphArray[i], "gBaseline" +str(i), ";VH (V); Baseline (mV)", colorArr[i], markerArr[i])
         BasgraphArray[i].Draw("p,same")
         legend.AddEntry(BasgraphArray[i], "Pixel "+str(int(pixelArr[i])))
     legend.Draw()
+    text.Draw()
+    text2.Draw()
     canvas2.cd(2)
     hFrame = canvas2.cd(2).DrawFrame(0.3,0,1.3,80,"Amplitude vs VH; VH (V); Amplitude (mV)")
-    legend2 = TLegend(0.15,0.7,0.4,0.9)
+    legend2 = TLegend(0.15,0.65,0.4,0.9)
     for i in range(len(pixelArr)):
         SetGraph(AmgraphArray[i], "gAmplitude"+str(i), ";VH (V); Amplitude (mV)", colorArr[i], markerArr[i])
         AmgraphArray[i].Draw("p,same")
         legend2.AddEntry(AmgraphArray[i], "Pixel "+str(int(pixelArr[i])))
     legend2.Draw()
+    text1.Draw()
+    text3.Draw()
     canvas2.cd(3)
     hFrame = canvas2.cd(3).DrawFrame(0.3,0.06,1.3,0.13,"Falltime vs VH; VH (V); Falltime (ns)")
-    legend3 = TLegend(0.6,0.2,0.8,0.4)
+    legend3 = TLegend(0.6,0.20,0.85,0.45)
     for i in range(len(pixelArr)):
         SetGraph(FallgraphArray[i], "gFalltime"+str(i), ";VH (V); Falltime (ns)", colorArr[i], markerArr[i])
         FallgraphArray[i].Draw("p,same")
         legend3.AddEntry(FallgraphArray[i], "Pixel "+str(int(pixelArr[i])))
     legend3.Draw()
+    text4.Draw()
+    text5.Draw()
     canvas2.SaveAs('ITS3/data/output/VH2.pdf')
-    '''
-    #outer pixels
-    colorArr =[kGreen+1,kViolet,kViolet+1,kGreen+4,kViolet-1,kAzure,kOrange -3,kViolet -4,kViolet +3,kBlack,kRed,kViolet-9,kGreen -2,kViolet -6,kViolet +7,kGreen -7]
+    
+    '''#outer pixels
+    colorArr =[kGreen+1,kViolet,kViolet+1,kGreen+3,kViolet-1,kAzure,kOrange -3,kViolet -4,kViolet +10,kBlack,kRed,kViolet-9,kGreen -2,kViolet -6,kViolet +7,kGreen -7]
     markerArr = 4*[kFullCircle, kFullSquare, kFullTriangleUp, kFullTriangleDown]
     VHex=np.array([])
     AmpliPx=[]
@@ -219,20 +243,25 @@ if __name__=='__main__':
         AmgraphArray.append(TGraphErrors(len(VHex), np.asarray(VHex), np.asarray(ampli_px_values, dtype=float), np.zeros(len(VHex)), np.asarray(ampli_err_px_values, dtype=float)))
         SetGraph(BasgraphArray[i], "gBaseline" + str(i), ";VH (V); Baseline (mV)", colorArr[i], markerArr[i])
         SetGraph(AmgraphArray[i], "gAmplitude" + str(i), ";VH (V); Amplitude (mV)", colorArr[i], markerArr[i])
-    canvas3 = TCanvas("canvas3","canvas3",2200,600)
+    canvas3 = TCanvas("canvas3","canvas3",2000,700)
     canvas3.Divide(2,1)
     canvas3.cd(1)
-    hFrame = canvas3.cd(1).DrawFrame(0.3,200,1.300,330,"Baseline vs VH; VH (V); Baseline (mV)")
+    hFrame = canvas3.cd(1).DrawFrame(0.3,220,1.300,345,"Baseline vs VH; VH (V); Baseline (mV)")
     legend = TLegend(0.15,0.65,0.35,0.9)
+    legendb = TLegend(0.35,0.65,0.55,0.9)
     for i in range(len(AmpliPx[0])):
-        if(i==0 or i==15 or i==7 or i==8):
+        if(i!=5 and i!=6 and i!=9 and i!=10):
             BasgraphArray[i].Draw("p,same")
-            legend.AddEntry(BasgraphArray[i], "Pixel "+str(int(i)))
+            if(i<8):
+                legend.AddEntry(BasgraphArray[i], "Pixel "+str(int(i)))
+            else:
+                legendb.AddEntry(BasgraphArray[i], "Pixel "+str(int(i)))
     legend.Draw()
-    text =TLatex(0.6, 0.8,"APTS_AO10P_B6")
-    text2 =TLatex(0.6, 0.73,"External Pixels")
-    text1 =TLatex(0.6, 0.4,"APTS_AO10P_B6")
-    text3 =TLatex(0.6, 0.33,"External Pixels")
+    legendb.Draw()
+    text =TLatex(0.58, 0.8,"APTS_AO10P_B6")
+    text2 =TLatex(0.58, 0.73,"External Pixels")
+    text1 =TLatex(0.58, 0.4,"APTS_AO10P_B6")
+    text3 =TLatex(0.58, 0.33,"External Pixels")
     text.SetNDC()
     text.SetTextSize(gStyle.GetTextSize())
     text.Draw()
@@ -243,11 +272,16 @@ if __name__=='__main__':
     canvas3.cd(2)
     hFrame = canvas3.cd(2).DrawFrame(0.3,0,1.300,80,"Amplitude vs VH; VH (V); Amplitude (mV)")
     legend2 = TLegend(0.15,0.65,0.35,0.9)
+    legend2b = TLegend(0.35,0.65,0.55,0.9)
     for i in range(len(AmpliPx[0])):
-        if(i==0 or i==15 or i==7 or i==8):
+        if(i!=5 and i!=6 and i!=9 and i!=10):
             AmgraphArray[i].Draw("p,same")
-            legend2.AddEntry(AmgraphArray[i], "Pixel "+str(int(i)))
+            if(i<8):
+                legend2.AddEntry(AmgraphArray[i], "Pixel "+str(int(i))) 
+            else:   
+                legend2b.AddEntry(AmgraphArray[i], "Pixel "+str(int(i)))
     legend2.Draw()
+    legend2b.Draw()
     text1.SetNDC()
     text1.SetTextSize(gStyle.GetTextSize())
     text3.SetTextFont(42)
@@ -255,4 +289,4 @@ if __name__=='__main__':
     text3.SetTextSize(gStyle.GetTextSize())
     text1.Draw()
     text3.Draw()
-    canvas3.SaveAs('ITS3/data/output/VH_external_pixel.pdf')
+    canvas3.SaveAs('ITS3/data/output/VH_external_pixel2.pdf')'''
