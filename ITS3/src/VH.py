@@ -1,15 +1,17 @@
-#script to study linearity versus VH for pixel 5 for baseline, falltime and amplitude
+'''script to study linearity versus VH for inner pixel for baseline, falltime and amplitude
+    and for outer pixels for baseline and amplitude
+    for a better use of the script comment the part you don't need'''
 import pandas as pd
 import numpy as np
 import glob
 import re
 import uproot
-import seaborn as sns
+#import seaborn as sns
 
 import sys
 sys.path.append('utils')
 
-from ROOT import TGraphErrors, TFile, TCanvas, kRed, kAzure, kOrange, kFullCircle, gROOT, TLatex, gStyle, TLegend, kBlack, kFullSquare,kFullTriangleUp, kFullTriangleDown, TH1D
+from ROOT import TGraphErrors, TFile, TCanvas, kRed, kAzure, kOrange, kFullCircle, gROOT, TLatex, gStyle, TLegend, kBlack, kFullSquare,kFullTriangleUp, kFullTriangleDown, TH1D, kGreen, kViolet
 from StyleFormatter import SetObjectStyle, SetGlobalStyle
 
 def SetGraph(graph, name, title, color, marker):
@@ -21,7 +23,8 @@ def SetGraph(graph, name, title, color, marker):
     graph.SetLineColor(color)
 
 if __name__=='__main__':
-    #inner pixels
+    #inner pixels if you have txt file with one data per pixel
+
     #dir_path='ITS3/Data/VH'
     #txt_files=glob.glob(dir_path+'/*.txt')
     #VHvalue=np.array([])
@@ -86,7 +89,7 @@ if __name__=='__main__':
     #text3.Draw()
     #canvas.SaveAs('ITS3/data/output/VH.pdf')
 
-    #inner pixel2
+    #inner pixel2 if you have txt file with dato of all pixel, one txt file for VH value
     '''
     colorArr = [kRed , kAzure, kBlack, kOrange-3]
     markerArr = [kFullCircle, kFullSquare, kFullTriangleUp, kFullTriangleDown]
@@ -158,17 +161,27 @@ if __name__=='__main__':
     canvas2.SaveAs('ITS3/data/output/VH2.pdf')
     '''
     #outer pixels
-    
-    VHEx=np.array([])
-    AmpliPx0=np.array([]) #plot only 2 corner pixels and 2 side pixels
-    AmpliPx15=np.array([])
-    AmpliPx2=np.array([])
-    AmpliPx11=np.array([])
-    BasePx0=np.array([])
-    BasePx15=np.array([])
-    BasePx2=np.array([])
-    BasePx11=np.array([])
+    colorArr =[kGreen+1,kViolet,kViolet+1,kGreen+4,kViolet-1,kAzure,kOrange -3,kViolet -4,kViolet +3,kBlack,kRed,kViolet-9,kGreen -2,kViolet -6,kViolet +7,kGreen -7]
+    markerArr = 4*[kFullCircle, kFullSquare, kFullTriangleUp, kFullTriangleDown]
+    VHex=np.array([])
+    AmpliPx=[]
+    BasePx=[]
+    AmpliErrPx=[]
+    BaseErrPx=[]
+    innerlist=[]
+    innerlist1=[]
+    innerlist2=[]
+    innerlist3=[]
+    for i in range(16):
+        AmpliPx.append(innerlist)
+        BasePx.append(innerlist1)
+        AmpliErrPx.append(innerlist2)
+        BaseErrPx.append(innerlist3)
+    BasgraphArray=np.array([], dtype=TGraphErrors)
+    AmgraphArray=np.array([], dtype=TGraphErrors)
+    FallgraphArray=np.array([], dtype=TGraphErrors)
     adc_unit=0.03881
+    indexFile=0
     dir_path='ITS3/Data/VH_external_pixel'
     root_files=glob.glob(dir_path+'/*.root')
     for file_name in root_files:
@@ -176,11 +189,9 @@ if __name__=='__main__':
         VHpart=parts[1]
         match= re.search(r'(\d+)(?=})',VHpart)
         VHex=np.append(VHex, int(match.group()))
-        df=uproot.open(file_name)['tree']
-        ArrHistoAmp=np.array([], dtype=TH1D)
-        ArrHistoBase=np.array([], dtype=TH1D)
-        amplitudePx=np.array([],dtype = float)
-        baselinePx=np.array([],dtype = float)
+        df=uproot.open(file_name)['PreprocessedData;1']
+        ArrHistoAmp=[]
+        ArrHistoBase=[]
         nPixels = 16 
         dfs = {}
 
@@ -188,11 +199,40 @@ if __name__=='__main__':
             dfs[i] = df[f"pixel{i}"].arrays(library="pd")
         dfs
         for j in range(nPixels):
-            ArrHistoAmp[j]=TH1D("Amplitude"+str(j),"Amplitude"+str(j),100,0,100)
-            ArrHistoBase[j]=TH1D("Baseline"+str(j),"Baseline"+str(j),100,0,1000)
+            ha=TH1D("Amplitude"+str(j),"Amplitude"+str(j),10,0,100)
+            ArrHistoAmp.append(ha)
+            hb=TH1D("Baseline"+str(j),"Baseline"+str(j),10,0,1000)
+            ArrHistoBase.append(hb)
             for i in range(len(dfs[j])):
                 ArrHistoAmp[j].Fill(dfs[j].loc[i]["amplitude"]*adc_unit)
                 ArrHistoBase[j].Fill(dfs[j].loc[i]["baseline"]*adc_unit)
-            amplitudePx[j]=ArrHistoAmp[j].GetMean()
-            baselinePx[j]=ArrHistoBase[j].GetMean()
- 
+            AmpliPx[indexFile][j]=ArrHistoAmp[0].GetMean()
+            BasePx[indexFile][j]=ArrHistoBase[j].GetMean()
+            AmpliErrPx[indexFile][j]=ArrHistoAmp[j].GetRMS()
+            BaseErrPx[indexFile][j]=ArrHistoBase[j].GetRMS()
+        indexFile+=1
+    for i in range(len(AmpliPx[0])):
+        BasgraphArray[i]=TGraphErrors(len(VHex), np.asarray(VHex, dtype=float), np.asarray(BasePx[:,i], dtype=float), np.zeros(len(VHex)), np.asarray(BaseErrPx[:,i], dtype=float))
+        AmgraphArray[i]=TGraphErrors(len(VHex), np.asarray(VHex, dtype=float), np.asarray(AmpliPx[:,i], dtype=float), np.zeros(len(VHex)), np.asarray(AmpliErrPx[:,i], dtype=float))
+        SetGraph(BasgraphArray[i], "gBaseline" +str(i), ";VH (V); Baseline (mV)", colorArr[i], markerArr[i])
+        SetGraph(AmgraphArray[i], "gAmplitude"+str(i), ";VH (V); Amplitude (mV)", colorArr[i], markerArr[i])
+    
+    canvas3 = TCanvas("canvas3","canvas3",2200,600)
+    canvas3.Divide(2,1)
+    canvas3.cd(1)
+    hFrame = canvas3.cd(1).DrawFrame(0,0,1.3,1000,"Baseline vs VH; VH (V); Baseline (mV)")
+    legend = TLegend(0.15,0.7,0.4,0.9)
+    for i in range(len(AmpliPx[0])):
+        if(i==0 or i==15 or i==7 or i==8):
+            BasgraphArray[i].Draw("p,same")
+            legend.AddEntry(BasgraphArray[i], "Pixel "+str(int(i)))
+    legend.Draw()
+    canvas3.cd(2)
+    hFrame = canvas3.cd(2).DrawFrame(0,0,1.3,100,"Amplitude vs VH; VH (V); Amplitude (mV)")
+    legend2 = TLegend(0.15,0.7,0.4,0.9)
+    for i in range(len(AmpliPx[0])):
+        if(i==0 or i==15 or i==7 or i==8):
+            AmgraphArray[i].Draw("p,same")
+            legend2.AddEntry(AmgraphArray[i], "Pixel "+str(int(i)))
+    legend2.Draw()
+    canvas3.SaveAs('ITS3/data/output/VH_external_pixel.pdf')
