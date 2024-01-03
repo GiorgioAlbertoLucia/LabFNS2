@@ -52,6 +52,7 @@ class Preprocessor
         // parameters for the preprocessing. Fine tuning related to the waveform shape
 
         void SetIgnorePoints(const int ignorePoints) { fIgnorePoints = ignorePoints; }
+        void SetChecks(const int checks) { fChecks = checks; }
         void SetNSample(const int nSample) { fNSample = nSample; }
         void SetNDerivativePoints(const int nDerivativePoints) { fNDerivativePoints = nDerivativePoints; }
         void SetNSmoothingPoints(const int nSmoothingPoints) { fNSmoothingPoints = nSmoothingPoints; }
@@ -85,7 +86,8 @@ class Preprocessor
         double ** fmVToElectrons;         // dictionary to convert mV to electrons
 
         double fThreshold;                  // in mV
-        int fIgnorePoints;                  // number of points to ignore at the beginning and at the end of the waveform 
+        int fIgnorePoints;                  // number of points to ignore at the beginning and at the end of the waveform
+        int fChecks;                        // number of points to check to find the change in the derivative 
         int fNSample;                       // number of points to consider to calculate the mean and the RMS of both signal and derivative
         int fNDerivativePoints;             // number of points to consider to calculate the derivative
         int fNSmoothingPoints;              // number of points to consider to calculate the smoothing of the waveform for the derivative

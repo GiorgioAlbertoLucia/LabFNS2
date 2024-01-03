@@ -15,15 +15,16 @@
 #include <TList.h>
 #include <TCanvas.h>
 #include <TAxis.h>
+#include <TStyle.h>
 
 
 // -------------------------------------------------------------------------------------
 // functions used in this file
-std::pair<double, double> FindEdge(TGraph & gr, int nIgnorePoints = 0, int nSample = 200, const int nDerivativePoints = 40, const int nSmoothingPoints = 10);
-std::pair<int, int> FindEdgeIndex(TGraph & gr, int nIgnorePoints = 0, int nSample = 200, const int nDerivativePoints = 40, const int nSmoothingPoints = 10);
+std::pair<double, double> FindEdge(TGraph & gr, int nIgnorePoints = 0, int nChecks = 10, int nSample = 200, const int nDerivativePoints = 40, const int nSmoothingPoints = 10);
+std::pair<int, int> FindEdgeIndex(TGraph & gr, int nIgnorePoints = 0, int nChecks = 10, int nSample = 200, const int nDerivativePoints = 40, const int nSmoothingPoints = 10);
 int FindMinimumIndex(TGraph & gr);
 int FindMaximumIndex(TGraph & gr);  
-int FindChangingDerivative(TGraph & grDer, const double& meanDer, const double& RMSDer, const int ignorePoints, const bool backwards = false);
+int FindChangingDerivative(TGraph & grDer, const double& meanDer, const double& RMSDer, const int ignorePoints, const int nChecks, const bool backwards = false);
 std::pair<double, double> GetMeanAndRMS(TGraph & gr, const int& begin, const int& end);
 TGraph* SmoothGraph(TGraph& gr, const int nSmoothingPoints = 2);
 TGraph* DerivativeGraph(TGraph& gr, const int nDerivativePoints = 40);
@@ -47,6 +48,7 @@ Preprocessor::Preprocessor(const char * inFilePath, const double threshold):
     fSamplingPeriodDictionary(NULL), 
     fThreshold(threshold), 
     fIgnorePoints(0),
+    fChecks(10),
     fNSample(200),
     fNDerivativePoints(40),
     fNSmoothingPoints(10)
@@ -256,7 +258,7 @@ bool Preprocessor::ProcessEventScope(const int event, const int pixel, PixelData
 
     const int minimumIndex = FindMinimumIndex(*gr);
     const double minimum = gr->GetPointY(minimumIndex);
-    auto edges = FindEdge(*gr, fIgnorePoints, fNSample, fNDerivativePoints, fNSmoothingPoints);
+    auto edges = FindEdge(*gr, fIgnorePoints, fChecks, fNSample, fNDerivativePoints, fNSmoothingPoints);
     //auto edges = FindEdgePRINO(gr);
     const double edgeLeft = (edges.first < 1e-5) ? gr->GetPointX(FindMaximumIndex(*gr)) : edges.first;
     const double edgeRight = edges.second;
@@ -484,33 +486,65 @@ void Preprocessor::DrawEvent(const int event, const char * outFilePath)
     for (int i = 0; i < fNPixels; i++)
     {
         TString grName = Form("grEv%dPx%dsamp%d", event, i, fSamplingPeriodDictionary[i]);
+        
         auto canvas = new TCanvas(Form("cEv%dPx%dsamp%d", event, i, fSamplingPeriodDictionary[i]), "", 1000, 1000);
+        auto canvasClean = new TCanvas(Form("cEv%dPx%dsamp%d_clean", event, i, fSamplingPeriodDictionary[i]), "", 1000, 1000);
+
         auto gr = (TGraph*)inFile->Get(grName.Data());
         auto grDerivative = DerivativeGraph(*gr);
+        grDerivative->SetTitle(Form("Signal derivative - Event %d, Pixel %d, Sampling Period %d ps; Time (ns); Derivative (a.u.)", event, i, fSamplingPeriodDictionary[i]));
         auto grSecondDerivative = DerivativeGraph(*grDerivative);
         auto grSmooth = SmoothGraph(*gr, 10);
         canvas->Divide(2);
 
-        auto edgesIdx = FindEdgeIndex(*gr, fIgnorePoints, fNSample, fNDerivativePoints, fNSmoothingPoints);
+        auto edgesIdx = FindEdgeIndex(*gr, fIgnorePoints, fChecks, fNSample, fNDerivativePoints, fNSmoothingPoints);
         auto grEdge = new TGraph(2);
         grEdge->SetPoint(0, gr->GetPointX(edgesIdx.first), gr->GetPointY(edgesIdx.first));
         grEdge->SetPoint(1, gr->GetPointX(edgesIdx.second), gr->GetPointY(edgesIdx.second));
         grEdge->SetMarkerStyle(20);
         grEdge->SetMarkerColor(kOrange-3);
 
-        canvas->cd(1);
-        gr->Draw("AL");
-        grEdge->Draw("same");
-        canvas->cd(2);
-        grDerivative->Draw("same");
+        auto baselineFit = new TF1(Form("baselineFit%d", i), "[0]");
+        baselineFit->SetLineColor(kRed);
+        gr->Fit(baselineFit, "Q+", "", gr->GetPointX(fIgnorePoints), gr->GetPointX(edgesIdx.first));
+        auto minLevelFit = new TF1(Form("minLevelFit%d", i), "[0]");
+        minLevelFit->SetLineColor(kRed);
+        gr->Fit(minLevelFit, "Q+", "", gr->GetPointX(edgesIdx.second), gr->GetPointX(gr->GetN()-1-fIgnorePoints));
+
+        gStyle->SetOptFit(0);
+
+        // recreate gr without the first and last nIgnorePoints points
+        auto grClean = new TGraph(gr->GetN() - 2 * fIgnorePoints);
+        for (int iPoint = fIgnorePoints; iPoint < gr->GetN() - fIgnorePoints; ++iPoint) grClean->SetPoint(iPoint - fIgnorePoints, gr->GetPointX(iPoint), gr->GetPointY(iPoint));
+        grClean->SetName(Form("grEv%dPx%dsamp%d_clean", event, i, fSamplingPeriodDictionary[i]));
+        grClean->SetTitle(Form("Event %d, Pixel %d, Sampling Period %d ps; Time (ns); Amplitude (mV)", event, i, fSamplingPeriodDictionary[i]));
 
         gr->Write();
+        grClean->Write();
         grDerivative->Write();
         grSecondDerivative->Write();
         grSmooth->Write();
+
+        canvas->cd(1);
+        grClean->Draw("AL");
+        grEdge->Draw("same");
+        baselineFit->Draw("same");
+        minLevelFit->Draw("same");
+        canvas->cd(2);
+        grDerivative->Draw("same");
         canvas->Write();
 
+        canvasClean->cd();
+        grClean->Draw("AL");
+        baselineFit->SetRange(grClean->GetPointX(0), grClean->GetPointX(edgesIdx.first-fIgnorePoints));
+        minLevelFit->SetRange(grClean->GetPointX(edgesIdx.second+fIgnorePoints), grClean->GetPointX(grClean->GetN()-1));
+        baselineFit->Draw("same");
+        minLevelFit->Draw("same");
+        grEdge->Draw("same");
+        canvasClean->Write();
+
         delete gr;
+        delete grClean;
         delete grDerivative;
         delete canvas;
     }
@@ -530,9 +564,9 @@ void Preprocessor::DrawEvent(const int event, const char * outFilePath)
  * peculiarity of the waveform)
  * @return std::tuple<double, double, double> edgeLeft, edgeRight
  */
-std::pair<double, double> FindEdge(TGraph & gr, int nIgnorePoints, int nSample, const int nDerivativePoints, const int nSmoothingPoints)
+std::pair<double, double> FindEdge(TGraph & gr, int nIgnorePoints, int nChecks, int nSample, const int nDerivativePoints, const int nSmoothingPoints)
 {
-    auto edgesIdx = FindEdgeIndex(gr, nIgnorePoints, nSample, nDerivativePoints, nSmoothingPoints);
+    auto edgesIdx = FindEdgeIndex(gr, nIgnorePoints, nChecks, nSample, nDerivativePoints, nSmoothingPoints);
     return std::make_pair(gr.GetPointX(edgesIdx.first), gr.GetPointX(edgesIdx.second));
 }
 
@@ -542,7 +576,7 @@ std::pair<double, double> FindEdge(TGraph & gr, int nIgnorePoints, int nSample, 
  * @param gr 
  * @return std::tuple<double, double, double> edgeLeft, edgeRight
  */
-std::pair<int, int> FindEdgeIndex(TGraph & gr, int nIgnorePoints, int nSample, const int nDerivativePoints, const int nSmoothingPoints)
+std::pair<int, int> FindEdgeIndex(TGraph & gr, int nIgnorePoints, int nChecks, int nSample, const int nDerivativePoints, const int nSmoothingPoints)
 {
     auto grSmooth = SmoothGraph(gr, nSmoothingPoints);                  // smooth the graph to find the edge more easily
     auto grDerivative = DerivativeGraph(*grSmooth, nDerivativePoints);  // take the derivative of the smoothed graph
@@ -555,8 +589,8 @@ std::pair<int, int> FindEdgeIndex(TGraph & gr, int nIgnorePoints, int nSample, c
     RMSDer = resultDer.second;
 
     double edgeLeft{0.}, edgeRight{0.};    
-    int edgeLeftIndex = FindChangingDerivative(*grDerivative, meanDer, RMSDer, nIgnorePoints);          // correct for smoothing
-    int edgeRightIndex = FindChangingDerivative(*grDerivative, meanDer, RMSDer, nIgnorePoints, true);   // correct for smoothing
+    int edgeLeftIndex = FindChangingDerivative(*grDerivative, meanDer, RMSDer, nIgnorePoints, nChecks);          // correct for smoothing
+    int edgeRightIndex = FindChangingDerivative(*grDerivative, meanDer, RMSDer, nIgnorePoints, nChecks, true);   // correct for smoothing
 
     delete grSmooth;
     delete grDerivative;
@@ -617,57 +651,76 @@ int FindMaximumIndex(TGraph & gr)
 }
 
 /**
- * @brief Find the pont in which the derivative changes for three consecutive points with a value higher than meanDer + 3 * RMSDer.
+ * @brief Find the point at which the derivative changes for n consecutive points with a value higher or lower than meanDer ± 3 * RMSDer.
  * 
  * @param grDer 
  * @param meanDer 
  * @param RMSDer 
- * @param ignorePoints number of points to ignore at the beginning and at the end of the TGraph (due to the smoothing)
- * @param backwards if true, the function loops through the TGraph from the last point to the first one
+ * @param ignorePoints Number of points to ignore at the beginning and at the end of the TGraph (due to smoothing).
+ * @param nChecks Number of consecutive points with derivative beyond meanDer ± 3 * RMSDer to consider a change.
+ * @param backwards If true, the function loops through the TGraph from the last point to the first one.
  * @return const int 
  */
-int FindChangingDerivative(TGraph & grDer, const double & meanDer, const double & RMSDer, const int ignorePoints, const bool backwards)
+int FindChangingDerivative(TGraph & grDer, const double & meanDer, const double & RMSDer, const int ignorePoints, const int nChecks, const bool backwards)
 {
     const int nSamples = grDer.GetN();
     double * x = grDer.GetX();
     double * y = grDer.GetY();
 
     int changingPoint{0};
+    int consecutiveCount{0};
+
     if (!backwards)
     {
-        for (int i = ignorePoints; i < nSamples - 2; ++i)
+        for (int i = ignorePoints; i < nSamples - nChecks + 1; ++i)
         {
-            // positive derivative
-            if (y[i] > meanDer + 3 * RMSDer && y[i + 1] > meanDer + 3 * RMSDer && y[i + 2] > meanDer + 3 * RMSDer)
+            // Check if the derivative of n consecutive points is beyond meanDer ± 3 * RMSDer
+            bool isChange = true;
+            for (int j = 0; j < nChecks; ++j)
             {
-                changingPoint = i;
-                break;
+                if (y[i + j] <= meanDer + 3 * RMSDer && y[i + j] >= meanDer - 3 * RMSDer)
+                {
+                    isChange = false;
+                    break;
+                }
             }
-            // negative derivative
-            if (y[i] < meanDer - 3 * RMSDer && y[i + 1] < meanDer - 3 * RMSDer && y[i + 2] < meanDer - 3 * RMSDer)
+
+            if (isChange)
             {
                 changingPoint = i;
+                consecutiveCount = nChecks;
                 break;
             }
         }
     }
     else
     {
-        for (int i = nSamples - ignorePoints - 1; i > 1; --i)
+        for (int i = nSamples - ignorePoints - 1; i > nChecks - 2; --i)
         {
-            // positive derivative
-            if (y[i] > meanDer + 3 * RMSDer && y[i - 1] > meanDer + 3 * RMSDer && y[i - 2] > meanDer + 3 * RMSDer)
+            // Check if the derivative of n consecutive points is beyond meanDer ± 3 * RMSDer
+            bool isChange = true;
+            for (int j = 0; j < nChecks; ++j)
             {
-                changingPoint = i;
-                break;
+                if (y[i - j] <= meanDer + 3 * RMSDer && y[i - j] >= meanDer - 3 * RMSDer)
+                {
+                    isChange = false;
+                    break;
+                }
             }
-            // negative derivative  
-            if (y[i] < meanDer - 3 * RMSDer && y[i - 1] < meanDer - 3 * RMSDer && y[i - 2] < meanDer - 3 * RMSDer)
+
+            if (isChange)
             {
                 changingPoint = i;
+                consecutiveCount = nChecks;
                 break;
             }
         }
+    }
+
+    if (consecutiveCount < nChecks)
+    {
+        // If no change is found, return 0
+        changingPoint = 0;
     }
 
     return changingPoint;
