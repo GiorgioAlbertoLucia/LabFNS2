@@ -91,6 +91,7 @@
         "wfm.C": "cpp",
         "ProcessFile.C": "cpp",
         "view_file.C": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "unordered_set": "cpp"
     }
 }

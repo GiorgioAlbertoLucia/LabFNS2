@@ -17,3 +17,4 @@ ITS3/src/build/
 ITS3/src/*.so
 ITS3/src/*.d
 ITS3/src/*.pcm
+Limadou/src/build/*

@@ -14,6 +14,7 @@ CMOS technologies, W. Snoeys](https://www.sciencedirect.com/science/article/pii/
 * [Study and Development of a novel Silicon
 Pixel Detector for the Upgrade of the ALICE
 Inner Tracking System,  J. W. van Hoorne](https://cds.cern.ch/record/2119197?ln=it)
+* [Slides: Overview od monolithic silicon pixel detectors, P. Riedler, CERN](https://indico.cern.ch/event/374145/contributions/1796414/attachments/745477/1022655/CLIC_seminar_032015_priedler.pdf)
 
 
 ## Reports, overleaf links
