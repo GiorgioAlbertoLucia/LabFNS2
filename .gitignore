@@ -18,3 +18,4 @@ ITS3/src/*.so
 ITS3/src/*.d
 ITS3/src/*.pcm
 Limadou/src/build/*
+Limadou/Data/*.raw

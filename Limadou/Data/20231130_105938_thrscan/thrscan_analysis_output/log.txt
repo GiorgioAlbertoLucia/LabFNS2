@@ -1,0 +1,220 @@
+*********************** processing chip 0x70 *************************
+   ------------------------------------------------------------
+  | Welcome to ROOT 6.10/08                http://root.cern.ch |
+  |                               (c) 1995-2017, The ROOT Team |
+  | Built for linuxx8664gcc                                    |
+  | From tag v6-10-08, 16 October 2017                         |
+  | Try '.help', '.demo', '.license', '.credits', '.quit'/'.q' |
+   ------------------------------------------------------------
+
+
+Processing FitThresholds.C+("alice_hitmap.txt")...
+Found 524287 pixels, i.e.1 pixels have no hits.
+No start point found: 57427
+Chisq cut failed:     0
+Chisq cut value:     5
+Threshold sector 0: 64.6601 +- 13.4 ( 466860 entries)
+Noise sector 0:     5.48446 +- 1.63214
+(int) 0
+
+
+
+
+*********************** processing chip 0x71 *************************
+   ------------------------------------------------------------
+  | Welcome to ROOT 6.10/08                http://root.cern.ch |
+  |                               (c) 1995-2017, The ROOT Team |
+  | Built for linuxx8664gcc                                    |
+  | From tag v6-10-08, 16 October 2017                         |
+  | Try '.help', '.demo', '.license', '.credits', '.quit'/'.q' |
+   ------------------------------------------------------------
+
+
+Processing FitThresholds.C+("alice_hitmap.txt")...
+Found 524287 pixels, i.e.1 pixels have no hits.
+No start point found: 16269
+Chisq cut failed:     0
+Chisq cut value:     5
+Threshold sector 0: 69.2103 +- 12.4009 ( 508018 entries)
+Noise sector 0:     5.67204 +- 1.62765
+(int) 0
+
+
+
+
+*********************** processing chip 0x72 *************************
+   ------------------------------------------------------------
+  | Welcome to ROOT 6.10/08                http://root.cern.ch |
+  |                               (c) 1995-2017, The ROOT Team |
+  | Built for linuxx8664gcc                                    |
+  | From tag v6-10-08, 16 October 2017                         |
+  | Try '.help', '.demo', '.license', '.credits', '.quit'/'.q' |
+   ------------------------------------------------------------
+
+
+Processing FitThresholds.C+("alice_hitmap.txt")...
+Found 524287 pixels, i.e.1 pixels have no hits.
+No start point found: 94737
+Chisq cut failed:     0
+Chisq cut value:     5
+Threshold sector 0: 59.1553 +- 11.9872 ( 429549 entries)
+Noise sector 0:     5.78745 +- 1.63883
+(int) 0
+
+
+
+
+*********************** processing chip 0x73 *************************
+   ------------------------------------------------------------
+  | Welcome to ROOT 6.10/08                http://root.cern.ch |
+  |                               (c) 1995-2017, The ROOT Team |
+  | Built for linuxx8664gcc                                    |
+  | From tag v6-10-08, 16 October 2017                         |
+  | Try '.help', '.demo', '.license', '.credits', '.quit'/'.q' |
+   ------------------------------------------------------------
+
+
+Processing FitThresholds.C+("alice_hitmap.txt")...
+Found 524287 pixels, i.e.1 pixels have no hits.
+No start point found: 4264
+Chisq cut failed:     0
+Chisq cut value:     5
+Threshold sector 0: 78.564 +- 14.454 ( 520023 entries)
+Noise sector 0:     5.69711 +- 1.63988
+(int) 0
+
+
+
+
+*********************** processing chip 0x74 *************************
+   ------------------------------------------------------------
+  | Welcome to ROOT 6.10/08                http://root.cern.ch |
+  |                               (c) 1995-2017, The ROOT Team |
+  | Built for linuxx8664gcc                                    |
+  | From tag v6-10-08, 16 October 2017                         |
+  | Try '.help', '.demo', '.license', '.credits', '.quit'/'.q' |
+   ------------------------------------------------------------
+
+
+Processing FitThresholds.C+("alice_hitmap.txt")...
+Found 524287 pixels, i.e.1 pixels have no hits.
+No start point found: 136224
+Chisq cut failed:     0
+Chisq cut value:     5
+Threshold sector 0: 59.2793 +- 13.0021 ( 388063 entries)
+Noise sector 0:     5.92601 +- 1.67107
+(int) 0
+
+
+
+
+*********************** processing chip 0x78 *************************
+   ------------------------------------------------------------
+  | Welcome to ROOT 6.10/08                http://root.cern.ch |
+  |                               (c) 1995-2017, The ROOT Team |
+  | Built for linuxx8664gcc                                    |
+  | From tag v6-10-08, 16 October 2017                         |
+  | Try '.help', '.demo', '.license', '.credits', '.quit'/'.q' |
+   ------------------------------------------------------------
+
+
+Processing FitThresholds.C+("alice_hitmap.txt")...
+Found 524287 pixels, i.e.1 pixels have no hits.
+No start point found: 524287
+Chisq cut failed:     0
+Chisq cut value:     5
+Threshold sector 0: 0 +- 0 ( 0 entries)
+Noise sector 0:     0 +- 0
+(int) 0
+
+
+
+
+*********************** processing chip 0x79 *************************
+   ------------------------------------------------------------
+  | Welcome to ROOT 6.10/08                http://root.cern.ch |
+  |                               (c) 1995-2017, The ROOT Team |
+  | Built for linuxx8664gcc                                    |
+  | From tag v6-10-08, 16 October 2017                         |
+  | Try '.help', '.demo', '.license', '.credits', '.quit'/'.q' |
+   ------------------------------------------------------------
+
+
+Processing FitThresholds.C+("alice_hitmap.txt")...
+Found 524287 pixels, i.e.1 pixels have no hits.
+No start point found: 524287
+Chisq cut failed:     0
+Chisq cut value:     5
+Threshold sector 0: 0 +- 0 ( 0 entries)
+Noise sector 0:     0 +- 0
+(int) 0
+
+
+
+
+*********************** processing chip 0x7a *************************
+   ------------------------------------------------------------
+  | Welcome to ROOT 6.10/08                http://root.cern.ch |
+  |                               (c) 1995-2017, The ROOT Team |
+  | Built for linuxx8664gcc                                    |
+  | From tag v6-10-08, 16 October 2017                         |
+  | Try '.help', '.demo', '.license', '.credits', '.quit'/'.q' |
+   ------------------------------------------------------------
+
+
+Processing FitThresholds.C+("alice_hitmap.txt")...
+Found 524287 pixels, i.e.1 pixels have no hits.
+No start point found: 524287
+Chisq cut failed:     0
+Chisq cut value:     5
+Threshold sector 0: 0 +- 0 ( 0 entries)
+Noise sector 0:     0 +- 0
+(int) 0
+
+
+
+
+*********************** processing chip 0x7b *************************
+   ------------------------------------------------------------
+  | Welcome to ROOT 6.10/08                http://root.cern.ch |
+  |                               (c) 1995-2017, The ROOT Team |
+  | Built for linuxx8664gcc                                    |
+  | From tag v6-10-08, 16 October 2017                         |
+  | Try '.help', '.demo', '.license', '.credits', '.quit'/'.q' |
+   ------------------------------------------------------------
+
+
+Processing FitThresholds.C+("alice_hitmap.txt")...
+Found 524287 pixels, i.e.1 pixels have no hits.
+No start point found: 524287
+Chisq cut failed:     0
+Chisq cut value:     5
+Threshold sector 0: 0 +- 0 ( 0 entries)
+Noise sector 0:     0 +- 0
+(int) 0
+
+
+
+
+*********************** processing chip 0x7c *************************
+   ------------------------------------------------------------
+  | Welcome to ROOT 6.10/08                http://root.cern.ch |
+  |                               (c) 1995-2017, The ROOT Team |
+  | Built for linuxx8664gcc                                    |
+  | From tag v6-10-08, 16 October 2017                         |
+  | Try '.help', '.demo', '.license', '.credits', '.quit'/'.q' |
+   ------------------------------------------------------------
+
+
+Processing FitThresholds.C+("alice_hitmap.txt")...
+Found 524287 pixels, i.e.1 pixels have no hits.
+No start point found: 524287
+Chisq cut failed:     0
+Chisq cut value:     5
+Threshold sector 0: 0 +- 0 ( 0 entries)
+Noise sector 0:     0 +- 0
+(int) 0
+
+
+
+

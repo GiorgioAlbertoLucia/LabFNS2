@@ -1,0 +1,6 @@
+# chipid avg(electrons) std(electrons)
+0x70 111 25
+0x71 119 23
+0x72 101 23
+0x73 137 26
+0x74 98 24
