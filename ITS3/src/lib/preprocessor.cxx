@@ -322,6 +322,7 @@ bool Preprocessor::ProcessEventScope(const int event, const int pixel, PixelData
     pixelData.RMS = grMeanAndRMS.second;
 
     // Debugging session
+    /*
     if (pixel == 9 and event == 5)
     {
         TFile outFile("ITS3/Data/Event5Pixel9.root", "recreate");
@@ -351,6 +352,7 @@ bool Preprocessor::ProcessEventScope(const int event, const int pixel, PixelData
         std::cout << "FallTime: " << pixelData.fallTime << std::endl;
         std::cout << std::endl;
     }
+    */
     /*
     if (pixel == 1)
     {
