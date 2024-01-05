@@ -2,7 +2,7 @@
 #include <TTree.h>
 #include <TH1D.h>
 
-#include "../yaml/Yaml.hpp"
+#include "../../yaml/Yaml.hpp"
 
 #include "lib/spectrum.hh"
 

@@ -6,6 +6,8 @@
 #include <iostream>
 #include <fstream>
 #include <streambuf>
+#include <numeric>
+#include <algorithm>
 
 #include <TFile.h>
 #include <TGraph.h>
@@ -29,6 +31,7 @@ std::pair<double, double> GetMeanAndRMS(TGraph & gr, const int& begin, const int
 TGraph* SmoothGraph(TGraph& gr, const int nSmoothingPoints = 2);
 TGraph* DerivativeGraph(TGraph& gr, const int nDerivativePoints = 40);
 int FindPointIndex(TGraph& gr, const double& x, const int nIgnorePoints = 0);
+int FindClosestPointIndex(TGraph& gr, const double y, const int nIgnorePoints = 0);
 
 // -------------------------------------------------------------------------------------
 
@@ -218,7 +221,6 @@ void Preprocessor::BuildTree(const char * outFilePath)
     outFile.cd();
     outTree.Write();
     outFile.Close();
-    
 }
 
 /**
@@ -258,12 +260,19 @@ bool Preprocessor::ProcessEventScope(const int event, const int pixel, PixelData
 
     const int minimumIndex = FindMinimumIndex(*gr);
     const double minimum = gr->GetPointY(minimumIndex);
-    auto edges = FindEdge(*gr, fIgnorePoints, fChecks, fNSample, fNDerivativePoints, fNSmoothingPoints);
-    //auto edges = FindEdgePRINO(gr);
-    const double edgeLeft = (edges.first < 1e-5) ? gr->GetPointX(FindMaximumIndex(*gr)) : edges.first;
-    const double edgeRight = edges.second;
+
+    auto edgesIdx = FindEdgeIndex(*gr, fIgnorePoints, fChecks, fNSample, fNDerivativePoints, fNSmoothingPoints);
+    const double edgeLeft = gr->GetPointX(edgesIdx.first);
+    const double edgeRight = gr->GetPointX(edgesIdx.second);
+
+    // auto edges = FindEdge(*gr, fIgnorePoints, fChecks, fNSample, fNDerivativePoints, fNSmoothingPoints);
     // if edgeLeft is too little, it means that the signal is not present in the graph
     // therefore, in order to have a meaningful value for the baseline, we take the maximum of the graph as the edgeLeft
+    // an event like this will have fallTime = -9999. (etc.)
+    // const bool isSignalPresent = (edges.first > 1e-5);
+    // const double edgeLeft = isSignalPresent ? gr->GetPointX(FindMaximumIndex(*gr)) : edges.first;
+    // const double edgeRight = edges.second;
+    
 
     int oldVerbosity = gErrorIgnoreLevel;
     gErrorIgnoreLevel = kFatal;                         // disable implicit multithreading
@@ -294,12 +303,17 @@ bool Preprocessor::ProcessEventScope(const int event, const int pixel, PixelData
     }
     else
     {
-        TF1 fit(Form("fit%d", pixel), "pol1", edgeLeft, edgeRight);
-        gr->Fit(&fit, "RMLQ+");
-        pixelData.t10 = fit.GetX(pixelData.baseline - 0.1 * pixelData.amplitude);
-        pixelData.t50 = fit.GetX(pixelData.baseline - 0.5 * pixelData.amplitude);
-        pixelData.t90 = fit.GetX(pixelData.baseline - 0.9 * pixelData.amplitude);
+        pixelData.t10 = gr->GetPointX(FindClosestPointIndex(*gr, pixelData.baseline - 0.1 * pixelData.amplitude, fIgnorePoints));
+        pixelData.t50 = gr->GetPointX(FindClosestPointIndex(*gr, pixelData.baseline - 0.5 * pixelData.amplitude, fIgnorePoints));
+        pixelData.t90 = gr->GetPointX(FindClosestPointIndex(*gr, pixelData.baseline - 0.9 * pixelData.amplitude, fIgnorePoints));
         pixelData.fallTime = pixelData.t50 - pixelData.t10;
+
+        //TF1 fit(Form("fit%d", pixel), "pol1", edgeLeft, edgeRight);
+        //gr->Fit(&fit, "RMQ+");
+        //pixelData.t10 = fit.GetX(pixelData.baseline - 0.1 * pixelData.amplitude);
+        //pixelData.t50 = fit.GetX(pixelData.baseline - 0.5 * pixelData.amplitude);
+        //pixelData.t90 = fit.GetX(pixelData.baseline - 0.9 * pixelData.amplitude);
+        //pixelData.fallTime = pixelData.t50 - pixelData.t10;
     }
 
     gErrorIgnoreLevel = oldVerbosity;                   // re-enable implicit multithreading
@@ -308,6 +322,35 @@ bool Preprocessor::ProcessEventScope(const int event, const int pixel, PixelData
     pixelData.RMS = grMeanAndRMS.second;
 
     // Debugging session
+    if (pixel == 9 and event == 5)
+    {
+        TFile outFile("ITS3/Data/Event5Pixel9.root", "recreate");
+        gr->Write();
+        TGraph * grPoints = new TGraph(0);
+        grPoints->SetPoint(0, pixelData.t10, pixelData.baseline - 0.1 * pixelData.amplitude);
+        grPoints->SetPoint(1, pixelData.t50, pixelData.baseline - 0.5 * pixelData.amplitude);
+        grPoints->SetPoint(2, pixelData.t90, pixelData.baseline - 0.9 * pixelData.amplitude);
+        grPoints->Write();
+
+        auto canvas = new TCanvas("c", "", 1000, 1000);
+        gr->Draw("AL");
+        grPoints->SetMarkerSize(2);
+        grPoints->SetMarkerStyle(20);
+        grPoints->SetMarkerColor(kRed);
+        grPoints->Draw("same");
+        outFile.cd();
+        canvas->Write();
+
+        outFile.Close();
+
+        std::cout << "Event 5, Pixel 9" << std::endl;
+        std::cout << "Amplitude: " << pixelData.amplitude << std::endl;
+        std::cout << "t10: " << pixelData.t10 << std::endl;
+        std::cout << "t50: " << pixelData.t50 << std::endl;
+        std::cout << "t90: " << pixelData.t90 << std::endl; 
+        std::cout << "FallTime: " << pixelData.fallTime << std::endl;
+        std::cout << std::endl;
+    }
     /*
     if (pixel == 1)
     {
@@ -547,6 +590,10 @@ void Preprocessor::DrawEvent(const int event, const char * outFilePath)
         delete grClean;
         delete grDerivative;
         delete canvas;
+        delete baselineFit;
+        delete minLevelFit;
+        delete grEdge;
+        delete canvasClean;
     }
 
     outFile->Close();
@@ -678,7 +725,7 @@ int FindChangingDerivative(TGraph & grDer, const double & meanDer, const double 
             bool isChange = true;
             for (int j = 0; j < nChecks; ++j)
             {
-                if (y[i + j] <= meanDer + 3 * RMSDer && y[i + j] >= meanDer - 3 * RMSDer)
+                if (y[i + j] <= meanDer + 5 * RMSDer && y[i + j] >= meanDer - 5 * RMSDer)
                 {
                     isChange = false;
                     break;
@@ -701,7 +748,7 @@ int FindChangingDerivative(TGraph & grDer, const double & meanDer, const double 
             bool isChange = true;
             for (int j = 0; j < nChecks; ++j)
             {
-                if (y[i - j] <= meanDer + 3 * RMSDer && y[i - j] >= meanDer - 3 * RMSDer)
+                if (y[i - j] <= meanDer + 5 * RMSDer && y[i - j] >= meanDer - 5 * RMSDer)
                 {
                     isChange = false;
                     break;
@@ -840,6 +887,54 @@ int FindPointIndex(TGraph & gr, const double & x, const int nIgnorePoints)
     return 0;
 }
 
+/**
+ * @brief Find the point in TGraph with value closest to the target value.
+ * 
+ * @param gr
+ * @param target
+ * @return int
+*/
+int FindClosestPointIndex(TGraph & gr, const double target, const int nIgnorePoints)
+{
+    const int size = gr.GetN();
+    double * array = gr.GetY();
+
+    size_t effectiveSize = (size > nIgnorePoints) ? size - nIgnorePoints : 0;
+    array += nIgnorePoints;
+
+    // Create a vector of indices and sort it based on the values in the array
+    size_t * indices = new size_t[effectiveSize];
+    std::iota(indices, indices + effectiveSize, 0);
+    std::sort(indices, indices + effectiveSize,
+              [&array](size_t i1, size_t i2) { return array[i1] < array[i2]; });
+
+    // Use binary search on the sorted indices
+    auto it = std::lower_bound(indices, indices + effectiveSize, target,
+                               [&array](size_t i, double value) { return array[i] < value; });
+
+    if (it == indices) {
+        // Target is less than or equal to the first element
+        size_t result = *it;
+        delete[] indices;
+        return result;
+    } else if (it == indices + effectiveSize) {
+        // Target is greater than or equal to the last element
+        size_t result = *(--it);
+        delete[] indices;
+        return result;
+    }
+
+    // Check the closest value between the current iterator and the one before
+    size_t index1 = *it;
+    size_t index2 = *(--it);
+
+    size_t result = std::abs(array[index1] - target) < std::abs(array[index2] - target) ? index1 : index2;
+    result += nIgnorePoints;
+
+    delete[] indices;
+    return result;
+}
+
 // -------------------------------------------------------------------------------------
 // progress bar section
 /**
@@ -866,7 +961,7 @@ void updateProgressBar(int progress, int total, const std::chrono::steady_clock:
             std::cout << " ";
         }
     }
-    //std::cout << "] " << std::setw(3) << static_cast<int>(percentage * 100.0) << "%";
+    std::cout << "] " << static_cast<int>(percentage * 100.0) << "%";
     std::cout << "  Elapsed Time: " << elapsedTime << "s";
     std::cout.flush();
 }
