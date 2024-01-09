@@ -29,7 +29,10 @@ http://yaml.org/spec/1.0/index.html
 https://www.codeproject.com/Articles/28720/YAML-Parser-in-C
 */
 
-#pragma once
+//#pragma once
+
+#ifndef YAML_HPP
+#define YAML_HPP
 
 #include <exception>
 #include <string>
@@ -654,3 +657,5 @@ namespace Yaml
     void Serialize(const Node & root, std::string & string, const SerializeConfig & config = {2, 64, false, false});
 
 }
+
+#endif // YAML_HPP
