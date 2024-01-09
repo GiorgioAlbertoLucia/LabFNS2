@@ -3,7 +3,7 @@
 */
 
 #include <TFile.h>
-#include <TH2I.h>
+#include <TH2D.h>
 
 #include "clusterer.hh"
 
@@ -34,7 +34,7 @@ void Clusterer::VisualizeHits(const char * outFilePath)
 
     for (int ichip = 0; ichip < fNChips; ichip++)
     {
-        TH2I * h2 = new TH2I(Form("chip%d", fChipIDs[ichip]), Form("Chip %d; x (position); y (position)", fChipIDs[ichip]), 1024, 0, 1024, 512, 0, 512);
+        TH2D * h2 = new TH2D(Form("chip%d", fChipIDs[ichip]), Form("Chip %d; x (position); y (position)", fChipIDs[ichip]), 1024, 0, 1024, 512, 0, 512);
         for (int irow = 0; irow < fInputData->getNRows(); irow++)
         {
             double * x = fInputData->getColumn("hit_x");
@@ -47,7 +47,7 @@ void Clusterer::VisualizeHits(const char * outFilePath)
         delete h2;
     }
 
-    TH2I * h2 = new TH2I("all_chips", "All Chips; x (position); y (position)", 1024, 0, 1024, 512, 0, 512);
+    TH2D * h2 = new TH2D("all_chips", "All Chips; x (position); y (position)", 1024, 0, 1024, 512, 0, 512);
     for (int irow = 0; irow < fInputData->getNRows(); irow++)
     {
         double * x = fInputData->getColumn("hit_x");

@@ -11,11 +11,14 @@ void loadMacros(TString myopt="fast")
     else                          opt = "kg";
   
     // YAML
-    //gSystem->CompileMacro("yaml/Yaml.cpp",opt.Data(), "", "ITS3/src/build");
+    gSystem->CompileMacro("yaml/Yaml.cpp",opt.Data(), "", "Limadou/src/build");
 
     // FILEMANAGER
     gSystem->CompileMacro("Limadou/src/lib/fileManager.cxx",opt.Data(), "", "Limadou/src/build");
 
     // CLUSTERER
     gSystem->CompileMacro("Limadou/src/lib/clusterer.cxx",opt.Data(), "", "Limadou/src/build");
+
+    // SOURCEANALYSIS
+    gSystem->CompileMacro("Limadou/src/lib/sourceAnalysis.cxx",opt.Data(), "", "Limadou/src/build");
 }

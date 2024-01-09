@@ -1,0 +1,32 @@
+fits:
+  - name: "projX"
+    projRange: 
+      - 0
+      - -1
+    rebin: 16
+    func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2))" 
+    range: 
+      - 440
+      - 650
+    nParams: 3
+    param:
+      - 3500
+      - 540
+      - 70
+    color: 2
+
+  - name: "projY"
+    projRange: 
+      - 0
+      - -1
+    rebin: 16
+    func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2))" 
+    range: 
+      - 140
+      - 340
+    nParams: 3
+    param:
+      - 1300
+      - 226
+      - 60
+    color: 3

@@ -7,8 +7,10 @@
 
 #include <string>
 
-#include <TH2I.h>
+#include <TH2D.h>
 #include <TFile.h>
+
+#include "../../../yaml/Yaml.hpp"
 
 class SourceAnalysis 
 {
@@ -16,13 +18,18 @@ class SourceAnalysis
         SourceAnalysis(const int chipID, const char * inFilePath, const char * outFilePath = "default");
         ~SourceAnalysis();
 
-        void FitHits(const char * cfgFitFile, const char * outLogPath = "default");
         void SubtractBackground(const char * bkgFilePath);
+
+        void FitHits(const char * cfgFitFile, const char * outLogPath = "default");
+        void Save();
+
+    protected: 
+        void FitFromConfig(Yaml::Node & cfgFit, TH1D * hist);
 
     private:    
 
         int fChipID;
-        TH2I * fHits;
+        TH2D * fHits;
 
         std::string fInFilePath;
         TFile * fOutFile;
