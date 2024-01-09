@@ -9,6 +9,9 @@
 
 #include "../../../yaml/Yaml.hpp"
 
+#include <TFile.h>
+#include <TH1D.h>
+
 #include "pixelData.hh"
 
 class Spectrum

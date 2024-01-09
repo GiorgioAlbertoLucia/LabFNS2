@@ -1,0 +1,85 @@
+seed:
+  spectrumSpec: 
+    - 200
+    - 18
+    - 2018
+  selection: "ClusterSize <= 1 && Seed.fallTime < 200"
+  nFits: 3
+  fits:
+    - name: "Si-escape"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2)) + [3]" # + [4] * x"
+      range: 
+        - 1075
+        - 1200
+      nParams: 4
+      param:
+        - 46.5201
+        - 1146.7
+        - 16.8173
+        - 68.0734
+      color: 1
+    - name: "K-alpha"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2))" #" + [3] + [4] * x"
+      range: 
+        - 1608
+        - 1688
+      nParams: 3
+      param:
+        - 2032.44
+        - 1633.44
+        - 18.7671
+      color: 2
+    - name: "K-beta"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2))" #" + [3]"
+      range: 
+        - 1750
+        - 1840
+      nParams: 3
+      param:
+        - 123.249
+        - 1791.18
+        - 19.4063
+      color: 3
+
+cluster:
+  spectrumSpec: 
+    - 200
+    - 18
+    - 2018
+  selection: "ClusterSize <= 4 && Cluster.fallTime < 200"
+  nFits: 3
+  fits:
+    - name: "Si-escape"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2)) + [3]" # + [4] * x"
+      range: 
+        - 1075
+        - 1200
+      nParams: 4
+      param:
+        - 46.5201
+        - 1146.7
+        - 16.8173
+        - 68.0734
+      color: 1
+    - name: "K-alpha"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2))" #" + [3] + [4] * x"
+      range: 
+        - 1608
+        - 1678
+      nParams: 3
+      param:
+        - 2032.44
+        - 1633.44
+        - 18.767
+      color: 2
+    - name: "K-beta"
+      func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2))" #" + [3]"
+      range: 
+        - 1760
+        - 1840
+      nParams: 3
+      param:
+        - 123.249
+        - 1791.18
+        - 19.4063
+      color: 3

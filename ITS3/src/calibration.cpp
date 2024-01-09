@@ -53,7 +53,7 @@ void calibration()
 
     const int nPixels = 4;
     int pixels[] = {5, 6, 9, 10};
-    double keV_to_electrons = 3.6e3;
+    double keV_to_electrons = 1e3/3.6;
     double peakPositions[] = {5.89875, 6.49045};                                                // in electrons
     double peakPositionsElectrons[] = {5.89875 * keV_to_electrons, 6.49045 * keV_to_electrons}; // in electrons
     double peakPositionsError[] = {0., 0.};                                                     // in electrons

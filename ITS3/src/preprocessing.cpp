@@ -41,6 +41,7 @@ void preprocessing()
 
     //for (int ievent = 0; ievent < 10; ievent++)   p.DrawEvent(ievent);
 
-    p.UploadConversionValues(mV_to_electrons);
-    p.BuildTree();
+    //p.UploadConversionValues(mV_to_electrons);
+    //p.BuildTree();
+    p.BuildSeedAndClusterTree();
 }

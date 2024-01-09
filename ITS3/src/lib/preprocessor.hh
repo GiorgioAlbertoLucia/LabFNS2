@@ -57,7 +57,6 @@ class Preprocessor
         void SetNDerivativePoints(const int nDerivativePoints) { fNDerivativePoints = nDerivativePoints; }
         void SetNSmoothingPoints(const int nSmoothingPoints) { fNSmoothingPoints = nSmoothingPoints; }
         
-
         TString GetInFilePath() const { return fInFilePath; }
         int GetNPixels() const { return fNPixels; }
         int GetNEvents() const { return fNEvents; }
@@ -65,15 +64,23 @@ class Preprocessor
 
         void UploadConversionValues(double (* mvToElectrons)[2]);
 
+
         void BuildTree(const char * outFilePath = "default");
-        bool ProcessEventScope(const int event, const int pixel, PixelData & pixelData, TFile * inFile);
-        bool ProcessEventADC(const int event, const int pixel, PixelData & pixelData, TFile * inFile);
+        void BuildSeedAndClusterTree(const char * inFilePath = "default", const char * outFilePath = "default");
+
         void DrawPixel(const int event, const int pixel, const char * outFilePath = "default");
         void DrawEvent(const int event, const char * outFilePath = "default");
+
+        
 
     protected:
         void ReadInput();
         void GenerateSamplingDictionary();
+
+        bool ProcessEventScope(const int event, const int pixel, PixelData & pixelData, TFile * inFile);
+        bool ProcessEventADC(const int event, const int pixel, PixelData & pixelData, TFile * inFile);
+        bool GenerateSeedAndCluster(int & clusterSize, PixelData & seedData, PixelData & clusterData, PixelData * pixelData);
+
 
     private:
 
@@ -83,7 +90,7 @@ class Preprocessor
         int fNEvents;
 
         int * fSamplingPeriodDictionary;    // in ps
-        double ** fmVToElectrons;         // dictionary to convert mV to electrons
+        double ** fmVToElectrons;           // dictionary to convert mV to electrons
 
         double fThreshold;                  // in mV
         int fIgnorePoints;                  // number of points to ignore at the beginning and at the end of the waveform
@@ -91,6 +98,7 @@ class Preprocessor
         int fNSample;                       // number of points to consider to calculate the mean and the RMS of both signal and derivative
         int fNDerivativePoints;             // number of points to consider to calculate the derivative
         int fNSmoothingPoints;              // number of points to consider to calculate the smoothing of the waveform for the derivative
+        double fClusterThreshold;           // in mV - minimum amlitude to be counted for te cluster size of the event
 };
 
 #endif 

@@ -1,6 +1,8 @@
 // Implementation of Preprocessor class
 
 #include "preprocessor.hh"
+#include "graphUtilities.hh"
+#include "progressBar.hh"
 #include "colorTerminal.hh"
 
 #include <iostream>
@@ -20,30 +22,6 @@
 #include <TStyle.h>
 
 
-// -------------------------------------------------------------------------------------
-// functions used in this file
-std::pair<double, double> FindEdge(TGraph & gr, int nIgnorePoints = 0, int nChecks = 10, int nSample = 200, const int nDerivativePoints = 40, const int nSmoothingPoints = 10);
-std::pair<int, int> FindEdgeIndex(TGraph & gr, int nIgnorePoints = 0, int nChecks = 10, int nSample = 200, const int nDerivativePoints = 40, const int nSmoothingPoints = 10);
-int FindMinimumIndex(TGraph & gr);
-int FindMaximumIndex(TGraph & gr);  
-int FindChangingDerivative(TGraph & grDer, const double& meanDer, const double& RMSDer, const int ignorePoints, const int nChecks, const bool backwards = false);
-std::pair<double, double> GetMeanAndRMS(TGraph & gr, const int& begin, const int& end);
-TGraph* SmoothGraph(TGraph& gr, const int nSmoothingPoints = 2);
-TGraph* DerivativeGraph(TGraph& gr, const int nDerivativePoints = 40);
-int FindPointIndex(TGraph& gr, const double& x, const int nIgnorePoints = 0);
-int FindClosestPointIndex(TGraph& gr, const double y, const int nIgnorePoints = 0);
-
-// -------------------------------------------------------------------------------------
-
-
-// progress bar section
-// -------------------------------------------------------------------------------------
-#include <chrono>
-#include <thread>
-void updateProgressBar(int progress, int total, const std::chrono::steady_clock::time_point& startTime);
-// -------------------------------------------------------------------------------------
-
-
 Preprocessor::Preprocessor(const char * inFilePath, const double threshold): 
     fInFilePath(inFilePath), 
     fNPixels(0), 
@@ -54,7 +32,8 @@ Preprocessor::Preprocessor(const char * inFilePath, const double threshold):
     fChecks(10),
     fNSample(200),
     fNDerivativePoints(40),
-    fNSmoothingPoints(10)
+    fNSmoothingPoints(10),
+    fClusterThreshold(10)
 {
     Preprocessor::ReadInput();   
     Preprocessor::GenerateSamplingDictionary();
@@ -153,74 +132,6 @@ void Preprocessor::GenerateSamplingDictionary()
     }
 
     inFile->Close();
-}
-
-
-/*  PUBLIC  */
-
-/**
- * @brief Upload a dictionary to convert mV to electrons.
- * 
- * @param mV_to_electrons 
- */
-void Preprocessor::UploadConversionValues(double (* mVToElectrons)[2])
-{
-    for (int i = 0; i < fNPixels; i++)
-    {
-        fmVToElectrons[i][0] = mVToElectrons[i][0];
-        fmVToElectrons[i][1] = mVToElectrons[i][1];
-    }
-}
-
-/**
- * @brief Function to build the tree with the preprocessed data. All events in the input files will be processed.
- * 
- * @param outFilePath 
- */
-void Preprocessor::BuildTree(const char * outFilePath)
-{
-    TString sOutFilePath(outFilePath);
-    if (sOutFilePath.EqualTo("default")) 
-    {
-        sOutFilePath = fInFilePath;
-        sOutFilePath.ReplaceAll(".root", "_preprocessed.root");
-    }
-
-    int nPixels = fNPixels;
-    PixelData pixelData[nPixels];
-
-    auto inFile = TFile::Open(fInFilePath.Data());
-    TFile outFile(sOutFilePath.Data(), "RECREATE");
-    TTree outTree("PreprocessedData", "outTree");
-
-    int event{0};
-    outTree.Branch("Event", &event, "Event/I");
-    outTree.Branch("nPixels", &nPixels, "nPixels/I");
-    for(int i = 0; i < fNPixels; i++) outTree.Branch(Form("pixel%d", i), &pixelData[i]);//, PixelData::GetBranchList().Data());
-    
-    std::cout << "Writing output file: " << BLUE << UNDERLINE << sOutFilePath << RESET << std::endl;
-    const auto startTime = std::chrono::steady_clock::now();
-
-    for (int ievent = 0; ievent < fNEvents; ++ievent)
-    {
-        updateProgressBar(ievent, fNEvents, startTime);
-        
-        event = ievent;
-        for (int ipixel = 0; ipixel < fNPixels; ipixel++)   
-        {
-            if (fSamplingPeriodDictionary[ipixel] == 25)            Preprocessor::ProcessEventScope(ievent, ipixel, pixelData[ipixel], inFile);
-            else if (fSamplingPeriodDictionary[ipixel] == 250000)   Preprocessor::ProcessEventADC(ievent, ipixel, pixelData[ipixel], inFile);
-        }
-
-        outTree.Fill();
-    }
-
-    inFile->Close();
-
-    std::cout << std::endl;
-    outFile.cd();
-    outTree.Write();
-    outFile.Close();
 }
 
 /**
@@ -469,6 +380,139 @@ bool Preprocessor::ProcessEventADC(const int event, const int pixel, PixelData &
 }
 
 /**
+ * @brief Function to process a single evet and to find the seed and the cluster.
+ * 
+ * @param clusterSize
+ * @param seedData
+ * @param clusterData
+ * @param pixelData
+ * 
+ * @return true
+*/
+bool Preprocessor::GenerateSeedAndCluster(int & clusterSize, PixelData & seedData, PixelData & clusterData, PixelData * pixelData)
+{
+    clusterSize = 0;
+
+    seedData.pixel = -fNPixels;  
+    seedData.samplingPeriod = 0;
+    seedData.baseline = 0.;
+    seedData.minLevel = 0.;
+    seedData.t10 = 0.;
+    seedData.t90 = 0.;
+    seedData.t50 = 0.;
+    seedData.fallTime = -9999.;
+    seedData.amplitude = -9999.;
+    seedData.electrons = -9999.;
+    seedData.RMS = 0.;
+
+    clusterData.pixel = 0;  
+    clusterData.samplingPeriod = 0;
+    clusterData.baseline = 0.;
+    clusterData.minLevel = 0.;
+    clusterData.t10 = 0.;
+    clusterData.t90 = 0.;
+    clusterData.t50 = 0.;
+    clusterData.fallTime = 0.;
+    clusterData.amplitude = 0.;
+    clusterData.electrons = 0.;
+    clusterData.RMS = 0.;
+
+
+    for (int ipixel = 0; ipixel < fNPixels; ipixel++)
+    {
+        std::cout << "ampl pixel " << ipixel << ": " << (pixelData+ipixel)->amplitude << std::endl;
+        if ((pixelData+ipixel)->amplitude > seedData.amplitude)
+        {
+            seedData.pixel = ipixel;
+            seedData.amplitude = (pixelData+ipixel)->amplitude;
+            seedData.electrons = (pixelData+ipixel)->electrons;
+            seedData.fallTime= (pixelData+ipixel)->fallTime;
+        }
+        if ((pixelData+ipixel)->amplitude > fClusterThreshold)
+        {
+            clusterSize++;
+            clusterData.amplitude += (pixelData+ipixel)->amplitude;
+            clusterData.electrons += (pixelData+ipixel)->electrons;
+        } 
+    }
+    if (clusterSize == 0) 
+    {
+        clusterData.amplitude = -9999.;
+        clusterData.electrons = -9999.;
+    }
+
+    return 1;
+}
+
+
+/*  PUBLIC  */
+
+/**
+ * @brief Upload a dictionary to convert mV to electrons.
+ * 
+ * @param mV_to_electrons 
+ */
+void Preprocessor::UploadConversionValues(double (* mVToElectrons)[2])
+{
+    for (int i = 0; i < fNPixels; i++)
+    {
+        fmVToElectrons[i][0] = mVToElectrons[i][0];
+        fmVToElectrons[i][1] = mVToElectrons[i][1];
+    }
+}
+
+/**
+ * @brief Function to build the tree with the preprocessed data. All events in the input files will be processed.
+ * 
+ * @param outFilePath 
+ */
+void Preprocessor::BuildTree(const char * outFilePath)
+{
+    TString sOutFilePath(outFilePath);
+    if (sOutFilePath.EqualTo("default")) 
+    {
+        sOutFilePath = fInFilePath;
+        sOutFilePath.ReplaceAll(".root", "_preprocessed.root");
+    }
+
+    int nPixels = fNPixels;
+    PixelData pixelData[nPixels];
+
+    auto inFile = TFile::Open(fInFilePath.Data());
+    TFile outFile(sOutFilePath.Data(), "RECREATE");
+    TTree outTree("PreprocessedData", "outTree");
+
+    int event{0};
+    outTree.Branch("Event", &event, "Event/I");
+    outTree.Branch("nPixels", &nPixels, "nPixels/I");
+    for(int i = 0; i < fNPixels; i++) outTree.Branch(Form("pixel%d", i), &pixelData[i]);//, PixelData::GetBranchList().Data());
+    
+    std::cout << "Writing output file: " << BLUE << UNDERLINE << sOutFilePath << RESET << std::endl;
+    const auto startTime = std::chrono::steady_clock::now();
+
+    for (int ievent = 0; ievent < fNEvents; ++ievent)
+    {
+        updateProgressBar(ievent, fNEvents, startTime);
+        
+        event = ievent;
+        for (int ipixel = 0; ipixel < fNPixels; ipixel++)   
+        {
+            if (fSamplingPeriodDictionary[ipixel] == 25)            Preprocessor::ProcessEventScope(ievent, ipixel, pixelData[ipixel], inFile);
+            else if (fSamplingPeriodDictionary[ipixel] == 250000)   Preprocessor::ProcessEventADC(ievent, ipixel, pixelData[ipixel], inFile);
+        }
+
+        outTree.Fill();
+    }
+
+    inFile->Close();
+
+    std::cout << std::endl;
+    outFile.cd();
+    outTree.Write();
+    outFile.Close();
+}
+
+/**
  * @brief For a single event and pixel, draws the waveform and its derivative.
  * 
  * @param event 
@@ -602,369 +646,64 @@ void Preprocessor::DrawEvent(const int event, const char * outFilePath)
     inFile->Close();    
 }
 
-// -------------------------------------------------------------------------------------
-// functions used in this file
-
 /**
- * @brief Function to find the edge of the signal.
- * 
- * @param gr 
- * @param nIgnorePoints number of points to ignore at the beginning and at the end of the TGraph (due to the smoothing and/or 
- * peculiarity of the waveform)
- * @return std::tuple<double, double, double> edgeLeft, edgeRight
- */
-std::pair<double, double> FindEdge(TGraph & gr, int nIgnorePoints, int nChecks, int nSample, const int nDerivativePoints, const int nSmoothingPoints)
-{
-    auto edgesIdx = FindEdgeIndex(gr, nIgnorePoints, nChecks, nSample, nDerivativePoints, nSmoothingPoints);
-    return std::make_pair(gr.GetPointX(edgesIdx.first), gr.GetPointX(edgesIdx.second));
-}
-
-/**
- * @brief Function to find the edge of the signal.
- * 
- * @param gr 
- * @return std::tuple<double, double, double> edgeLeft, edgeRight
- */
-std::pair<int, int> FindEdgeIndex(TGraph & gr, int nIgnorePoints, int nChecks, int nSample, const int nDerivativePoints, const int nSmoothingPoints)
-{
-    auto grSmooth = SmoothGraph(gr, nSmoothingPoints);                  // smooth the graph to find the edge more easily
-    auto grDerivative = DerivativeGraph(*grSmooth, nDerivativePoints);  // take the derivative of the smoothed graph
-
-    double meanDer{0.}, RMSDer{0.};
-    if (nSample > gr.GetN())  nSample = int(gr.GetN()/2);
-    if (nIgnorePoints == 0)  nIgnorePoints = nSmoothingPoints;
-    auto resultDer = GetMeanAndRMS(*grDerivative, nIgnorePoints, nIgnorePoints+nSample);
-    meanDer = resultDer.first;
-    RMSDer = resultDer.second;
-
-    double edgeLeft{0.}, edgeRight{0.};    
-    int edgeLeftIndex = FindChangingDerivative(*grDerivative, meanDer, RMSDer, nIgnorePoints, nChecks);          // correct for smoothing
-    int edgeRightIndex = FindChangingDerivative(*grDerivative, meanDer, RMSDer, nIgnorePoints, nChecks, true);   // correct for smoothing
-
-    delete grSmooth;
-    delete grDerivative;
-    
-    return std::make_pair(edgeLeftIndex, edgeRightIndex);
-}
-
-/**
- * @brief Function to find the minimum value in a graph.
- * 
- * @param gr 
- * @return double 
- */
-int FindMinimumIndex(TGraph & gr)
-{
-    const int nSamples = gr.GetN();
-    double * x = gr.GetX();
-    double * y = gr.GetY();
-
-    double minimum{999999.};
-    int minimumIndex{0};
-    for (int i = 0; i < nSamples; ++i)
-    {
-        if (y[i] < minimum)     
-        {
-            minimum = y[i];
-            minimumIndex = i;
-        }   
-    }
-
-    return minimumIndex;
-}
-
-/**
- * @brief Function to find the maximum value in a graph.
- * 
- * @param gr 
- * @return double 
- */
-int FindMaximumIndex(TGraph & gr)
-{
-    const int nSamples = gr.GetN();
-    double * x = gr.GetX();
-    double * y = gr.GetY();
-
-    double maximum{-9999999.};
-    int maximumIndex{0};
-    for (int i = 0; i < nSamples; ++i)
-    {
-        if (y[i] > maximum)     
-        {
-            maximum = y[i];
-            maximumIndex = i;
-        }   
-    }
-
-    return maximumIndex;
-}
-
-/**
- * @brief Find the point at which the derivative changes for n consecutive points with a value higher or lower than meanDer ± 3 * RMSDer.
- * 
- * @param grDer 
- * @param meanDer 
- * @param RMSDer 
- * @param ignorePoints Number of points to ignore at the beginning and at the end of the TGraph (due to smoothing).
- * @param nChecks Number of consecutive points with derivative beyond meanDer ± 3 * RMSDer to consider a change.
- * @param backwards If true, the function loops through the TGraph from the last point to the first one.
- * @return const int 
- */
-int FindChangingDerivative(TGraph & grDer, const double & meanDer, const double & RMSDer, const int ignorePoints, const int nChecks, const bool backwards)
-{
-    const int nSamples = grDer.GetN();
-    double * x = grDer.GetX();
-    double * y = grDer.GetY();
-
-    int changingPoint{0};
-    int consecutiveCount{0};
-
-    if (!backwards)
-    {
-        for (int i = ignorePoints; i < nSamples - nChecks + 1; ++i)
-        {
-            // Check if the derivative of n consecutive points is beyond meanDer ± 3 * RMSDer
-            bool isChange = true;
-            for (int j = 0; j < nChecks; ++j)
-            {
-                if (y[i + j] <= meanDer + 5 * RMSDer && y[i + j] >= meanDer - 5 * RMSDer)
-                {
-                    isChange = false;
-                    break;
-                }
-            }
-
-            if (isChange)
-            {
-                changingPoint = i;
-                consecutiveCount = nChecks;
-                break;
-            }
-        }
-    }
-    else
-    {
-        for (int i = nSamples - ignorePoints - 1; i > nChecks - 2; --i)
-        {
-            // Check if the derivative of n consecutive points is beyond meanDer ± 3 * RMSDer
-            bool isChange = true;
-            for (int j = 0; j < nChecks; ++j)
-            {
-                if (y[i - j] <= meanDer + 5 * RMSDer && y[i - j] >= meanDer - 5 * RMSDer)
-                {
-                    isChange = false;
-                    break;
-                }
-            }
-
-            if (isChange)
-            {
-                changingPoint = i;
-                consecutiveCount = nChecks;
-                break;
-            }
-        }
-    }
-
-    if (consecutiveCount < nChecks)
-    {
-        // If no change is found, return 0
-        changingPoint = 0;
-    }
-
-    return changingPoint;
-}
-
-/**
- * @brief Get the Mean And RMS of a graph in a given range (points).
- * 
- * @param gr 
- * @param begin 
- * @param end 
- * @return std::pair<double, double> 
- */
-std::pair<double, double> GetMeanAndRMS(TGraph & gr, const int & begin, const int & end)
-{
-    const int nSamples = gr.GetN();
-    double * x = gr.GetX();
-    double * y = gr.GetY();
-
-    double mean{0.};
-    for (int i = begin; i < end; ++i)
-    {
-        mean += y[i];
-    }
-    mean /= (end - begin);
-
-    double RMS{0.};
-    for (int i = begin; i < end; ++i)
-    {
-        RMS += (y[i] - mean) * (y[i] - mean);
-    }
-    RMS /= (end - begin);
-    RMS = std::sqrt(RMS);
-
-    return std::make_pair(mean, RMS);
-}
-
-/**
- * @brief Function to obtain a smoothed version of a TGraph, by doing a running average over nSmoothingPoints points.
- * 
- * @param gr 
- * @param nSmoothingPoints 
- * @return TGraph* 
- */
-TGraph* SmoothGraph(TGraph& gr, const int nSmoothingPoints)
-{
-    const int nSamples = gr.GetN();
-    double * x = gr.GetX();
-    double * y = gr.GetY();
-
-    auto grSmooth = new TGraph(0);
-    grSmooth->SetName(Form("%s_smoothed", gr.GetName()));
-    for (int i = 0; i < nSamples; ++i)
-    {
-        double sum{0.};
-        for (int j = i - nSmoothingPoints; j < i + nSmoothingPoints; ++j)
-        {
-            if (j < 0 || j > nSamples) continue;
-            sum += y[j];
-        }
-        grSmooth->SetPoint(i, x[i], sum / (2 * nSmoothingPoints + 1));
-    }
-
-    return grSmooth;
-}
-
-/**
- * @brief Function to obtain the derivative of a TGraph point by point. The derivative is computed as the average of the derivative done on 
- * nDerivativePoints points before and after the point in which the derivative is evaluated.
- * 
- * @param gr 
- * @param nDerivativePoints
- * @return TGraph* 
- */
-TGraph* DerivativeGraph(TGraph& gr, const int nDerivativePoints)
-{
-    // compute the derivative of a TGraph point by point considering nDerivativePoints points before and after the point in which the derivative is evaluated
-    const int nSamples = gr.GetN();
-    double * x = gr.GetX();
-    double * y = gr.GetY();
-
-    auto grDerivative = new TGraph(0);
-    grDerivative->SetName(Form("%s_derivative", gr.GetName()));
-    
-    for (int i = 1; i < nSamples - nDerivativePoints - 1; ++i)
-    {
-        double der{0.};
-        for (int j = i; j < i + nDerivativePoints; j++)   der += (y[j + 1] - y[j - 1]) / (x[j + 1] - x[j - 1]);
-        der /= nDerivativePoints;
-        grDerivative->SetPoint(i, x[i], der);
-    }
-    grDerivative->SetPoint(0, x[0], grDerivative->GetPointY(1));
-    grDerivative->SetPoint(nSamples - 1, x[nSamples - 1], grDerivative->GetPointY(nSamples - 2));
-
-    // set the first and last point of the derivative graph to the second and second to last point of the original graph
-    grDerivative->SetPoint(0, x[0], grDerivative->GetPointY(1));
-    grDerivative->SetPoint(nSamples - 1, x[nSamples - 1], grDerivative->GetPointY(nSamples - 2));
-
-    return grDerivative;
-}
-
-/**
- * @brief Find the first point in the TGraph with given value. The first skipPoints points are ignored.
- * 
- * @param gr 
- * @param x 
- * @param skipPoints 
- * @return int 
- */
-int FindPointIndex(TGraph & gr, const double & x, const int nIgnorePoints)
-{
-    const int nSamples = gr.GetN();
-    double * xGraph = gr.GetX();
-    double * yGraph = gr.GetY();
-
-    for (int i = nIgnorePoints; i < nSamples; ++i)  if (xGraph[i] == x) return i;
-    return 0;
-}
-
-/**
- * @brief Find the point in TGraph with value closest to the target value.
- * 
- * @param gr
- * @param target
- * @return int
+ * @brief Function to generate the seed and cluster tree from tree generated in BuildTree().
 */
-int FindClosestPointIndex(TGraph & gr, const double target, const int nIgnorePoints)
+void Preprocessor::BuildSeedAndClusterTree(const char * inFilePath, const char * outFilePath)
 {
-    const int size = gr.GetN();
-    double * array = gr.GetY();
-
-    size_t effectiveSize = (size > nIgnorePoints) ? size - nIgnorePoints : 0;
-    array += nIgnorePoints;
-
-    // Create a vector of indices and sort it based on the values in the array
-    size_t * indices = new size_t[effectiveSize];
-    std::iota(indices, indices + effectiveSize, 0);
-    std::sort(indices, indices + effectiveSize,
-              [&array](size_t i1, size_t i2) { return array[i1] < array[i2]; });
-
-    // Use binary search on the sorted indices
-    auto it = std::lower_bound(indices, indices + effectiveSize, target,
-                               [&array](size_t i, double value) { return array[i] < value; });
-
-    if (it == indices) {
-        // Target is less than or equal to the first element
-        size_t result = *it;
-        delete[] indices;
-        return result;
-    } else if (it == indices + effectiveSize) {
-        // Target is greater than or equal to the last element
-        size_t result = *(--it);
-        delete[] indices;
-        return result;
+    TString sInFilePath(inFilePath);
+    if (sInFilePath.EqualTo("default")) 
+    {
+        sInFilePath = fInFilePath;
+        sInFilePath.ReplaceAll(".root", "_preprocessed.root");
+    }
+    TString sOutFilePath(outFilePath);
+    if (sOutFilePath.EqualTo("default")) 
+    {
+        sOutFilePath = fInFilePath;
+        sOutFilePath.ReplaceAll(".root", "_seed_and_cluster.root");
     }
 
-    // Check the closest value between the current iterator and the one before
-    size_t index1 = *it;
-    size_t index2 = *(--it);
+    auto inFile = TFile::Open(sInFilePath.Data());
+    std::cout << "Reading input file: " << BLUE << UNDERLINE << sInFilePath.Data() << RESET << std::endl;
+    auto inTree = (TTree*)inFile->Get("PreprocessedData");
 
-    size_t result = std::abs(array[index1] - target) < std::abs(array[index2] - target) ? index1 : index2;
-    result += nIgnorePoints;
+    const int nPixels = fNPixels;
+    PixelData * pixelData[nPixels];
+    for (PixelData *& pxDt: pixelData)  pxDt = new PixelData();
+    TBranch * bPixelData[nPixels];
+    for (int ipixel = 0; ipixel < nPixels; ipixel++)    inTree->SetBranchAddress(Form("pixel%d", ipixel), pixelData+ipixel, &bPixelData[ipixel]);
 
-    delete[] indices;
-    return result;
-}
+    TFile outFile(sOutFilePath.Data(), "RECREATE");
+    TTree outTree("SeedAndCluster", "SeedAndCluster");
+    std::cout << "Writing output file: " << BLUE << UNDERLINE << sOutFilePath << RESET << std::endl;
 
-// -------------------------------------------------------------------------------------
-// progress bar section
-/**
- * @brief Function to update the progress bar.
- * 
- * @param progress 
- * @param total 
- */
-void updateProgressBar(int progress, int total, const std::chrono::steady_clock::time_point& startTime) 
-{
-    const int barWidth = 50;
+    int event{0}, clusterSize{0};
+    PixelData seedData, clusterData;
 
-    float percentage = static_cast<float>(progress) / total;
-    int barLength = static_cast<int>(percentage * barWidth);
+    outTree.Branch("Event", &event, "Event/I");
+    outTree.Branch("ClusterSize", &clusterSize,"ClusterSize/I");
+    outTree.Branch("Seed", &seedData);
+    outTree.Branch("Cluster", &clusterData);
 
-    auto currentTime = std::chrono::steady_clock::now();
-    auto elapsedTime = std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime).count();
+    const auto startTime = std::chrono::steady_clock::now();
+    for (int ievent = 0; ievent < fNEvents; ++ievent)
+    //for (int ievent = 0; ievent < 3; ++ievent)
+    {
+        updateProgressBar(ievent, fNEvents, startTime);
+        
+        event = ievent;
+        inTree->GetEntry(ievent);
+        for (int ipixel = 0; ipixel < nPixels; ipixel++)    std::cout << "ampl pixel " << ipixel << ": " << pixelData[ipixel]->amplitude << std::endl;
+        Preprocessor::GenerateSeedAndCluster(clusterSize, seedData, clusterData, *pixelData);
 
-    std::cout << "\r[";
-    for (int i = 0; i < barWidth; ++i) {
-        if (i < barLength) {
-            std::cout << "=";
-        } else {
-            std::cout << " ";
-        }
+        outTree.Fill();
     }
-    std::cout << "] " << static_cast<int>(percentage * 100.0) << "%";
-    std::cout << "  Elapsed Time: " << elapsedTime << "s";
-    std::cout.flush();
+
+    inFile->Close();
+    std::cout << std::endl;
+
+    outFile.cd();
+    outTree.Write();
+    outFile.Close();
 }
-// -------------------------------------------------------------------------------------

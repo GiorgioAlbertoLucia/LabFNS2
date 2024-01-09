@@ -1,12 +1,13 @@
+#include <fstream>
+
 #include <TFile.h>
 #include <TTree.h>
 #include <TH1D.h>
 
 #include "../../yaml/Yaml.hpp"
-
 #include "lib/spectrum.hh"
 
-void analyseSpectra()
+void fitXrayPeaks()
 {
     const char * inFilePath = "ITS3/Data/run175174828_230428174901_preprocessed.root";
     const char * inTreeName = "PreprocessedData";
