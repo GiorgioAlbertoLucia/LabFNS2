@@ -39,9 +39,9 @@ void preprocessing()
         mV_to_electrons[iPixel][1] = conversionLog[Form("pixel%d", iPixel)]["calibrationParsElectrons"][1].As<double>();
     }
 
-    //for (int ievent = 0; ievent < 10; ievent++)   p.DrawEvent(ievent);
+    for (int ievent = 0; ievent < 10; ievent++)   p.DrawEvent(ievent);
 
     //p.UploadConversionValues(mV_to_electrons);
     //p.BuildTree();
-    p.BuildSeedAndClusterTree();
+    //p.BuildSeedAndClusterTree();
 }

@@ -104,6 +104,7 @@ class DepletionAnalysis:
         gStyle.SetOptFit(0)
 
         self.text1 = 'Area = 1.0 #times 1.0 mm^{2}'
+        if self.sensor == 'Strip':  self.text1 = 'Area = 8.0 #times 33.0 mm^{2}'
         self.text2 = f'{args.sensor} sensor'
 
     def close(self):
@@ -222,7 +223,6 @@ class DepletionAnalysis:
         graph.SetMarkerSize(1)
         graph.SetMarkerColor(kAzure+1)
         graph.SetTitle('1/C^{2} vs V '+f'{args.sensor}'+'; Reverse bias (V); 1/C^{2} (pF^{-2})')
-        if self.sensor == 'Strip':  graph.SetTitle('1/C^{2} vs V '+f'{args.sensor}'+'; Bias voltage (V); 1/C^{2} (pF^{-2})')
 
         self.graph = graph.Clone()
         
@@ -261,8 +261,6 @@ class DepletionAnalysis:
         canvas.SetLeftMargin(0.15)
         canvas.DrawFrame(self.config['canvas_limits']['xmin'], self.config['canvas_limits']['ymin'],
                          self.config['canvas_limits']['xmax'], self.config['canvas_limits']['ymax'], '1/C^{2} vs V '+f'{args.sensor}'+'; Reverse bias (V); 1/C^{2} (pF^{-2})')
-        if self.sensor == 'Strip':  canvas.DrawFrame(self.config['canvas_limits']['xmin'], self.config['canvas_limits']['ymin'],
-                         self.config['canvas_limits']['xmax'], self.config['canvas_limits']['ymax'], '1/C^{2} vs V '+f'{args.sensor}'+'; Bias voltage (V); 1/C^{2} (pF^{-2})')
         #canvas.SetGrid()
 
         graph.Draw('P')

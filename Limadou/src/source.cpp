@@ -8,9 +8,10 @@ void source()
 {
     const int chipID = 113;
     const char * inFilePath = "Limadou/Data/output/source_123218.root";
+    //const char * inFilePath = "Limadou/Data/output/source_130551.root";
     const char * cfgFilePath = "Limadou/src/config/cfgSourcePosition.yml";
 
-    //const char * bkgFilePath1 = "Limadou/Data/output/background_113112.root";
+    const char * bkgFilePath1 = "Limadou/Data/output/background_113112.root";
     const char * bkgFilePath2 = "Limadou/Data/output/background_115654.root";
 
     SourceAnalysis sa(chipID, inFilePath);

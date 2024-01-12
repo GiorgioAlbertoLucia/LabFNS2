@@ -14,15 +14,17 @@ def drawXProjection(inFile):
     hist.SetLineColor(797)
     hist.SetFillStyle(3356)
 
-    hist.GetXaxis().SetTitleSize(0.05)
-    hist.GetYaxis().SetTitleSize(0.05)
-    hist.GetXaxis().SetLabelSize(0.04)
-    hist.GetYaxis().SetLabelSize(0.04)
-
     canvas = TCanvas('canvas', '^{90}Sr acquisition - x projection ', 800, 600)
     canvas.SetLeftMargin(0.15)
     canvas.SetRightMargin(0.15)
     canvas.SetBottomMargin(0.15)
+
+    hframe = canvas.DrawFrame(-200, 0, 1024, 11000, r'^{90}Sr acquisition - x projection; x (pixel); Counts')
+
+    hframe.GetXaxis().SetTitleSize(0.05)
+    hframe.GetYaxis().SetTitleSize(0.05)
+    hframe.GetXaxis().SetLabelSize(0.04)
+    hframe.GetYaxis().SetLabelSize(0.04)
 
 
     fit = hist.GetFunction('projX')
@@ -37,19 +39,25 @@ def drawXProjection(inFile):
     legend.AddEntry(fit, 'Fit', 'l')
 
     canvas.cd()
-    hist.Draw('hist')
+    hist.Draw('hist same')
     fit.Draw('same')
     legend.Draw('same')
 
     latex = TLatex()
     latex.SetTextSize(0.04)
     latex.SetTextFont(42)
-    latex.DrawLatexNDC(0.2, 0.75, '^{90}Sr acquisition')
-    latex.DrawLatexNDC(0.2, 0.7, 'Chip 113')
+    latex.DrawLatexNDC(0.2, 0.85, '^{90}Sr acquisition')
+    latex.DrawLatexNDC(0.2, 0.8, 'Chip 113')
+    latex.DrawLatexNDC(0.2, 0.75, f'Threshold values:')
+    latex.SetTextSize(0.03)
+    #latex.DrawLatexNDC(0.2, 0.7, f'VCASN=50, VCASN2=62, ITHR=80')
+    latex.DrawLatexNDC(0.2, 0.7, f'VCASN=55, VCASN2=67, ITHR=60')
+    latex.SetTextSize(0.04)
     latex.DrawLatexNDC(0.2, 0.65, f'x position = ({fit.GetParameter(1):.0f} #pm {fit.GetParameter(2):.0f})')
     
 
-    canvas.SaveAs('../Data/output/sourceXProjection.pdf')
+    #canvas.SaveAs('../Data/output/sourceXProjection.pdf')
+    canvas.SaveAs('../Data/output/sourceXProjection_lowTH.pdf')
     del canvas
 
 def drawYProjection(inFile):
@@ -67,7 +75,7 @@ def drawYProjection(inFile):
     canvas.SetLeftMargin(0.15)
     canvas.SetRightMargin(0.15)
     canvas.SetBottomMargin(0.15)
-    hframe = canvas.DrawFrame(-100, 0, 512, 2800, r'^{90}Sr acquisition - y projection; y (pixel); Counts')
+    hframe = canvas.DrawFrame(-300, 0, 512, 5000, r'^{90}Sr acquisition - y projection; y (pixel); Counts')
 
     hframe.GetXaxis().SetTitleSize(0.05)
     hframe.GetYaxis().SetTitleSize(0.05)
@@ -93,13 +101,19 @@ def drawYProjection(inFile):
     latex = TLatex()
     latex.SetTextSize(0.04)
     latex.SetTextFont(42)
-    latex.DrawLatexNDC(0.2, 0.7, '^{90}Sr acquisition')
-    latex.DrawLatexNDC(0.2, 0.65, 'Chip 113')
+    latex.DrawLatexNDC(0.2, 0.8, '^{90}Sr acquisition')
+    latex.DrawLatexNDC(0.2, 0.75, 'Chip 113')
+    latex.DrawLatexNDC(0.2, 0.7, f'Threshold values:')
+    latex.SetTextSize(0.03)
+    #latex.DrawLatexNDC(0.2, 0.65, f'VCASN=50, VCASN2=62, ITHR=80')
+    latex.DrawLatexNDC(0.2, 0.65, f'VCASN=60, VCASN2=72, ITHR=50')
+    latex.SetTextSize(0.04)
     latex.DrawLatexNDC(0.2, 0.6, f'x range = [505, 575]')
     latex.DrawLatexNDC(0.2, 0.55, f'y position = ({fit.GetParameter(1):.0f} #pm {fit.GetParameter(2):.0f})')
     
 
-    canvas.SaveAs('../Data/output/sourceYProjection.pdf')    
+    #canvas.SaveAs('../Data/output/sourceYProjection.pdf')    
+    canvas.SaveAs('../Data/output/sourceYProjection_lowTH.pdf')
     del canvas
 
 def drawAcquisition(inFile):
@@ -120,26 +134,41 @@ def drawAcquisition(inFile):
     gStyle.SetPalette(53)
 
     canvas = TCanvas('canvas', '^{90}Sr acquisition', 900, 600)
+    
     canvas.cd()
     canvas.SetLeftMargin(0.15)
     canvas.SetRightMargin(0.15)
     canvas.SetBottomMargin(0.15)
     #canvas.SetLogz()
-    hist.Draw('colz')
+
+    hframe = canvas.DrawFrame(-200, -50, 1024, 562, r'^{90}Sr acquisition; x (pixel);y (pixel)')
+
+    hframe.GetXaxis().SetTitleSize(0.05)
+    hframe.GetYaxis().SetTitleSize(0.05)
+    hframe.GetXaxis().SetLabelSize(0.04)
+    hframe.GetYaxis().SetLabelSize(0.04)
+
+    hist.Draw('colz same')
 
     latex = TLatex()
     latex.SetTextSize(0.04)
     latex.SetTextFont(42)
-    latex.DrawLatexNDC(0.2, 0.8, '^{90}Sr acquisition')
-    latex.DrawLatexNDC(0.2, 0.75, 'Chip 113')
-    latex.DrawLatexNDC(0.2, 0.7, 'Background subtracted')
+    latex.DrawLatexNDC(0.2, 0.85, '^{90}Sr acquisition')
+    latex.DrawLatexNDC(0.2, 0.75, 'Background subtracted')
+    latex.DrawLatexNDC(0.2, 0.8, 'Chip 113')
+    latex.DrawLatexNDC(0.2, 0.7, f'Threshold values:')
+    latex.SetTextSize(0.03)
+    #latex.DrawLatexNDC(0.18, 0.65, f'VCASN=50, VCASN2=62, ITHR=80')
+    latex.DrawLatexNDC(0.18, 0.65, f'VCASN=55, VCASN2=67, ITHR=60')
 
-    canvas.SaveAs('../Data/output/source.pdf')
+    #canvas.SaveAs('../Data/output/source.pdf')
+    canvas.SaveAs('../Data/output/source_lowTH.pdf')
     del canvas
 
 def main():
 
-    inFile = TFile.Open('../Data/output/source_123218_analysis_chip113.root')
+    #inFile = TFile.Open('../Data/output/source_123218_analysis_chip113.root')
+    inFile = TFile.Open('../Data/output/source_130551_analysis_chip113.root')
 
     drawXProjection(inFile)
     drawYProjection(inFile)

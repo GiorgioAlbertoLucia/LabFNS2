@@ -581,7 +581,7 @@ void Preprocessor::DrawEvent(const int event, const char * outFilePath)
 
         auto gr = (TGraph*)inFile->Get(grName.Data());
         auto grDerivative = DerivativeGraph(*gr);
-        grDerivative->SetTitle(Form("Signal derivative - Event %d, Pixel %d, Sampling Period %d ps; Time (ns); Derivative (a.u.)", event, i, fSamplingPeriodDictionary[i]));
+        grDerivative->SetTitle(Form("Signal derivative - Event %d, Pixel %d, Sampling Period %d ps; Time (ps); Derivative (a.u.)", event, i, fSamplingPeriodDictionary[i]));
         auto grSecondDerivative = DerivativeGraph(*grDerivative);
         auto grSmooth = SmoothGraph(*gr, 10);
         canvas->Divide(2);
@@ -606,7 +606,7 @@ void Preprocessor::DrawEvent(const int event, const char * outFilePath)
         auto grClean = new TGraph(gr->GetN() - 2 * fIgnorePoints);
         for (int iPoint = fIgnorePoints; iPoint < gr->GetN() - fIgnorePoints; ++iPoint) grClean->SetPoint(iPoint - fIgnorePoints, gr->GetPointX(iPoint), gr->GetPointY(iPoint));
         grClean->SetName(Form("grEv%dPx%dsamp%d_clean", event, i, fSamplingPeriodDictionary[i]));
-        grClean->SetTitle(Form("Event %d, Pixel %d, Sampling Period %d ps; Time (ns); Amplitude (mV)", event, i, fSamplingPeriodDictionary[i]));
+        grClean->SetTitle(Form("Event %d, Pixel %d, Sampling Period %d ps; Time (ps); Amplitude (mV)", event, i, fSamplingPeriodDictionary[i]));
 
         gr->Write();
         grClean->Write();

@@ -17,8 +17,8 @@ fits:
 
   - name: "projY"
     projRange: 
-      - 0
-      - -1
+      - 510
+      - 575
     rebin: 16
     func: "[0] * exp(-(x-[1])**2 / (2 * [2]**2))" 
     range: 
