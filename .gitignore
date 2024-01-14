@@ -20,9 +20,9 @@ ITS3/src/build/
 ITS3/src/*.so
 ITS3/src/*.d
 ITS3/src/*.pcm
+ITS3/data/*.root
 Limadou/src/build/*
 Limadou/Data/*.raw
-
 Limadou/src/build/*
 Limadou/Data/Gruppo1_2023/*
 

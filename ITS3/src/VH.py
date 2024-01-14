@@ -337,8 +337,8 @@ if __name__=='__main__':
     fitArray2=[]
     ifit2=0
     for indexfit in range(len(AmpliPx[0])):
-        fitArray.append(TF1("fit"+str(indexfit),"[0]+x*[1]",0,1.23))
-        fitArray2.append(TF1("fit"+str(indexfit),"[0]+x*[1]",0,1.23))
+        fitArray.append(TF1("fit"+str(indexfit),"[0]+x*[1]",0.0,1.23))
+        fitArray2.append(TF1("fit"+str(indexfit),"[0]+x*[1]",0.0,1.23))
         fitArray[indexfit].SetParameter(1,0)
         fitArray2[indexfit].SetParameter(0,0)
         fitArray[indexfit].SetLineColor(colorArr[indexfit])
@@ -348,12 +348,16 @@ if __name__=='__main__':
             BasgraphArray[indexfit].Fit(fitArray[indexfit],"rm+")
             AmgraphArray[indexfit].Fit(fitArray2[indexfit],"rm+")
             print("pixel" +str(indexfit) + " baseline fit par intercetta= "+ str(fitArray[indexfit].GetParameter(0))+" err="+ str(fitArray[indexfit].GetParError(0))+" coeff= "+str(fitArray[indexfit].GetParameter(1)) +" err="+ str(fitArray[indexfit].GetParError(1)))
+            print("chi2/dof= "+str(fitArray[indexfit].GetChisquare())+"/"+str(fitArray[indexfit].GetNDF()))
             print("pixel" +str(indexfit)+ " amplitude fit par intercetta= "+ str(fitArray2[indexfit].GetParameter(0))+" err="+ str(fitArray2[indexfit].GetParError(0))+" coeff= "+str(fitArray2[indexfit].GetParameter(1))+ " err="+ str(fitArray2[indexfit].GetParError(1)))
+            print("chi2/dof= "+str(fitArray2[indexfit].GetChisquare())+"/"+str(fitArray2[indexfit].GetNDF()))
         else:
             BasgraphArray2[ifit2].Fit(fitArray[indexfit],"rm+")
             AmgraphArray2[ifit2].Fit(fitArray2[indexfit],"rm+")
             print("pixel scala a sx)" +str(indexfit)+ "baseline fit par intercetta= "+ str(fitArray[indexfit].GetParameter(0))+" coeff= "+str(fitArray[indexfit].GetParameter(1)))
+            print("chi2/dof= "+str(fitArray[indexfit].GetChisquare())+"/"+str(fitArray[indexfit].GetNDF()))
             print("pixel scala a sx)" +str(indexfit)+ "amplitude fit par intercetta= "+ str(fitArray2[indexfit].GetParameter(0))+" coeff= "+str(fitArray2[indexfit].GetParameter(1)))
+            print("chi2/dof= "+str(fitArray2[indexfit].GetChisquare())+"/"+str(fitArray2[indexfit].GetNDF()))
             ifit2+=1
     canvas4 = TCanvas("canvas4","canvas4",2000,700)
     canvas4.Divide(2,1)
@@ -361,16 +365,16 @@ if __name__=='__main__':
     hFrame = canvas4.cd(1).DrawFrame(0.3,210,1.300,340,"Baseline vs VH; VH (V); Baseline (mV)")
     legend = TLegend(0.15,0.55,0.35,0.9)
     for i in range(len(AmpliPx[0])):
-        if( i==0 or i==7):
+        if( i==3 or i==7):
             BasgraphArray[i].Draw("p,same")
             fitArray[i].Draw("l,same")
             legend.AddEntry(BasgraphArray[i], "Pixel "+str(int(i)))
             legend.AddEntry(fitArray[i],"Linear fit, Pixel "+str(int(i)))
         if(i==9):
-            BasgraphArray2[2].Draw("p,same")
-            fitArray[9].Draw("l,same")
-            legend.AddEntry(BasgraphArray2[2], "Pixel 6 ")#there is a shift of 1 pixel in the inner pixels so in position 9 in the 6
-            legend.AddEntry(fitArray[9], "Linear fit, Pixel 6 ")
+            BasgraphArray2[0].Draw("p,same")
+            fitArray[5].Draw("l,same")
+            legend.AddEntry(BasgraphArray2[0], "Pixel 10 ")#there is a shift of 1 pixel in the inner pixels so in position 9 in the 6
+            legend.AddEntry(fitArray[5], "Linear fit, Pixel 6 ")
     legend.Draw()
     text8 =TLatex(0.58, 0.8,"APTS_AO10P_B10")
     text8.SetNDC()
@@ -386,10 +390,10 @@ if __name__=='__main__':
             legend2.AddEntry(AmgraphArray[i], "Pixel "+str(int(i)))
             legend2.AddEntry(fitArray2[i],"Linear fit, Pixel "+str(int(i)))
         if(i==9):
-            AmgraphArray2[2].Draw("p,same")
-            fitArray2[9].Draw("l,same")
-            legend2.AddEntry(AmgraphArray2[2], "Pixel 6 ")
-            legend2.AddEntry(fitArray2[9], "Linear fit, Pixel 6 ")
+            AmgraphArray2[0].Draw("p,same")
+            fitArray2[5].Draw("l,same")
+            legend2.AddEntry(AmgraphArray2[0], "Pixel 10 ")
+            legend2.AddEntry(fitArray2[5], "Linear fit, Pixel 10 ")
     legend2.Draw()
     text9 =TLatex(0.50, 0.8,"APTS_AO10P_B10")
     text9.SetNDC()

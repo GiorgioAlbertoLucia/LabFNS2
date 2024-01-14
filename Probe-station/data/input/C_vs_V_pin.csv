@@ -1,5 +1,3 @@
-# Measurements for PiN sensor
-# V (V), C (pF)
 V,V_err,C,C_err
 0.4,0.1,66,1
 0.3,0.1,54,1
