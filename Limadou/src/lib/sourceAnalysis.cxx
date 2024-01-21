@@ -27,7 +27,8 @@ SourceAnalysis::SourceAnalysis(const int chipID, const char * inFilePath, const 
     fOutFile = new TFile(outFilePath, "recreate");
 
     auto inFile = TFile::Open(inFilePath);
-    fHits = (TH2D*)inFile->Get(Form("chip%d", fChipID));
+    fHits = (TH2D*)inFile->Get(Form("chip%d_hits", fChipID));
+    fPixelMap = (TH2D*)inFile->Get(Form("chip%d", fChipID));
 }
 
 SourceAnalysis::~SourceAnalysis()
@@ -36,20 +37,66 @@ SourceAnalysis::~SourceAnalysis()
     delete fHits;
 }   
 
+void SourceAnalysis::RemoveNoisyPixels(const double threshold)
+{
+    auto noiseFile = TFile::Open(fInFilePath.c_str());
+    auto noiseHist = (TH2D*)noiseFile->Get(Form("chip%d_clsize1", fChipID));
+
+    for (int ibinX = 0; ibinX < noiseHist->GetNbinsX(); ibinX++)
+    {
+        for (int ibinY = 0; ibinY < noiseHist->GetNbinsY(); ibinY++)
+        {   
+            if (noiseHist->GetBinContent(ibinX, ibinY) > 0)
+            {
+                int binX = fHits->GetXaxis()->FindBin(fHits->GetXaxis()->GetBinCenter(ibinX));
+                int binY = fHits->GetYaxis()->FindBin(fHits->GetYaxis()->GetBinCenter(ibinY));
+                fHits->SetBinContent(binX, binY, 0);
+
+                int binX2 = fPixelMap->GetXaxis()->FindBin(fPixelMap->GetXaxis()->GetBinCenter(ibinX));
+                int binY2 = fPixelMap->GetYaxis()->FindBin(fPixelMap->GetYaxis()->GetBinCenter(ibinY));
+                fPixelMap->SetBinContent(binX2, binY2, 0);
+            }
+        }
+    }
+    
+    for (int ibinX = 0; ibinX < fHits->GetNbinsX(); ibinX++)
+    {
+        for (int ibinY = 0; ibinY < fHits->GetNbinsY(); ibinY++)
+        {
+            if (fHits->GetBinContent(ibinX, ibinY) > threshold) fHits->SetBinContent(ibinX, ibinY, 0);
+        }
+    }
+
+    for (int ibinX = 0; ibinX < fPixelMap->GetNbinsX(); ibinX++)
+    {
+        for (int ibinY = 0; ibinY < fPixelMap->GetNbinsY(); ibinY++)
+        {
+            if (fPixelMap->GetBinContent(ibinX, ibinY) > threshold) fPixelMap->SetBinContent(ibinX, ibinY, 0);
+        }
+    }
+
+    delete noiseHist;
+}
+
 void SourceAnalysis::SubtractBackground(const char * bkgFilePath)
 {
     auto bkgFile = TFile::Open(bkgFilePath);
-    auto bkgHist = (TH2D*)bkgFile->Get(Form("chip%d", fChipID));
+    auto bkgHist = (TH2D*)bkgFile->Get(Form("chip%d_clsize1", fChipID));
 
-    // normalize the background histogram to the same number of entries as the hits histogram
-    bkgHist->Scale(fHits->GetEntries() / bkgHist->GetEntries());
-    
-    fHits->Add(bkgHist, -1);
-    for (int xbin = 1; xbin <= fHits->GetNbinsX(); xbin++)
+    for (int ibinX = 0; ibinX < bkgHist->GetNbinsX(); ibinX++)
     {
-        for (int ybin = 1; ybin <= fHits->GetNbinsY(); ybin++)
+        for (int ibinY = 0; ibinY < bkgHist->GetNbinsY(); ibinY++)
         {
-            if (fHits->GetBinContent(xbin, ybin) < 0)    fHits->SetBinContent(xbin, ybin, 0);
+            if (bkgHist->GetBinContent(ibinX, ibinY) > 0)
+            {
+                int binX = fHits->GetXaxis()->FindBin(fHits->GetXaxis()->GetBinCenter(ibinX));
+                int binY = fHits->GetYaxis()->FindBin(fHits->GetYaxis()->GetBinCenter(ibinY));
+                fHits->SetBinContent(binX, binY, 0);
+
+                int binX2 = fPixelMap->GetXaxis()->FindBin(fPixelMap->GetXaxis()->GetBinCenter(ibinX));
+                int binY2 = fPixelMap->GetYaxis()->FindBin(fPixelMap->GetYaxis()->GetBinCenter(ibinY));
+                fPixelMap->SetBinContent(binX2, binY2, 0);
+            }
         }
     }
 
@@ -100,6 +147,7 @@ void SourceAnalysis::Save()
 {
     fOutFile->cd();
     fHits->Write();
+    fPixelMap->Write();
 }
 
 /*  PROTECTED   */

@@ -18,6 +18,7 @@ class SourceAnalysis
         SourceAnalysis(const int chipID, const char * inFilePath, const char * outFilePath = "default");
         ~SourceAnalysis();
 
+        void RemoveNoisyPixels(const double threshold = 99999.);
         void SubtractBackground(const char * bkgFilePath);
 
         void FitHits(const char * cfgFitFile, const char * outLogPath = "default");
@@ -30,6 +31,7 @@ class SourceAnalysis
 
         int fChipID;
         TH2D * fHits;
+        TH2D * fPixelMap;
 
         std::string fInFilePath;
         TFile * fOutFile;
